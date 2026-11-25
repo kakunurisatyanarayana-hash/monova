@@ -289,9 +289,9 @@ class InterestCalculatorScreen extends StatefulWidget {
 }
 
 class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
-  final _principal = TextEditingController(text: '100000');
-  final _rate = TextEditingController(text: '7');
-  final _years = TextEditingController(text: '5');
+  final _principal = TextEditingController();
+  final _rate = TextEditingController();
+  final _years = TextEditingController();
   bool _compound = true;
   String? _error;
   ({double amount, double interest})? _compoundResult;
@@ -312,6 +312,15 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
   }
 
   void _calculate() {
+    // Show nothing until the three numbers are typed in.
+    if (_principal.text.trim().isEmpty || _rate.text.trim().isEmpty || _years.text.trim().isEmpty) {
+      setState(() {
+        _compoundResult = null;
+        _simpleResult = null;
+        _error = null;
+      });
+      return;
+    }
     try {
       final p = double.parse(_principal.text.replaceAll(',', ''));
       final r = double.parse(_rate.text);
@@ -383,8 +392,8 @@ class SplitCalculatorScreen extends StatefulWidget {
 }
 
 class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
-  final _total = TextEditingController(text: '2400');
-  final List<TextEditingController> _names = [TextEditingController(text: 'You'), TextEditingController(text: 'Bo'), TextEditingController(text: 'Cy')];
+  final _total = TextEditingController();
+  final List<TextEditingController> _names = [TextEditingController(), TextEditingController(), TextEditingController()];
   final List<TextEditingController> _values = [TextEditingController(), TextEditingController(), TextEditingController()];
   final List<bool> _included = [true, true, true];
   int _payer = 0;
@@ -404,7 +413,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
 
   void _addPerson() {
     setState(() {
-      _names.add(TextEditingController(text: 'Person ${_names.length + 1}'));
+      _names.add(TextEditingController());
       _values.add(TextEditingController());
       _included.add(true);
     });

@@ -16,11 +16,12 @@ class LoanCalculatorScreen extends StatefulWidget {
 }
 
 class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
-  int _product = 0;
-  final _amount = TextEditingController(text: '5000000');
-  final _rate = TextEditingController(text: '8.5');
-  final _tenure = TextEditingController(text: '240');
-  final _processing = TextEditingController(text: '0.5');
+  // -1 means no loan type chosen yet. Nothing is calculated, and no sample figures are shown, until the user picks one or types numbers.
+  int _product = -1;
+  final _amount = TextEditingController();
+  final _rate = TextEditingController();
+  final _tenure = TextEditingController();
+  final _processing = TextEditingController();
   final _serviceFees = TextEditingController(text: '0');
   final _otherCharges = TextEditingController(text: '0');
   bool _gstOnFees = true;
@@ -29,12 +30,6 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
 
   LoanResult? _result;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _applyProduct(0);
-  }
 
   @override
   void dispose() {
@@ -56,6 +51,14 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   double _num(TextEditingController c) => double.tryParse(c.text.replaceAll(',', '').trim()) ?? double.nan;
 
   void _calculate() {
+    // Nothing to show until a loan type is chosen and an amount is typed.
+    if (_product < 0 || _amount.text.trim().isEmpty) {
+      setState(() {
+        _result = null;
+        _error = null;
+      });
+      return;
+    }
     final principal = _num(_amount);
     final rate = _num(_rate);
     final tenure = int.tryParse(_tenure.text.trim()) ?? 0;
@@ -106,7 +109,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   Widget build(BuildContext context) {
     final c = context.monova;
     final r = _result;
-    final product = LoanProduct.all[_product];
+    final product = _product < 0 ? null : LoanProduct.all[_product];
     return Scaffold(
       appBar: AppBar(title: const Text('Loan calculator')),
       body: ListView(
@@ -122,8 +125,12 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text('${product.note} Defaults are indicative. Edit anything to match your sanction letter.',
-              style: TextStyle(color: c.muted, fontSize: 12)),
+          Text(
+            product == null
+                ? 'Choose a loan type above. Its typical rate, tenure and fee will fill in, and you can change them.'
+                : '${product.note} Defaults are indicative. Edit anything to match your sanction letter.',
+            style: TextStyle(color: c.muted, fontSize: 12),
+          ),
           const SizedBox(height: 14),
           _field(_amount, 'Loan amount', prefix: '₹ ', onChanged: _calculate),
           Row(children: [
