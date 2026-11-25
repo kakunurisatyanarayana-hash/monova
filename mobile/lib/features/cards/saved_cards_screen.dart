@@ -402,8 +402,9 @@ class _CardEditorState extends State<_CardEditor> {
       setState(() => _error = 'Enter the name printed on the card.');
       return;
     }
-    if (digits.isNotEmpty && !isValidCardNumber(digits)) {
-      setState(() => _error = 'Check the card number. It should be 12 to 19 digits.');
+    final numberProblem = digits.isNotEmpty ? cardNumberError(digits) : null;
+    if (numberProblem != null) {
+      setState(() => _error = numberProblem);
       return;
     }
     if (digits.isEmpty && initial == null) {

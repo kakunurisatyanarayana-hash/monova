@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/bill_store.dart';
 import '../../core/finance_calc.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
+import 'bill_balance_card.dart';
 
 /// Offline calculators. Open to everyone, signed in or not.
 class ToolsScreen extends ConsumerWidget {
@@ -465,6 +467,44 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   List<String> _lines = [];
   List<({int index, int cents})> _shares = [];
 
+  /// The last calculated bill, waiting to be saved. Null until a calculation succeeds.
+  SavedBill? _pending;
+  List<SavedBill> _saved = [];
+  bool _savedLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    BillStore.load().then((bills) {
+      if (!mounted) return;
+      setState(() {
+        _saved = bills;
+        _savedLoaded = true;
+      });
+    }).catchError((Object e) {
+      debugPrint('Bill load failed: $e');
+      if (mounted) setState(() => _savedLoaded = true);
+    });
+  }
+
+  Future<void> _savePending() async {
+    final bill = _pending;
+    if (bill == null) return;
+    final updated = [bill, ..._saved];
+    setState(() {
+      _saved = updated;
+      _pending = null;
+    });
+    await BillStore.save(updated);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
+  }
+
+  Future<void> _deleteBill(String id) async {
+    final updated = _saved.where((b) => b.id != id).toList();
+    setState(() => _saved = updated);
+    await BillStore.save(updated);
+  }
+
   @override
   void dispose() {
     _total.dispose();
@@ -522,9 +562,21 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
         return n.isEmpty ? 'Person ${i + 1}' : n;
       }
 
+      final now = DateTime.now();
       setState(() {
         _error = null;
         _shares = shares;
+        _pending = SavedBill(
+          id: now.microsecondsSinceEpoch.toString(),
+          title: '',
+          createdAt: now,
+          totalCents: totalCents,
+          payer: nameOf(payer.toString()),
+          people: [for (final s in shares) nameOf(s.index.toString())],
+          settlements: [
+            for (final p in payments) Settlement(from: nameOf(p.from), to: nameOf(p.to), cents: p.cents),
+          ],
+        );
         _lines = payments.isEmpty
             ? ['Everyone is settled.']
             : [for (final p in payments) '${nameOf(p.from)} pays ${nameOf(p.to)} ${money(p.cents / 100)}'];
@@ -534,6 +586,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
         _error = e is ArgumentError ? (e.message as String? ?? 'Check the amounts.') : 'Check the amounts.';
         _lines = [];
         _shares = [];
+        _pending = null;
       });
     }
   }
@@ -619,6 +672,58 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _pending == null ? null : _savePending,
+              icon: const Icon(Icons.bookmark_add_rounded, size: 18),
+              label: const Text('Save this bill'),
+            ),
+          ],
+          const SizedBox(height: 24),
+          const BillBalanceCard(),
+          const SizedBox(height: 16),
+          if (_savedLoaded && _saved.isNotEmpty) ...[
+            Text('Saved bills', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            for (final bill in _saved) ...[
+              MonovaCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${money(bill.totalCents / 100)} paid by ${bill.payer}',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${bill.createdAt.day.toString().padLeft(2, '0')}/${bill.createdAt.month.toString().padLeft(2, '0')}/${bill.createdAt.year}'
+                            ' · ${bill.people.join(', ')}',
+                            style: TextStyle(color: c.muted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 6),
+                          if (bill.settlements.isEmpty)
+                            Text('Everyone is settled.', style: TextStyle(color: c.muted, fontSize: 13))
+                          else
+                            for (final s in bill.settlements)
+                              Text('${s.from} pays ${s.to} ${money(s.cents / 100)}', style: const TextStyle(fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete this bill',
+                      icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+                      onPressed: () => _deleteBill(bill.id),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
         ],
       ),

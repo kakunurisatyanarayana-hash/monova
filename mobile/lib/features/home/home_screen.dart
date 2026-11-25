@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
+import '../tools/bill_balance_card.dart';
 import '../tools/tools_screens.dart';
 
 /// Home: the daily answer to "where do I stand?" The Halo shows liquid cash at the centre, card use on the inner ring,
@@ -564,6 +565,8 @@ class _GuestHome extends StatelessWidget {
               Expanded(child: _ToolCard(icon: Icons.call_split_rounded, label: 'Split bill', onTap: () => context.push('/tools/split'))),
             ],
           ),
+          const SizedBox(height: 22),
+          const BillBalanceCard(),
           const SizedBox(height: 24),
           SignInGate(
             title: 'Track everything in one place',

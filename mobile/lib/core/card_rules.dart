@@ -24,6 +24,17 @@ bool isValidCardNumber(String digits) {
   return sum % 10 == 0;
 }
 
+/// Null when the number is acceptable; otherwise says which check failed, so the user knows what to fix.
+String? cardNumberError(String digits) {
+  if (digits.length < 12 || digits.length > 19) {
+    return 'Card numbers have 12 to 19 digits. You entered ${digits.length}.';
+  }
+  if (!isValidCardNumber(digits)) {
+    return 'This number fails the card check digit test, so one digit is probably mistyped. Compare it with the card.';
+  }
+  return null;
+}
+
 /// Card network from the leading digits. Only used as a label, so unknown ones say "Card".
 String detectNetwork(String digits) {
   if (digits.startsWith('4')) return 'Visa';
