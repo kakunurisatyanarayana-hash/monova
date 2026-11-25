@@ -40,6 +40,16 @@ jobs:
       - name: Build offline release APK
         run: flutter build apk --release --dart-define=MONOVA_OFFLINE=true
 
+      - name: Build offline web app
+        run: flutter build web --release --dart-define=MONOVA_OFFLINE=true
+
+      - name: Upload web app
+        uses: actions/upload-artifact@v4
+        with:
+          name: monova-offline-web
+          path: mobile/build/web
+          retention-days: 30
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
