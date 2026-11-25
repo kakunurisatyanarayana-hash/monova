@@ -18,18 +18,10 @@ class MonovaApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
       routerConfig: ref.watch(routerProvider),
       scrollBehavior: const MonovaScrollBehavior(),
-      // Phones use the full width. Desktop and web use up to 1100 px, centred, so screens look like a web application.
+      // Full width on every device, like a web application: the side menu and top bar frame the page.
       builder: (context, child) {
         final base = Theme.of(context).scaffoldBackgroundColor;
-        return ColoredBox(
-          color: base,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: child,
-            ),
-          ),
-        );
+        return ColoredBox(color: base, child: child!);
       },
     );
   }

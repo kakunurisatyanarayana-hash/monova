@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/api_client.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -9,7 +10,8 @@ import '../tools/tools_screens.dart';
 import 'quick_add_sheet.dart';
 
 /// Phones get a bottom bar: Home | Activity | Add | Groups | Insights.
-/// Wide screens (web and desktop) get a side menu with the same items, so the app feels like a web application.
+/// Wide screens (web and desktop) get a left sidebar with grouped sections and a slim top bar,
+/// the same layout most web applications use.
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.child});
 
@@ -17,10 +19,51 @@ class MainShell extends ConsumerWidget {
 
   static const _tabs = ['/home', '/activity', '/groups', '/insights'];
   static const _wideBreakpoint = 900.0;
+  static const _sidebarWidth = 248.0;
+
+  static const _sidebarSections = <_SidebarSection>[
+    _SidebarSection('Overview', [
+      _SidebarItem('Home', Icons.home_rounded, '/home'),
+      _SidebarItem('Activity', Icons.swap_vert_rounded, '/activity'),
+      _SidebarItem('Insights', Icons.insights_rounded, '/insights'),
+    ]),
+    _SidebarSection('Money', [
+      _SidebarItem('Accounts', Icons.account_balance_wallet_rounded, '/accounts'),
+      _SidebarItem('Credit cards', Icons.credit_card_rounded, '/cards'),
+      _SidebarItem('Lending', Icons.handshake_rounded, '/lending'),
+      _SidebarItem('Loans and EMI', Icons.directions_car_rounded, '/loans'),
+      _SidebarItem('Budgets and savings', Icons.savings_rounded, '/planning'),
+      _SidebarItem('Recurring', Icons.repeat_rounded, '/recurring'),
+      _SidebarItem('Groups', Icons.groups_rounded, '/groups'),
+    ]),
+    _SidebarSection('Tools', [
+      _SidebarItem('All services', Icons.grid_view_rounded, '/services'),
+      _SidebarItem('Calculators', Icons.calculate_outlined, '/tools'),
+      _SidebarItem('Passwords and notes', Icons.lock_rounded, '/vault'),
+      _SidebarItem('Saved cards', Icons.credit_card_rounded, '/saved-cards'),
+      _SidebarItem('Backup and restore', Icons.backup_rounded, '/backup'),
+    ]),
+  ];
+
+  /// Section and label of the menu entry that matches [location], e.g. ('Money', 'Credit cards').
+  static ({String section, String label})? _currentPage(String location) {
+    for (final section in _sidebarSections) {
+      for (final item in section.items) {
+        if (location.startsWith(item.route)) return (section: section.title, label: item.label);
+      }
+    }
+    if (location.startsWith('/settings')) return (section: 'Account', label: 'Settings');
+    return null;
+  }
 
   void _onAdd(BuildContext context, bool signedIn) {
     if (signedIn) {
       showQuickAdd(context);
+      return;
+    }
+    if (ApiConfig.offline) {
+      // The offline build keeps passwords, cards and backups on the device, so offer those instead of a sign-in.
+      FormSheet.show<void>(context, title: 'What would you like to save?', child: const _AddChooser());
       return;
     }
     FormSheet.show<void>(
@@ -36,37 +79,32 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final signedIn = ref.watch(sessionProvider).isSignedIn;
+    final session = ref.watch(sessionProvider);
+    final signedIn = session.isSignedIn;
     final location = GoRouterState.of(context).matchedLocation;
     final tab = _tabs.indexWhere(location.startsWith);
     final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
 
     if (wide) {
-      // Side menu: Home, Activity, Add (action), Groups, Insights. Rail index 2 is the Add action, so tabs after it shift by one.
-      final railIndex = tab < 0 ? 0 : (tab >= 2 ? tab + 1 : tab);
       return Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              selectedIndex: railIndex,
-              labelType: NavigationRailLabelType.all,
-              onDestinationSelected: (i) {
-                if (i == 2) {
-                  _onAdd(context, signedIn);
-                  return;
-                }
-                context.go(_tabs[i >= 3 ? i - 1 : i]);
-              },
-              destinations: const [
-                NavigationRailDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: Text('Home')),
-                NavigationRailDestination(icon: Icon(Icons.swap_vert_rounded), label: Text('Activity')),
-                NavigationRailDestination(icon: Icon(Icons.add_circle_outline_rounded), selectedIcon: Icon(Icons.add_circle_rounded), label: Text('Add')),
-                NavigationRailDestination(icon: Icon(Icons.groups_outlined), selectedIcon: Icon(Icons.groups_rounded), label: Text('Groups')),
-                NavigationRailDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights_rounded), label: Text('Insights')),
-              ],
+            _Sidebar(
+              width: _sidebarWidth,
+              location: location,
+              signedIn: signedIn,
+              offline: ApiConfig.offline,
+              onAdd: () => _onAdd(context, signedIn),
             ),
             VerticalDivider(width: 1, color: context.monova.border),
-            Expanded(child: child),
+            Expanded(
+              child: Column(
+                children: [
+                  _TopBar(page: _currentPage(location), onAdd: () => _onAdd(context, signedIn)),
+                  Expanded(child: child),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -116,16 +154,236 @@ class MainShell extends ConsumerWidget {
   }
 }
 
-class _MonovaWordmark extends StatelessWidget {
-  const _MonovaWordmark({required this.colors});
-
-  final MonovaColors colors;
+/// Choices shown by the Add button in the offline build. Each opens a page that works without an account.
+class _AddChooser extends StatelessWidget {
+  const _AddChooser();
 
   @override
   Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (r) => colors.aurora.createShader(r),
-      child: const Text('MONOVA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white)),
+    final c = context.monova;
+    final options = [
+      (icon: Icons.lock_rounded, title: 'Password or note', subtitle: 'Logins, PINs and anything you want to remember', route: '/vault'),
+      (icon: Icons.credit_card_rounded, title: 'Card', subtitle: 'Card name, bank, last four digits and a photo', route: '/saved-cards'),
+      (icon: Icons.backup_rounded, title: 'Backup', subtitle: 'Make an encrypted copy to restore on another device', route: '/backup'),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final o in options) ...[
+          MonovaCard(
+            padding: const EdgeInsets.all(14),
+            onTap: () {
+              // Read the router before closing the sheet, because the sheet's context is gone after the pop.
+              final router = GoRouter.of(context);
+              Navigator.of(context).pop();
+              router.push(o.route);
+            },
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(gradient: c.aurora, borderRadius: BorderRadius.circular(14)),
+                  child: Icon(o.icon, color: c.onAccent),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(o.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      const SizedBox(height: 2),
+                      Text(o.subtitle, style: TextStyle(color: c.muted, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: c.muted),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
+class _SidebarSection {
+  const _SidebarSection(this.title, this.items);
+
+  final String title;
+  final List<_SidebarItem> items;
+}
+
+class _SidebarItem {
+  const _SidebarItem(this.label, this.icon, this.route);
+
+  final String label;
+  final IconData icon;
+  final String route;
+}
+
+class _Sidebar extends StatelessWidget {
+  const _Sidebar({
+    required this.width,
+    required this.location,
+    required this.signedIn,
+    required this.offline,
+    required this.onAdd,
+  });
+
+  final double width;
+  final String location;
+  final bool signedIn;
+  final bool offline;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return SizedBox(
+      width: width,
+      child: ColoredBox(
+        color: c.raised,
+        child: SafeArea(
+          right: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(gradient: c.aurora, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.account_balance_wallet_rounded, color: c.onAccent, size: 16),
+                    ),
+                    const SizedBox(width: 10),
+                    ShaderMask(
+                      shaderCallback: (r) => c.aurora.createShader(r),
+                      child: const Text('MONOVA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  children: [
+                    for (final section in MainShell._sidebarSections) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
+                        child: Text(
+                          section.title.toUpperCase(),
+                          style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1),
+                        ),
+                      ),
+                      for (final item in section.items)
+                        _SidebarTile(
+                          item: item,
+                          selected: location.startsWith(item.route),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _SidebarTile(
+                      item: const _SidebarItem('Settings', Icons.settings_rounded, '/settings'),
+                      selected: location.startsWith('/settings'),
+                    ),
+                    if (!signedIn && !offline)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: FilledButton(
+                          onPressed: () => context.go('/auth'),
+                          child: const Text('Sign in'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarTile extends StatelessWidget {
+  const _SidebarTile({required this.item, required this.selected});
+
+  final _SidebarItem item;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final color = selected ? c.accentStart : c.ink;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: selected ? c.accentStart.withValues(alpha: 0.12) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => context.go(item.route),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: [
+                Icon(item.icon, size: 19, color: selected ? c.accentStart : c.muted),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: color, fontSize: 14, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Slim bar above the page content: the main action is always one click away.
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.page, required this.onAdd});
+
+  final ({String section, String label})? page;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final title = page?.label ?? 'Home';
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(color: c.raised, border: Border(bottom: BorderSide(color: c.border))),
+      child: Row(
+        children: [
+          // The page's own header shows the title; the bar keeps the breadcrumb only, so the name is not repeated.
+          Text('MONOVA${page == null ? '' : ' / ${page!.section} / $title'}', style: TextStyle(color: c.muted, fontSize: 13)),
+          const Spacer(),
+          FilledButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add entry'),
+          ),
+        ],
+      ),
     );
   }
 }

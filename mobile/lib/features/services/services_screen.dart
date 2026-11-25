@@ -41,6 +41,8 @@ const _sections = [
     ServiceItem(title: 'Recurring entries', icon: Icons.repeat_rounded, route: '/recurring'),
     ServiceItem(title: 'Groups and splitting', icon: Icons.groups_rounded, route: '/groups'),
     ServiceItem(title: 'Insights', icon: Icons.insights_rounded, route: '/insights'),
+    ServiceItem(title: 'Passwords and notes', icon: Icons.lock_rounded, route: '/vault'),
+    ServiceItem(title: 'Saved cards (details and photo)', icon: Icons.credit_card_rounded, route: '/saved-cards'),
   ]),
   ServiceSection('Recharges and bill payments', [
     ServiceItem(title: 'Mobile recharge', icon: Icons.smartphone_rounded,
@@ -81,6 +83,7 @@ const _sections = [
         note: 'Planned: notifications for bills, EMIs and card due dates.'),
   ]),
   ServiceSection('Other', [
+    ServiceItem(title: 'Backup and restore', icon: Icons.backup_rounded, route: '/backup'),
     ServiceItem(title: 'Export my data (CSV)', icon: Icons.download_rounded,
         note: 'Planned.'),
     ServiceItem(title: 'Investments (mutual funds, FD, RD)', icon: Icons.trending_up_rounded,

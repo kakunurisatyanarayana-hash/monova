@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../core/calculator_engine.dart';
 import '../../core/local_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
-const _historyKey = 'monova.calcHistory';
+const calcHistoryKey = 'monova.calcHistory';
 
 /// Full calculator: basic and scientific keypads, memory, history, degree/radian modes.
 class CalculatorScreen extends StatefulWidget {
@@ -32,7 +32,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     LocalStore.open().then((store) {
       if (!mounted) return;
       _store = store;
-      final saved = store.readList(_historyKey);
+      final saved = store.readList(calcHistoryKey);
       setState(() {
         _history.addAll(saved.map((e) => (expr: '${e['expr']}', result: '${e['result']}')));
       });
@@ -40,7 +40,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   Future<void> _saveHistory() async {
-    await _store?.writeList(_historyKey, [for (final h in _history) {'expr': h.expr, 'result': h.result}]);
+    await _store?.writeList(calcHistoryKey, [for (final h in _history) {'expr': h.expr, 'result': h.result}]);
   }
 
   void _press(String key) {
@@ -52,7 +52,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _justEvaluated = false;
         return;
       }
-      if (key == '⌫') {
+      if (key == 'âŒ«') {
         if (_justEvaluated) {
           _expression = '';
           _result = '0';
@@ -70,7 +70,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _engine.degrees = key == 'DEG';
         return;
       }
-      if (_justEvaluated && RegExp(r'^[0-9.(πe]|sin|cos|tan|log|ln|√|cbrt|asin|acos|atan|abs|exp$').hasMatch(key)) {
+      if (_justEvaluated && RegExp(r'^[0-9.(Ï€e]|sin|cos|tan|log|ln|âˆš|cbrt|asin|acos|atan|abs|exp$').hasMatch(key)) {
         _expression = '';
       }
       _justEvaluated = false;
@@ -80,14 +80,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   String _insertText(String key) => switch (key) {
-        '×' => '*',
-        '÷' => '/',
-        '−' => '-',
-        'π' => 'pi',
-        '√' => 'sqrt(',
+        'Ã—' => '*',
+        'Ã·' => '/',
+        'âˆ’' => '-',
+        'Ï€' => 'pi',
+        'âˆš' => 'sqrt(',
         'sin' || 'cos' || 'tan' || 'asin' || 'acos' || 'atan' || 'log' || 'ln' || 'cbrt' || 'abs' || 'exp' => '$key(',
-        'x²' => '^2',
-        'xʸ' => '^',
+        'xÂ²' => '^2',
+        'xÊ¸' => '^',
         'x!' => '!',
         _ => key,
       };
@@ -138,17 +138,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Widget build(BuildContext context) {
     final c = context.monova;
     final basic = [
-      ['C', '⌫', '%', '÷'],
-      ['7', '8', '9', '×'],
-      ['4', '5', '6', '−'],
+      ['C', 'âŒ«', '%', 'Ã·'],
+      ['7', '8', '9', 'Ã—'],
+      ['4', '5', '6', 'âˆ’'],
       ['1', '2', '3', '+'],
       ['(', '0', '.', '='],
     ];
     final scientific = [
-      ['sin', 'cos', 'tan', 'π'],
+      ['sin', 'cos', 'tan', 'Ï€'],
       ['asin', 'acos', 'atan', 'e'],
-      ['log', 'ln', '√', 'cbrt'],
-      ['x²', 'xʸ', 'x!', 'abs'],
+      ['log', 'ln', 'âˆš', 'cbrt'],
+      ['xÂ²', 'xÊ¸', 'x!', 'abs'],
       ['(', ')', '%', 'exp'],
     ];
     return Scaffold(
@@ -265,8 +265,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   _KeyKind _kindOf(String k, bool science) {
     if (k == '=') return _KeyKind.primary;
-    if (k == 'C' || k == '⌫') return _KeyKind.danger;
-    if (k == '÷' || k == '×' || k == '−' || k == '+') return _KeyKind.operator;
+    if (k == 'C' || k == 'âŒ«') return _KeyKind.danger;
+    if (k == 'Ã·' || k == 'Ã—' || k == 'âˆ’' || k == '+') return _KeyKind.operator;
     if (science && !RegExp(r'^[0-9.]$').hasMatch(k)) return _KeyKind.function;
     return _KeyKind.number;
   }
@@ -392,7 +392,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
           TextField(
             controller: _amount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: _addGst ? 'Price before GST' : 'Price including GST', prefixText: '₹ '),
+            decoration: InputDecoration(labelText: _addGst ? 'Price before GST' : 'Price including GST', prefixText: 'â‚¹ '),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 14),
@@ -412,7 +412,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_addGst ? 'Total with GST' : 'Price before GST', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85))),
-                Text('₹ ${(_addGst ? total : base).toStringAsFixed(2)}', style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
+                Text('â‚¹ ${(_addGst ? total : base).toStringAsFixed(2)}', style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
               ],
             ),
           ),
@@ -439,7 +439,8 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(children: [
           Expanded(child: Text(label, style: TextStyle(color: c.muted, fontWeight: bold ? FontWeight.w800 : FontWeight.w500))),
-          Text('₹ ${value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
+          Text('â‚¹ ${value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
         ]),
       );
 }
+

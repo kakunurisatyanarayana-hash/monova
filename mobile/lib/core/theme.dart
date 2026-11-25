@@ -106,8 +106,14 @@ class MonovaTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: c.raised,
-        labelStyle: TextStyle(color: c.muted),
+        fillColor: c.base,
+        isDense: false,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        labelStyle: TextStyle(color: c.muted, fontWeight: FontWeight.w500),
+        floatingLabelStyle: TextStyle(color: c.accentStart, fontWeight: FontWeight.w700),
+        hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.7)),
+        prefixIconColor: c.muted,
+        suffixIconColor: c.muted,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: c.border),
@@ -118,18 +124,88 @@ class MonovaTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: c.accentStart, width: 1.5),
+          borderSide: BorderSide(color: c.accentStart, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: c.expense),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: c.expense, width: 1.8),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: c.accentStart,
           foregroundColor: c.onAccent,
+          elevation: 0,
           minimumSize: const Size(48, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: c.ink,
+          side: BorderSide(color: c.border, width: 1.2),
+          minimumSize: const Size(48, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: c.accentStart,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          backgroundColor: c.base,
+          foregroundColor: c.muted,
+          selectedForegroundColor: c.onAccent,
+          selectedBackgroundColor: c.accentStart,
+          side: BorderSide(color: c.border),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: c.raised,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: c.border),
+        ),
+        titleTextStyle: TextStyle(color: c.ink, fontSize: 19, fontWeight: FontWeight.w800),
+        contentTextStyle: TextStyle(color: c.muted, fontSize: 14, height: 1.45),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: c.ink,
+        contentTextStyle: TextStyle(color: c.base, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: c.raised,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: c.raised,
+        side: BorderSide(color: c.border),
+        labelStyle: TextStyle(color: c.ink, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.onAccent : c.muted),
+        trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.accentStart : c.border),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+      dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 1),
       textTheme: TextTheme(
         headlineMedium: TextStyle(color: c.ink, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
         titleLarge: TextStyle(color: c.ink, fontSize: 20, fontWeight: FontWeight.w700),

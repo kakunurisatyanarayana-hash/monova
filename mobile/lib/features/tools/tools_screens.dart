@@ -19,7 +19,7 @@ class ToolsScreen extends ConsumerWidget {
     final signedIn = ref.watch(sessionProvider).isSignedIn;
     return Scaffold(
       appBar: AppBar(title: const Text('Tools')),
-      body: ListView(
+      body: TwoColumnList(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           Text('Plan before you commit. These run on your device and need no account.', style: TextStyle(color: c.muted)),
@@ -61,13 +61,32 @@ class ToolsScreen extends ConsumerWidget {
             onTap: () => context.push('/tools/interest'),
           ),
           _ToolTile(
+            icon: Icons.lock_rounded,
+            title: 'Passwords and notes',
+            subtitle: 'Keep logins, PINs and any note you want to remember. Stored on this device only.',
+            onTap: () => context.push('/vault'),
+          ),
+          _ToolTile(
+            icon: Icons.credit_card_rounded,
+            title: 'Saved cards',
+            subtitle: 'Card name, bank, last four digits, expiry and a photo of the card. Stored on this device.',
+            onTap: () => context.push('/saved-cards'),
+          ),
+          _ToolTile(
+            icon: Icons.backup_rounded,
+            title: 'Backup and restore',
+            subtitle: 'Encrypted text backup of passwords, notes and calculator data. Restore it on a second device.',
+            onTap: () => context.push('/backup'),
+          ),
+          _ToolTile(
             icon: Icons.call_split_rounded,
             title: 'Split a bill',
             subtitle: 'Split a bill equally, by exact amounts, percentages or shares, and see who pays whom.',
             onTap: () => context.push('/tools/split'),
           ),
           const SizedBox(height: 24),
-          if (!signedIn)
+          // The offline build has no accounts, so a sign-in prompt would only promise something that is not in this build.
+          if (!signedIn && !ApiConfig.offline)
             SignInGate(
               title: 'Want your money in one place?',
               message: 'Sign in to save accounts, cards, groups and budgets, and to see your dashboard and insights.',
@@ -75,6 +94,37 @@ class ToolsScreen extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Tool tiles sit in two columns on wide screens and stack on phones. Other children span the full width.
+class TwoColumnList extends StatelessWidget {
+  const TwoColumnList({super.key, required this.children, this.padding = EdgeInsets.zero});
+
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+
+  static const _wideBreakpoint = 900.0;
+  static const _gap = 12.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inner = constraints.maxWidth - (padding.horizontal);
+        final wide = constraints.maxWidth >= _wideBreakpoint;
+        final half = (inner - _gap) / 2;
+        return SingleChildScrollView(
+          padding: padding,
+          child: Wrap(
+            children: [
+              for (final child in children)
+                SizedBox(width: wide && child is _ToolTile ? half : inner, child: child),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -408,7 +458,8 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   final List<TextEditingController> _names = [TextEditingController(), TextEditingController(), TextEditingController()];
   final List<TextEditingController> _values = [TextEditingController(), TextEditingController(), TextEditingController()];
   final List<bool> _included = [true, true, true];
-  int _payer = 0;
+  /// Null until the user picks who paid, so the field starts empty instead of showing a made-up name.
+  int? _payer;
   String _mode = 'equal';
   String? _error;
   List<String> _lines = [];
@@ -439,9 +490,9 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       _values.removeAt(i).dispose();
       _included.removeAt(i);
       if (_payer == i) {
-        _payer = 0;
-      } else if (_payer > i) {
-        _payer--;
+        _payer = null;
+      } else if (_payer != null && _payer! > i) {
+        _payer = _payer! - 1;
       }
     });
   }
@@ -460,7 +511,9 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       for (final s in shares) {
         net[s.index.toString()] = (net[s.index.toString()] ?? 0) - s.cents;
       }
-      net[_payer.toString()] = (net[_payer.toString()] ?? 0) + totalCents;
+      final payer = _payer;
+      if (payer == null) throw ArgumentError('Choose who paid the bill.');
+      net[payer.toString()] = (net[payer.toString()] ?? 0) + totalCents;
       final payments = FinanceCalc.settle(net);
 
       String nameOf(String key) {
@@ -497,9 +550,10 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
+            hint: const Text('Choose who paid'),
             decoration: const InputDecoration(labelText: 'Who paid the bill?'),
             items: [for (var i = 0; i < _names.length; i++) DropdownMenuItem(value: i, child: Text(_names[i].text.trim().isEmpty ? 'Person ${i + 1}' : _names[i].text.trim()))],
-            onChanged: (v) => setState(() => _payer = v ?? 0),
+            onChanged: (v) => setState(() => _payer = v),
           ),
           const SizedBox(height: 16),
           SegmentedButton<String>(

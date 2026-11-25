@@ -127,12 +127,34 @@ class LoadingBox extends StatelessWidget {
 
 /// A bottom sheet frame with a title, a drag handle and safe bottom padding. All forms use it.
 class FormSheet extends StatelessWidget {
-  const FormSheet({super.key, required this.title, required this.child});
+  const FormSheet({super.key, required this.title, required this.child, this.asDialog = false});
 
   final String title;
   final Widget child;
 
+  /// True when shown as a centred card on wide screens: rounded on all corners, no drag handle.
+  final bool asDialog;
+
+  /// Phones get a bottom sheet. Wide screens (web, desktop) get a card centred near the top of the window,
+  /// which is where people expect a form to appear on a computer.
   static Future<T?> show<T>(BuildContext context, {required String title, required Widget child}) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width >= 900) {
+      return showDialog<T>(
+        context: context,
+        builder: (_) => Dialog(
+          alignment: Alignment.topCenter,
+          insetPadding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height - 80),
+            child: FormSheet(title: title, child: child, asDialog: true),
+          ),
+        ),
+      );
+    }
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
@@ -148,7 +170,8 @@ class FormSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: c.raised,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: asDialog ? BorderRadius.circular(24) : const BorderRadius.vertical(top: Radius.circular(28)),
+        border: asDialog ? Border.all(color: c.border) : null,
       ),
       padding: EdgeInsets.only(
         left: 16,
@@ -161,14 +184,15 @@ class FormSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: c.border, borderRadius: BorderRadius.circular(4)),
+            if (!asDialog)
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: c.border, borderRadius: BorderRadius.circular(4)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+            SizedBox(height: asDialog ? 4 : 16),
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             child,
