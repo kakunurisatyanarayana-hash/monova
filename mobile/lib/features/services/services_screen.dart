@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
@@ -42,6 +42,7 @@ const _sections = [
     ServiceItem(title: 'Groups and splitting', icon: Icons.groups_rounded, route: '/groups'),
     ServiceItem(title: 'Insights', icon: Icons.insights_rounded, route: '/insights'),
     ServiceItem(title: 'Passwords and notes', icon: Icons.lock_rounded, route: '/vault'),
+    ServiceItem(title: 'Credit book (udhaar with daily interest)', icon: Icons.menu_book_rounded, route: '/ledger'),
     ServiceItem(title: 'Saved cards (details and photo)', icon: Icons.credit_card_rounded, route: '/saved-cards'),
   ]),
   ServiceSection('Recharges and bill payments', [

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -67,6 +67,12 @@ class ToolsScreen extends ConsumerWidget {
             title: 'Passwords and notes',
             subtitle: 'Keep logins, PINs and any note you want to remember. Stored on this device only.',
             onTap: () => context.push('/vault'),
+          ),
+          _ToolTile(
+            icon: Icons.menu_book_rounded,
+            title: 'Credit book',
+            subtitle: 'Bills given on credit, payments, and interest worked out for each day. Final amount on any date.',
+            onTap: () => context.push('/ledger'),
           ),
           _ToolTile(
             icon: Icons.credit_card_rounded,
@@ -316,7 +322,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -423,7 +429,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -599,7 +605,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
+          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: 'â‚¹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -702,7 +708,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '${bill.createdAt.day.toString().padLeft(2, '0')}/${bill.createdAt.month.toString().padLeft(2, '0')}/${bill.createdAt.year}'
-                            ' · ${bill.people.join(', ')}',
+                            ' Â· ${bill.people.join(', ')}',
                             style: TextStyle(color: c.muted, fontSize: 12),
                           ),
                           const SizedBox(height: 6),

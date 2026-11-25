@@ -9,7 +9,9 @@ import '../features/activity/activity_screen.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/backup/backup_screen.dart';
 import '../features/cards/saved_cards_screen.dart';
+import '../features/ledger/ledger_screens.dart';
 import '../features/groups/group_screens.dart';
+import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/insights/insights_screen.dart';
 import '../features/lending/lending_screens.dart';
@@ -29,14 +31,13 @@ import '../state/providers.dart';
 Widget _form(Widget child) => PageWidth(maxWidth: 760, child: child);
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final session = ref.watch(sessionProvider);
-
+  // Read, not watch: watching would rebuild the whole router on every session change and send people back to the start.
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
+      final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;
-      // Guests and signed-in users both enter the app directly. Only the startup splash is special.
-      if (session.status == SessionStatus.unknown) return loc == '/' ? null : '/';
+      // Deep links (for example a reload on /groups in the browser) keep their page while the session restores.
       if (ApiConfig.offline && loc == '/auth') return '/tools';
       if (loc == '/') return '/home';
       if (loc == '/auth' && session.isSignedIn) return '/home';
@@ -51,8 +52,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/activity', builder: (_, __) => const RequiresAccount(title: 'Activity', child: ActivityScreen())),
-          GoRoute(path: '/groups', builder: (_, __) => const GroupsScreen()),
-          GoRoute(path: '/groups/:id', builder: (_, s) => RequiresAccount(title: 'Group', child: GroupDetailScreen(id: s.pathParameters['id']!))),
+          // The offline build keeps groups on the device; the online build uses the server.
+          GoRoute(path: '/groups', builder: (_, __) => ApiConfig.offline ? const LocalGroupsScreen() : const GroupsScreen()),
+          GoRoute(
+            path: '/groups/:id',
+            builder: (_, s) => ApiConfig.offline
+                ? LocalGroupDetailScreen(id: s.pathParameters['id']!)
+                : RequiresAccount(title: 'Group', child: GroupDetailScreen(id: s.pathParameters['id']!)),
+          ),
           GoRoute(path: '/insights', builder: (_, __) => const RequiresAccount(title: 'Insights', child: InsightsScreen())),
           GoRoute(path: '/accounts', builder: (_, __) => const RequiresAccount(title: 'Accounts', child: AccountsScreen())),
           GoRoute(path: '/accounts/:id', builder: (_, s) => RequiresAccount(title: 'Account', child: AccountDetailScreen(id: s.pathParameters['id']!))),
@@ -61,6 +68,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/loans', builder: (_, __) => const RequiresAccount(title: 'Loans & EMI', child: LoansScreen())),
           GoRoute(path: '/planning', builder: (_, __) => const RequiresAccount(title: 'Budgets & savings', child: PlanningScreen())),
           GoRoute(path: '/recurring', builder: (_, __) => const RequiresAccount(title: 'Recurring', child: RecurringScreen())),
+          GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
+          GoRoute(path: '/ledger/:id', builder: (_, s) => LedgerAccountScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/saved-cards', builder: (_, __) => const SavedCardsScreen()),
           GoRoute(path: '/backup', builder: (_, __) => _form(const BackupScreen())),
           GoRoute(path: '/vault', builder: (_, __) => const VaultScreen()),
@@ -91,7 +100,6 @@ class _SplashState extends ConsumerState<_Splash> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(sessionProvider.notifier).restore());
   }
 
   @override

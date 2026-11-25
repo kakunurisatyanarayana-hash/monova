@@ -34,7 +34,11 @@ class SessionState {
 /// Owns login state. Login is optional: guests can use every offline tool.
 class SessionController extends Notifier<SessionState> {
   @override
-  SessionState build() => const SessionState(status: SessionStatus.unknown);
+  SessionState build() {
+    // Restored once, when the app starts, whichever page was opened first. Calling it twice could rotate the refresh token twice.
+    Future.microtask(restore);
+    return const SessionState(status: SessionStatus.unknown);
+  }
 
   Future<void> restore() async {
     if (ApiConfig.offline) {

@@ -40,6 +40,7 @@ class MainShell extends ConsumerWidget {
       _SidebarItem('All services', Icons.grid_view_rounded, '/services'),
       _SidebarItem('Calculators', Icons.calculate_outlined, '/tools'),
       _SidebarItem('Passwords and notes', Icons.lock_rounded, '/vault'),
+      _SidebarItem('Credit book', Icons.menu_book_rounded, '/ledger'),
       _SidebarItem('Saved cards', Icons.credit_card_rounded, '/saved-cards'),
       _SidebarItem('Backup and restore', Icons.backup_rounded, '/backup'),
     ]),
