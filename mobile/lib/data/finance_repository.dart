@@ -117,6 +117,38 @@ class FinanceRepository {
         'note': note,
       })).asMap);
 
+  // ----- recurring entries -----
+  Future<List<RecurringItem>> recurring() async =>
+      (await _api.get('/api/v1/recurring')).asList.map((e) => RecurringItem.fromJson(e as Map<String, dynamic>)).toList();
+
+  Future<void> addRecurring({
+    required String type,
+    required double amount,
+    required String title,
+    required String frequency,
+    required DateTime startOn,
+    required String accountId,
+  }) =>
+      _api.post('/api/v1/recurring', body: {
+        'type': type,
+        'amount': amount,
+        'title': title,
+        'categoryId': null,
+        'accountId': accountId,
+        'creditCardId': null,
+        'frequency': frequency,
+        'startOn': ymd(startOn),
+      });
+
+  Future<void> setRecurringActive(String id, {required bool active}) =>
+      _api.post('/api/v1/recurring/$id/${active ? 'activate' : 'deactivate'}');
+
+  /// Creates every entry that is due today or earlier. Safe to press more than once.
+  Future<int> runDueRecurring() async {
+    final body = (await _api.post('/api/v1/recurring/run-due')).asMap;
+    return (body['created'] as num?)?.toInt() ?? 0;
+  }
+
   Future<List<CategoryItem>> categories({String? kind}) async =>
       (await _api.get('/api/v1/categories', query: {if (kind != null) 'kind': kind})).asList
           .map((e) => CategoryItem.fromJson(e as Map<String, dynamic>))

@@ -124,6 +124,37 @@ class AccountMovement {
       );
 }
 
+/// A repeating entry (rent, subscription, salary). The server creates the actual entries when they fall due.
+class RecurringItem {
+  const RecurringItem({
+    required this.id,
+    required this.type,
+    required this.amount,
+    required this.title,
+    required this.frequency,
+    required this.nextRunOn,
+    required this.isActive,
+  });
+
+  final String id;
+  final String type;
+  final double amount;
+  final String title;
+  final String frequency;
+  final DateTime nextRunOn;
+  final bool isActive;
+
+  factory RecurringItem.fromJson(Map<String, dynamic> j) => RecurringItem(
+        id: _s(j['id']),
+        type: _s(j['type']),
+        amount: _d(j['amount']),
+        title: _s(j['title']),
+        frequency: _s(j['frequency']),
+        nextRunOn: _dt(j['nextRunOn']),
+        isActive: _b(j['isActive']),
+      );
+}
+
 class CategoryItem {
   const CategoryItem({required this.id, required this.name, required this.kind, required this.colorHex});
 
