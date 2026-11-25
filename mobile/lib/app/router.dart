@@ -11,6 +11,7 @@ import '../features/insights/insights_screen.dart';
 import '../features/lending/lending_screens.dart';
 import '../features/planning/planning_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/services/services_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../core/api_client.dart';
 import '../features/tools/calculator_screen.dart';
@@ -58,6 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/loans', builder: (_, __) => const RequiresAccount(title: 'Loans & EMI', child: LoansScreen())),
       GoRoute(path: '/planning', builder: (_, __) => const RequiresAccount(title: 'Budgets & savings', child: PlanningScreen())),
       GoRoute(path: '/recurring', builder: (_, __) => const RequiresAccount(title: 'Recurring', child: RecurringScreen())),
+      GoRoute(path: '/services', builder: (_, __) => const ServicesScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(path: '/groups/:id', builder: (_, s) => RequiresAccount(title: 'Group', child: GroupDetailScreen(id: s.pathParameters['id']!))),
     ],

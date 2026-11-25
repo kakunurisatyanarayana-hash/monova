@@ -104,6 +104,7 @@ class HomeScreen extends ConsumerWidget {
                   ActionChip(label: const Text('Loans & EMI'), onPressed: () => context.push('/loans')),
                   ActionChip(label: const Text('Savings goals'), onPressed: () => context.push('/planning')),
                   ActionChip(label: const Text('Calculators & bill split'), onPressed: () => context.push('/tools')),
+                  ActionChip(label: const Text('All services'), onPressed: () => context.push('/services')),
                 ],
               ),
             ],
@@ -552,7 +553,7 @@ class _GuestHome extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 22),
-          SectionTitle('Free tools', action: 'All tools', onAction: () => context.push('/tools')),
+          SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),
           Row(
             children: [

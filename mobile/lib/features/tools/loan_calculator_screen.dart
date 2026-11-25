@@ -208,7 +208,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
           SavedLoanScenarios(snapshot: _snapshot, onLoad: _loadSnapshot),
           const SizedBox(height: 16),
           Text(
-            'Estimates only. Actual rates, fees, GST and stamp duty depend on the lender, your profile and your state. Verify with the lender before you sign.',
+            'Estimates only. Home, personal, car and two-wheeler rates come from public bank listings checked in November 2026. Interest on loans is GST-exempt; processing and service fees carry 18% GST. Stamp duty and actual rates depend on the lender, your profile and your state. Verify with the lender before you sign.',
             style: TextStyle(color: c.muted, fontSize: 11, height: 1.4),
           ),
         ],

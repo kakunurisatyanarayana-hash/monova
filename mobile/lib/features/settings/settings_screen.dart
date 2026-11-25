@@ -50,6 +50,7 @@ class SettingsScreen extends ConsumerWidget {
           _Link(icon: Icons.directions_car_rounded, label: 'Loans & EMI', onTap: () => context.push('/loans')),
           _Link(icon: Icons.savings_rounded, label: 'Budgets & savings goals', onTap: () => context.push('/planning')),
           _Link(icon: Icons.repeat_rounded, label: 'Recurring entries', onTap: () => context.push('/recurring')),
+          _Link(icon: Icons.grid_view_rounded, label: 'All services (including coming soon)', onTap: () => context.push('/services')),
           const SizedBox(height: 16),
           const SectionTitle('Security'),
           const SizedBox(height: 8),

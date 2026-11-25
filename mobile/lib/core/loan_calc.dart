@@ -24,14 +24,14 @@ class LoanProduct {
   final String note;
 
   static const all = <LoanProduct>[
-    LoanProduct(name: 'Home loan', icon: 'home', ratePercent: 8.5, tenureMonths: 240, processingFeePercent: 0.5, maxTenureMonths: 360, note: 'Long tenure, lowest rate. Stamp duty and registration are extra.'),
-    LoanProduct(name: 'Personal loan', icon: 'person', ratePercent: 11.5, tenureMonths: 60, processingFeePercent: 2.0, maxTenureMonths: 72, note: 'Unsecured, so the rate is higher.'),
-    LoanProduct(name: 'Car loan', icon: 'car', ratePercent: 9.0, tenureMonths: 84, processingFeePercent: 1.0, maxTenureMonths: 96, note: 'Secured on the vehicle.'),
-    LoanProduct(name: 'Two-wheeler loan', icon: 'bike', ratePercent: 12.0, tenureMonths: 36, processingFeePercent: 1.0, maxTenureMonths: 48, note: 'Short tenure, often with a fixed fee.'),
-    LoanProduct(name: 'Education loan', icon: 'school', ratePercent: 9.5, tenureMonths: 120, processingFeePercent: 1.0, maxTenureMonths: 180, note: 'Moratorium on repayment during the course is common.'),
-    LoanProduct(name: 'Business loan', icon: 'business', ratePercent: 13.0, tenureMonths: 60, processingFeePercent: 2.0, maxTenureMonths: 84, note: 'Rates depend on turnover and credit history.'),
-    LoanProduct(name: 'Loan against property', icon: 'property', ratePercent: 10.0, tenureMonths: 180, processingFeePercent: 1.0, maxTenureMonths: 240, note: 'Secured on your property.'),
-    LoanProduct(name: 'Gold loan', icon: 'gold', ratePercent: 9.5, tenureMonths: 12, processingFeePercent: 1.0, maxTenureMonths: 36, note: 'Short term, usually bullet repayment or monthly interest.'),
+    LoanProduct(name: 'Home loan', icon: 'home', ratePercent: 7.25, tenureMonths: 240, processingFeePercent: 0.5, maxTenureMonths: 360, note: 'Starting rates at SBI, HDFC and ICICI (Nov 2026). Processing fee 0.25% to 2% plus GST. Stamp duty is extra.'),
+    LoanProduct(name: 'Personal loan', icon: 'person', ratePercent: 12.0, tenureMonths: 60, processingFeePercent: 2.0, maxTenureMonths: 72, note: 'Bank rates typically 10% to 16%; NBFCs can be higher. Processing fee 0.5% to 3% plus GST.'),
+    LoanProduct(name: 'Car loan', icon: 'car', ratePercent: 8.5, tenureMonths: 84, processingFeePercent: 1.0, maxTenureMonths: 96, note: 'New car rates about 7.6% to 11.5%. Used cars are higher.'),
+    LoanProduct(name: 'Two-wheeler loan', icon: 'bike', ratePercent: 10.5, tenureMonths: 36, processingFeePercent: 1.0, maxTenureMonths: 48, note: 'Bank rates typically 8.75% to 14.5%. Your credit score matters most.'),
+    LoanProduct(name: 'Education loan', icon: 'school', ratePercent: 9.5, tenureMonths: 120, processingFeePercent: 1.0, maxTenureMonths: 180, note: 'NOT YET CHECKED against current listings. Confirm the rate and fee with the lender.'),
+    LoanProduct(name: 'Business loan', icon: 'business', ratePercent: 13.0, tenureMonths: 60, processingFeePercent: 2.0, maxTenureMonths: 84, note: 'NOT YET CHECKED against current listings. Confirm the rate and fee with the lender.'),
+    LoanProduct(name: 'Loan against property', icon: 'property', ratePercent: 10.0, tenureMonths: 180, processingFeePercent: 1.0, maxTenureMonths: 240, note: 'NOT YET CHECKED against current listings. Confirm the rate and fee with the lender.'),
+    LoanProduct(name: 'Gold loan', icon: 'gold', ratePercent: 9.5, tenureMonths: 12, processingFeePercent: 1.0, maxTenureMonths: 36, note: 'NOT YET CHECKED against current listings. Confirm the rate and fee with the lender.'),
   ];
 }
 
