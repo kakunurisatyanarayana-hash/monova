@@ -4,6 +4,7 @@ import '../../core/format.dart';
 import '../../core/loan_calc.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import 'saved_loan_scenarios.dart';
 
 /// Loan calculator for India: any loan type, processing and service fees with 18% GST, insurance and stamp duty,
 /// effective APR, a full schedule and a side-by-side comparison of every product.
@@ -197,6 +198,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
             _comparison(_num(_amount), c),
           ],
           const SizedBox(height: 16),
+          SavedLoanScenarios(snapshot: _snapshot, onLoad: _loadSnapshot),
+          const SizedBox(height: 16),
           Text(
             'Estimates only. Actual rates, fees, GST and stamp duty depend on the lender, your profile and your state. Verify with the lender before you sign.',
             style: TextStyle(color: c.muted, fontSize: 11, height: 1.4),
@@ -204,6 +207,34 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
         ],
       ),
     );
+  }
+
+  /// Current inputs, saved as a scenario.
+  Map<String, dynamic> _snapshot() => {
+        'product': _product,
+        'amount': _amount.text,
+        'rate': _rate.text,
+        'tenure': _tenure.text,
+        'processing': _processing.text,
+        'services': _serviceFees.text,
+        'other': _otherCharges.text,
+        'gst': _gstOnFees,
+      };
+
+  /// Restores a saved scenario's inputs and recalculates.
+  void _loadSnapshot(Map<String, dynamic> s) {
+    setState(() {
+      final index = (s['product'] as num?)?.toInt() ?? 0;
+      _product = index.clamp(0, LoanProduct.all.length - 1);
+      _amount.text = '${s['amount'] ?? ''}';
+      _rate.text = '${s['rate'] ?? ''}';
+      _tenure.text = '${s['tenure'] ?? ''}';
+      _processing.text = '${s['processing'] ?? ''}';
+      _serviceFees.text = '${s['services'] ?? ''}';
+      _otherCharges.text = '${s['other'] ?? ''}';
+      _gstOnFees = s['gst'] == true;
+    });
+    _calculate();
   }
 
   Widget _productTile(int i, MonovaColors c) {

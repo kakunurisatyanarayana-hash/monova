@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/calculator_engine.dart';
+import '../../core/local_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+
+const _historyKey = 'monova.calcHistory';
 
 /// Full calculator: basic and scientific keypads, memory, history, degree/radian modes.
 class CalculatorScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class CalculatorScreen extends StatefulWidget {
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
   final _engine = CalculatorEngine();
+  LocalStore? _store;
   String _expression = '';
   String _result = '0';
   bool _error = false;
@@ -21,6 +25,23 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   bool _justEvaluated = false;
   double _memory = 0;
   final List<({String expr, String result})> _history = [];
+
+  @override
+  void initState() {
+    super.initState();
+    LocalStore.open().then((store) {
+      if (!mounted) return;
+      _store = store;
+      final saved = store.readList(_historyKey);
+      setState(() {
+        _history.addAll(saved.map((e) => (expr: '${e['expr']}', result: '${e['result']}')));
+      });
+    });
+  }
+
+  Future<void> _saveHistory() async {
+    await _store?.writeList(_historyKey, [for (final h in _history) {'expr': h.expr, 'result': h.result}]);
+  }
 
   void _press(String key) {
     setState(() {
@@ -86,6 +107,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       final text = CalculatorEngine.format(value);
       _history.insert(0, (expr: _expression, result: text));
       if (_history.length > 15) _history.removeLast();
+      _saveHistory();
       _result = text;
       _expression = text;
       _justEvaluated = true;
