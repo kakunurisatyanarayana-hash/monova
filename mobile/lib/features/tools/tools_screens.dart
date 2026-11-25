@@ -37,6 +37,18 @@ class ToolsScreen extends ConsumerWidget {
             onTap: () => context.push('/tools/calculator'),
           ),
           _ToolTile(
+            icon: Icons.cake_rounded,
+            title: 'Age calculator',
+            subtitle: 'Exact age in years, months and days, next birthday and days to it.',
+            onTap: () => context.push('/tools/age'),
+          ),
+          _ToolTile(
+            icon: Icons.house_rounded,
+            title: 'Rent calculator',
+            subtitle: 'Total rent over a lease with a yearly increase, lease end date and deposit.',
+            onTap: () => context.push('/tools/rent'),
+          ),
+          _ToolTile(
             icon: Icons.receipt_long_rounded,
             title: 'GST calculator',
             subtitle: 'Add GST to a price or remove it from a GST-inclusive price, with CGST and SGST split.',

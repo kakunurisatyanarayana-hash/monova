@@ -4,6 +4,8 @@ import '../../core/format.dart';
 import '../../core/loan_calc.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../core/date_calc.dart';
+import '../../shared/date_inputs.dart';
 import 'saved_loan_scenarios.dart';
 
 /// Loan calculator for India: any loan type, processing and service fees with 18% GST, insurance and stamp duty,
@@ -25,6 +27,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
   final _serviceFees = TextEditingController(text: '0');
   final _otherCharges = TextEditingController(text: '0');
   bool _gstOnFees = true;
+  TermUnit _termUnit = TermUnit.months;
+  DateTime? _startOn;
   bool _showSchedule = false;
   bool _showMonthly = false;
 
@@ -44,9 +48,13 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
     _product = index;
     _rate.text = p.ratePercent.toString();
     _tenure.text = p.tenureMonths.toString();
+    _termUnit = TermUnit.months;
     _processing.text = p.processingFeePercent.toString();
     _calculate();
   }
+
+  double get _tenureValue => double.tryParse(_tenure.text.trim()) ?? 0;
+  int get _tenureMonths => DateCalc.termToMonths(_tenureValue, _termUnit);
 
   double _num(TextEditingController c) => double.tryParse(c.text.replaceAll(',', '').trim()) ?? double.nan;
 
@@ -61,7 +69,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
     }
     final principal = _num(_amount);
     final rate = _num(_rate);
-    final tenure = int.tryParse(_tenure.text.trim()) ?? 0;
+    final tenure = _tenureMonths;
     final processing = _num(_processing);
     final services = _num(_serviceFees);
     final other = _num(_otherCharges);
@@ -136,8 +144,26 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
           Row(children: [
             Expanded(child: _field(_rate, 'Interest % per year', onChanged: _calculate)),
             const SizedBox(width: 12),
-            Expanded(child: _field(_tenure, 'Tenure (months)', onChanged: _calculate, integer: true)),
+            Expanded(
+              child: TermInput(
+                controller: _tenure,
+                unit: _termUnit,
+                label: 'Loan term',
+                onUnitChanged: (u) => setState(() {
+                  _termUnit = u;
+                  _calculate();
+                }),
+                onChanged: _calculate,
+              ),
+            ),
           ]),
+          const SizedBox(height: 12),
+          DateSelector(
+            label: 'Loan start date (optional, shows the end date)',
+            value: _startOn,
+            firstYear: 1990,
+            onChanged: (d) => setState(() => _startOn = d),
+          ),
           const SizedBox(height: 12),
           Text('Charges', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -183,7 +209,8 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
               child: Column(
                 children: [
                   _line('Loan amount', money(_num(_amount)), c),
-                  _line('Total interest over ${int.parse(_tenure.text)} months', money(r.totalInterest), c, tone: AmountTone.warning),
+                  if (_startOn != null) _line('Ends on', dayLabel(DateCalc.termEnd(_startOn!, _tenureValue, _termUnit)), c),
+                  _line('Total interest over $_tenureMonths months', money(r.totalInterest), c, tone: AmountTone.warning),
                   const Divider(),
                   _line('Processing fee', money(r.serviceFees - _num(_serviceFees).clamp(0, double.infinity)), c),
                   _line('Documentation, valuation and legal', money(_num(_serviceFees)), c),
@@ -226,6 +253,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
         'services': _serviceFees.text,
         'other': _otherCharges.text,
         'gst': _gstOnFees,
+        'unit': _termUnit.name,
       };
 
   /// Restores a saved scenario's inputs and recalculates.
@@ -240,6 +268,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
       _serviceFees.text = '${s['services'] ?? ''}';
       _otherCharges.text = '${s['other'] ?? ''}';
       _gstOnFees = s['gst'] == true;
+      _termUnit = TermUnit.values.firstWhere((u) => u.name == s['unit'], orElse: () => TermUnit.months);
     });
     _calculate();
   }

@@ -29,6 +29,8 @@ const _sections = [
     ServiceItem(title: 'GST calculator', icon: Icons.receipt_long_rounded, route: '/tools/gst'),
     ServiceItem(title: 'Scientific calculator', icon: Icons.calculate_outlined, route: '/tools/calculator'),
     ServiceItem(title: 'Bill split', icon: Icons.call_split_rounded, route: '/tools/split'),
+    ServiceItem(title: 'Age calculator', icon: Icons.cake_rounded, route: '/tools/age'),
+    ServiceItem(title: 'Rent calculator', icon: Icons.house_rounded, route: '/tools/rent'),
   ]),
   ServiceSection('Your money', [
     ServiceItem(title: 'Accounts', icon: Icons.account_balance_wallet_rounded, route: '/accounts'),
@@ -90,7 +92,7 @@ const _sections = [
   ]),
 ];
 
-/// Every feature in one menu. Working items open; the rest are shown as "Coming soon" with what they need.
+/// Every feature in one menu. On wide screens the sections sit side by side in columns.
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
@@ -99,23 +101,46 @@ class ServicesScreen extends StatelessWidget {
     final c = context.monova;
     return Scaffold(
       appBar: AppBar(title: const Text('All services')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          Text('Tap any working service to open it. "Coming soon" items are planned and show what they need first.',
-              style: TextStyle(color: c.muted, fontSize: 12)),
-          for (final section in _sections) ...[
-            const SizedBox(height: 18),
-            SectionTitle(section.title),
-            const SizedBox(height: 8),
-            MonovaCard(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Column(
-                children: [for (final item in section.items) _ServiceRow(item: item)],
-              ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 900;
+          final gap = 16.0;
+          final available = constraints.maxWidth - 32;
+          final columnWidth = wide ? (available - gap * 2) / 3 : available;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            child: Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                SizedBox(
+                  width: available,
+                  child: Text(
+                    'Tap any working service to open it. "Coming soon" items are planned and show what they need first.',
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  ),
+                ),
+                for (final section in _sections)
+                  SizedBox(
+                    width: columnWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SectionTitle(section.title),
+                        const SizedBox(height: 8),
+                        MonovaCard(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Column(
+                            children: [for (final item in section.items) _ServiceRow(item: item)],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ],
+          );
+        },
       ),
     );
   }

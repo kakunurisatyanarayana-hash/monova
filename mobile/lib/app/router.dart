@@ -14,6 +14,7 @@ import '../features/recurring/recurring_screen.dart';
 import '../features/services/services_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../core/api_client.dart';
+import '../features/tools/age_and_rent_screens.dart';
 import '../features/tools/calculator_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
@@ -41,6 +42,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/tools/emi', builder: (_, __) => const LoanCalculatorScreen()),
       GoRoute(path: '/tools/calculator', builder: (_, __) => const CalculatorScreen()),
       GoRoute(path: '/tools/gst', builder: (_, __) => const GstCalculatorScreen()),
+      GoRoute(path: '/tools/age', builder: (_, __) => const AgeCalculatorScreen()),
+      GoRoute(path: '/tools/rent', builder: (_, __) => const RentCalculatorScreen()),
       GoRoute(path: '/tools/interest', builder: (_, __) => const InterestCalculatorScreen()),
       GoRoute(path: '/tools/split', builder: (_, __) => const SplitCalculatorScreen()),
       ShellRoute(
