@@ -419,6 +419,21 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     });
   }
 
+  /// Removes a person. At least two people must remain to split a bill.
+  void _removePerson(int i) {
+    if (_names.length <= 2) return;
+    setState(() {
+      _names.removeAt(i).dispose();
+      _values.removeAt(i).dispose();
+      _included.removeAt(i);
+      if (_payer == i) {
+        _payer = 0;
+      } else if (_payer > i) {
+        _payer--;
+      }
+    });
+  }
+
   void _calculate() {
     try {
       final total = double.parse(_total.text.replaceAll(',', ''));
@@ -494,6 +509,11 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                 children: [
                   Checkbox(value: _included[i], onChanged: (v) => setState(() => _included[i] = v ?? false)),
                   Expanded(child: TextField(controller: _names[i], decoration: const InputDecoration(isDense: true, labelText: 'Name'), onChanged: (_) => setState(() {}))),
+                  IconButton(
+                    tooltip: 'Remove this person',
+                    icon: const Icon(Icons.person_remove_alt_1_rounded),
+                    onPressed: _names.length > 2 ? () => _removePerson(i) : null,
+                  ),
                   if (_mode != 'equal') ...[
                     const SizedBox(width: 8),
                     SizedBox(
