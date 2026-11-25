@@ -1,0 +1,21 @@
+﻿import '../features/tools/calculator_screen.dart' show calcHistoryKey;
+import '../features/tools/saved_loan_scenarios.dart' show loanScenariosKey;
+import 'bill_store.dart';
+import 'card_store.dart';
+import 'credit_ledger.dart';
+import 'groups_store.dart';
+import 'local_store.dart';
+import 'vault_store.dart';
+
+/// Deletes everything this app keeps on the device: passwords and notes, cards, saved bills,
+/// saved loan scenarios and calculator history. Used by "Erase data" on the lock screen.
+Future<void> eraseLocalData() async {
+  await VaultStore.save([]);
+  await CardStore.save([]);
+  await BillStore.save([]);
+  await GroupStore.save([]);
+  await CreditLedgerStore.save([]);
+  final store = await LocalStore.open();
+  await store.writeList(loanScenariosKey, []);
+  await store.writeList(calcHistoryKey, []);
+}

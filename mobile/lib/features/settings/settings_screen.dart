@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_lock.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
+import '../lock/lock_screen.dart';
 
 /// Account details, shortcuts to every module, and sign out. Sign out clears the stored tokens on this device.
 class SettingsScreen extends ConsumerWidget {
@@ -61,6 +63,33 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          MonovaCard(
+            padding: const EdgeInsets.all(14),
+            onTap: () => togglePinFromSettings(context, ref),
+            child: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, color: c.accentStart),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('App PIN', style: TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 2),
+                      Text(
+                        ref.watch(appLockProvider).status == LockStatus.disabled
+                            ? 'Off. Set a PIN to lock MONOVA when you leave it.'
+                            : 'On. MONOVA asks for the PIN when it is opened.',
+                        style: TextStyle(color: c.muted, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: c.muted),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           if (ApiConfig.offline)
             const SizedBox.shrink()
           else if (ref.watch(sessionProvider).isSignedIn)

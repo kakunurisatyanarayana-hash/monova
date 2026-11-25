@@ -71,6 +71,12 @@ class ToolsScreen extends ConsumerWidget {
             onTap: () => context.push('/vault'),
           ),
           _ToolTile(
+            icon: Icons.menu_book_rounded,
+            title: 'Credit book',
+            subtitle: 'Bills given on credit, payments, and interest worked out for each day. Final amount on any date.',
+            onTap: () => context.push('/ledger'),
+          ),
+          _ToolTile(
             icon: Icons.credit_card_rounded,
             title: 'Saved cards',
             subtitle: 'Card name, bank, last four digits, expiry and a photo of the card. Stored on this device.',

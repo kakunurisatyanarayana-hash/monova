@@ -18,6 +18,10 @@ class AgeCalculatorScreen extends StatefulWidget {
 class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
   DateTime? _birth;
   DateTime _on = DateCalc.dayOnly(DateTime.now());
+  /// Optional. The birth time is needed for the moon sign and nakshatra.
+  TimeOfDay? _birthTime;
+  /// Hours ahead of UTC at the place of birth. India is +5.5.
+  double _utcOffset = 5.5;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +46,38 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
             value: _birth,
             firstYear: 1900,
             onChanged: (d) => setState(() => _birth = d),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: _birthTime ?? const TimeOfDay(hour: 12, minute: 0),
+                    );
+                    if (picked != null) setState(() => _birthTime = picked);
+                  },
+                  icon: const Icon(Icons.schedule_rounded, size: 18),
+                  label: Text(_birthTime == null ? 'Time of birth (optional)' : 'Time of birth: ${_birthTime!.format(context)}'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 130,
+                child: TextFormField(
+                  key: const ValueKey('utc-offset'),
+                  initialValue: _utcOffset.toString(),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: const InputDecoration(labelText: 'UTC offset', helperText: 'India: 5.5'),
+                  onChanged: (v) {
+                    final parsed = double.tryParse(v.trim());
+                    if (parsed != null && parsed >= -12 && parsed <= 14) setState(() => _utcOffset = parsed);
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           DateSelector(
@@ -91,7 +127,13 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _BirthDetails(report: horoscopeFor(_birth!)),
+            _BirthDetails(
+              report: horoscopeFor(
+                DateTime(_birth!.year, _birth!.month, _birth!.day, _birthTime?.hour ?? 0, _birthTime?.minute ?? 0),
+                hasBirthTime: _birthTime != null,
+                utcOffsetHours: _utcOffset,
+              ),
+            ),
           ],
         ],
       ),
@@ -125,7 +167,10 @@ class _BirthDetails extends StatelessWidget {
           Text('Birth details', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           _detail(c, 'Western sun sign', '${w.name} (${w.dates})', 'Element ${w.element} · ruled by ${w.ruler}'),
-          _detail(c, 'Vedic sun sign', report.vedic, 'Approximate. Your moon sign needs the birth time and place.'),
+          _detail(c, 'Vedic sun sign (Rashi)', report.sunRashi, 'Exact to the minute when the birth time is given.'),
+          if (report.hasBirthTime) _detail(c, 'Vedic moon sign', report.moonRashi ?? '-', 'Most used for Vedic predictions.'),
+          if (report.hasBirthTime) _detail(c, 'Nakshatra', '${report.nakshatra} · pada ${report.nakshatraPada}', 'The lunar star. Can be off near its boundaries.'),
+          if (!report.hasBirthTime) _detail(c, 'Moon sign and nakshatra', 'Need the time of birth', 'Add the time above to see them.'),
           _detail(c, 'Chinese zodiac', '${report.chineseElement} ${report.chineseAnimal}', 'Based on the calendar year.'),
           _detail(c, 'Life path number', '${report.lifePath}', report.lifePathMeaning),
           const SizedBox(height: 10),
