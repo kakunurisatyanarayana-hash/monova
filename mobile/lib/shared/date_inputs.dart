@@ -82,12 +82,13 @@ class _DateSelectorState extends State<DateSelector> {
         Row(
           children: [
             Expanded(
-              flex: 2,
+              flex: 3,
               child: DropdownButtonFormField<int>(
                 key: ValueKey('day-$_day-$maxDay'),
                 initialValue: _day,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Day'),
+                // Narrow fields keep little inner padding, so a two-digit day is not cut to its first digit.
+                decoration: const InputDecoration(labelText: 'Day', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
                 items: [for (var d = 1; d <= maxDay; d++) DropdownMenuItem(value: d, child: Text('$d'))],
                 onChanged: (v) {
                   setState(() => _day = v);
@@ -97,12 +98,12 @@ class _DateSelectorState extends State<DateSelector> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              flex: 3,
+              flex: 4,
               child: DropdownButtonFormField<int>(
                 key: ValueKey('month-$_month'),
                 initialValue: _month,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Month'),
+                decoration: const InputDecoration(labelText: 'Month', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
                 items: [
                   for (var m = 1; m <= 12; m++) DropdownMenuItem(value: m, child: Text(_monthNames[m - 1])),
                 ],
@@ -114,7 +115,7 @@ class _DateSelectorState extends State<DateSelector> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              flex: 3,
+              flex: 4,
               child: DropdownButtonFormField<int>(
                 key: ValueKey('year-$_year'),
                 initialValue: _year,

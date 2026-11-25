@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/date_calc.dart';
 import '../../core/format.dart';
+import '../../core/horoscope.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
@@ -89,6 +90,8 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            _BirthDetails(report: horoscopeFor(_birth!)),
           ],
         ],
       ),
@@ -101,6 +104,53 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
           Expanded(child: Text(label, style: TextStyle(color: c.muted))),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
         ]),
+      );
+}
+
+/// Birth details worked out from the date alone: Western and Vedic sun sign, Chinese zodiac, life path number.
+class _BirthDetails extends StatelessWidget {
+  const _BirthDetails({required this.report});
+
+  final HoroscopeReport report;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final w = report.western;
+    return MonovaCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Birth details', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          _detail(c, 'Western sun sign', '${w.name} (${w.dates})', 'Element ${w.element} · ruled by ${w.ruler}'),
+          _detail(c, 'Vedic sun sign', report.vedic, 'Approximate. Your moon sign needs the birth time and place.'),
+          _detail(c, 'Chinese zodiac', '${report.chineseElement} ${report.chineseAnimal}', 'Based on the calendar year.'),
+          _detail(c, 'Life path number', '${report.lifePath}', report.lifePathMeaning),
+          const SizedBox(height: 10),
+          Text(w.traits, style: TextStyle(color: c.ink, height: 1.4)),
+          const SizedBox(height: 10),
+          Text(
+            'Worked out from the date of birth on this device. It is for fun and self-reflection, not advice.',
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detail(MonovaColors c, String label, String value, String note) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            Text(note, style: TextStyle(color: c.muted, fontSize: 12)),
+          ],
+        ),
       );
 }
 
