@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +10,8 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
 import 'bill_balance_card.dart';
+import 'contact_picker_sheet.dart';
+import '../../core/contacts_picker.dart';
 
 /// Offline calculators. Open to everyone, signed in or not.
 class ToolsScreen extends ConsumerWidget {
@@ -316,7 +318,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -423,7 +425,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -499,6 +501,39 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
   }
 
+  Future<void> _fromContacts() async {
+    final List<PickedContact> contacts;
+    try {
+      contacts = await loadContacts();
+    } on ContactsException catch (e) {
+      setState(() => _error = e.message);
+      return;
+    } catch (_) {
+      setState(() => _error = 'Contacts could not be opened. Please try again.');
+      return;
+    }
+    if (!mounted) return;
+    final picked = await FormSheet.show<List<PickedContact>>(
+      context,
+      title: 'Pick people from contacts',
+      child: ContactPickerSheet(contacts: contacts),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    setState(() {
+      for (final p in picked) {
+        final empty = _names.indexWhere((n) => n.text.trim().isEmpty);
+        if (empty >= 0) {
+          _names[empty].text = p.name;
+          _included[empty] = true;
+        } else {
+          _names.add(TextEditingController(text: p.name));
+          _values.add(TextEditingController());
+          _included.add(true);
+        }
+      }
+      _error = null;
+    });
+  }
   Future<void> _deleteBill(String id) async {
     final updated = _saved.where((b) => b.id != id).toList();
     setState(() => _saved = updated);
@@ -599,7 +634,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
+          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: 'â‚¹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -648,6 +683,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               ),
             ),
           TextButton.icon(onPressed: _addPerson, icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Add a person')),
+          TextButton.icon(onPressed: _fromContacts, icon: const Icon(Icons.contacts_rounded), label: const Text('Add from contacts')),
           const SizedBox(height: 8),
           FilledButton(onPressed: _calculate, child: const Text('Calculate')),
           const SizedBox(height: 16),
@@ -702,7 +738,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '${bill.createdAt.day.toString().padLeft(2, '0')}/${bill.createdAt.month.toString().padLeft(2, '0')}/${bill.createdAt.year}'
-                            ' · ${bill.people.join(', ')}',
+                            ' Â· ${bill.people.join(', ')}',
                             style: TextStyle(color: c.muted, fontSize: 12),
                           ),
                           const SizedBox(height: 6),
