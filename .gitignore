@@ -1,0 +1,30 @@
+# Build outputs and local caches (rebuilt automatically)
+**/bin/
+**/obj/
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/.idea/
+**/.vs/
+**/.vscode/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.plugin_symlinks/
+**/ephemeral/
+
+# Logs and runtime data
+**/logs/
+*.log
+
+# Secrets and local settings: never commit these
+**/appsettings.Local.json
+**/secrets.json
+**/*.jks
+**/*.keystore
+**/key.properties
+**/local.properties
+**/.env
+
+# OS and editor files
+.DS_Store
+Thumbs.db
