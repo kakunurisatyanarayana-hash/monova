@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/bill_scanner.dart';
+import '../../core/contacts_picker.dart';
+import '../tools/contact_picker_sheet.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
@@ -193,6 +195,32 @@ class _AccountForm extends StatefulWidget {
 class _AccountFormState extends State<_AccountForm> {
   late final _name = TextEditingController(text: widget.initial?.name ?? '');
   late final _phone = TextEditingController(text: widget.initial?.phone ?? '');
+
+  /// Fills the name and phone from one of the phone's contacts.
+  Future<void> _pickContact() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final List<PickedContact> contacts;
+    try {
+      contacts = await loadContacts();
+    } on ContactsException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Contacts could not be opened. Details: $e')));
+      return;
+    }
+    if (!mounted) return;
+    final picked = await FormSheet.show<List<PickedContact>>(
+      context,
+      title: 'Pick a customer',
+      child: ContactPickerSheet(contacts: contacts, singleSelect: true),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    setState(() {
+      _name.text = picked.first.name;
+      _phone.text = picked.first.phone;
+    });
+  }
   late final _rate = TextEditingController(text: (widget.initial?.annualRatePercent ?? 24).toString());
   late bool _compound = widget.initial?.compound ?? false;
   String? _error;
@@ -227,6 +255,8 @@ class _AccountFormState extends State<_AccountForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        OutlinedButton.icon(onPressed: _pickContact, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick from contacts')),
+        const SizedBox(height: 12),
         TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
         const SizedBox(height: 12),
         TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)')),

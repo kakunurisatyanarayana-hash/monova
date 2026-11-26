@@ -6,9 +6,12 @@ import '../../core/widgets.dart';
 
 /// Lists the phone's contacts with a search box. The user ticks the people to add to the bill.
 class ContactPickerSheet extends StatefulWidget {
-  const ContactPickerSheet({super.key, required this.contacts});
+  const ContactPickerSheet({super.key, required this.contacts, this.singleSelect = false});
 
   final List<PickedContact> contacts;
+
+  /// True when only one contact can be chosen (for example, a customer). Choosing another replaces the first.
+  final bool singleSelect;
 
   @override
   State<ContactPickerSheet> createState() => _ContactPickerSheetState();
@@ -48,7 +51,14 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
                     for (final i in visible)
                       CheckboxListTile(
                         value: _selected.contains(i),
-                        onChanged: (v) => setState(() => v == true ? _selected.add(i) : _selected.remove(i)),
+                        onChanged: (v) => setState(() {
+                          if (widget.singleSelect) _selected.clear();
+                          if (v == true) {
+                            _selected.add(i);
+                          } else {
+                            _selected.remove(i);
+                          }
+                        }),
                         title: Text(widget.contacts[i].name, maxLines: 1, overflow: TextOverflow.ellipsis),
                         subtitle: widget.contacts[i].phone.isEmpty
                             ? null
@@ -64,7 +74,7 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
           onPressed: _selected.isEmpty
               ? null
               : () => Navigator.of(context).pop([for (final i in _selected) widget.contacts[i]]),
-          child: Text(_selected.isEmpty ? 'Tick people to add' : 'Add ${_selected.length} to the bill'),
+          child: Text(widget.singleSelect ? (_selected.isEmpty ? 'Pick a contact' : 'Use this contact') : (_selected.isEmpty ? 'Tick people to add' : 'Add ${_selected.length} to the bill'))),
         ),
       ],
     );
