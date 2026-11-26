@@ -337,6 +337,11 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Balances', style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Total spent: ${money(group.expenses.fold<int>(0, (sum, e) => sum + e.cents) / 100)}',
+                            style: TextStyle(color: c.ink, fontWeight: FontWeight.w800, fontSize: 16),
+                          ),
                           const SizedBox(height: 10),
                           if (group.expenses.isEmpty)
                             Text('Add an expense to see who is owed and who owes.', style: TextStyle(color: c.muted)),
