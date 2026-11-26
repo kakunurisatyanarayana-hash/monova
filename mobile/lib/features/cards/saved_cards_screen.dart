@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -236,7 +236,7 @@ class _CardTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${card.title} · ${card.network}',
+                    '${card.title} Â· ${card.network}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
@@ -474,7 +474,7 @@ class _CardEditorState extends State<_CardEditor> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)],
           decoration: InputDecoration(
             labelText: 'Card number',
-            hintText: initial != null ? 'Leave empty to keep •••• ${initial.last4}' : '16 digits',
+            hintText: initial != null ? 'Leave empty to keep â€¢â€¢â€¢â€¢ ${initial.last4}' : '16 digits',
             prefixIcon: const Icon(Icons.credit_card_rounded),
             helperText: 'Only the last four digits are kept.',
           ),
@@ -490,6 +490,7 @@ class _CardEditorState extends State<_CardEditor> {
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
+                isDense: true,
                 initialValue: _month,
                 decoration: const InputDecoration(labelText: 'Expiry month'),
                 items: [for (var m = 1; m <= 12; m++) DropdownMenuItem(value: m, child: Text(m.toString().padLeft(2, '0')))],
@@ -499,6 +500,7 @@ class _CardEditorState extends State<_CardEditor> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<int>(
+                isDense: true,
                 initialValue: _years.contains(_year) ? _year : _years.first,
                 decoration: const InputDecoration(labelText: 'Expiry year'),
                 items: [for (final y in _years) DropdownMenuItem(value: y, child: Text('$y'))],
