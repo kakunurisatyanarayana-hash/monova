@@ -201,6 +201,8 @@ class _GroupFormState extends State<_GroupForm> {
       if (!names.contains(p.name)) names.add(p.name);
     }
     setState(() => _people.text = names.join(', '));
+  }
+
   @override
   void initState() {
     super.initState();
