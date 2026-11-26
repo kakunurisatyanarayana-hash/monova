@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -21,39 +22,39 @@ class MainShell extends ConsumerWidget {
   static const _wideBreakpoint = 900.0;
   static const _sidebarWidth = 248.0;
 
-  static const _sidebarSections = <_SidebarSection>[
-    _SidebarSection('Overview', [
-      _SidebarItem('Home', Icons.home_rounded, '/home'),
-      _SidebarItem('Activity', Icons.swap_vert_rounded, '/activity'),
-      _SidebarItem('Insights', Icons.insights_rounded, '/insights'),
+  static List<_SidebarSection> get _sidebarSections => <_SidebarSection>[
+    _SidebarSection(tr('section_overview'), [
+      _SidebarItem(tr('nav_home'), Icons.home_rounded, '/home'),
+      _SidebarItem(tr('nav_activity'), Icons.swap_vert_rounded, '/activity'),
+      _SidebarItem(tr('nav_insights'), Icons.insights_rounded, '/insights'),
     ]),
-    _SidebarSection('Money', [
-      _SidebarItem('Accounts', Icons.account_balance_wallet_rounded, '/accounts'),
-      _SidebarItem('Credit cards', Icons.credit_card_rounded, '/cards'),
-      _SidebarItem('Lending', Icons.handshake_rounded, '/lending'),
-      _SidebarItem('Loans and EMI', Icons.directions_car_rounded, '/loans'),
-      _SidebarItem('Budgets and savings', Icons.savings_rounded, '/planning'),
-      _SidebarItem('Recurring', Icons.repeat_rounded, '/recurring'),
-      _SidebarItem('Groups', Icons.groups_rounded, '/groups'),
+    _SidebarSection(tr('section_money'), [
+      _SidebarItem(tr('nav_accounts'), Icons.account_balance_wallet_rounded, '/accounts'),
+      _SidebarItem(tr('nav_credit_cards'), Icons.credit_card_rounded, '/cards'),
+      _SidebarItem(tr('nav_lending'), Icons.handshake_rounded, '/lending'),
+      _SidebarItem(tr('nav_loans'), Icons.directions_car_rounded, '/loans'),
+      _SidebarItem(tr('nav_budgets'), Icons.savings_rounded, '/planning'),
+      _SidebarItem(tr('nav_recurring'), Icons.repeat_rounded, '/recurring'),
+      _SidebarItem(tr('nav_groups'), Icons.groups_rounded, '/groups'),
     ]),
-    _SidebarSection('Tools', [
-      _SidebarItem('All services', Icons.grid_view_rounded, '/services'),
-      _SidebarItem('Calculators', Icons.calculate_outlined, '/tools'),
-      _SidebarItem('Passwords and notes', Icons.lock_rounded, '/vault'),
-      _SidebarItem('Credit book', Icons.menu_book_rounded, '/ledger'),
-      _SidebarItem('Saved cards', Icons.credit_card_rounded, '/saved-cards'),
-      _SidebarItem('Backup and restore', Icons.backup_rounded, '/backup'),
+    _SidebarSection(tr('section_tools'), [
+      _SidebarItem(tr('nav_all_services'), Icons.grid_view_rounded, '/services'),
+      _SidebarItem(tr('nav_calculators'), Icons.calculate_outlined, '/tools'),
+      _SidebarItem(tr('nav_vault'), Icons.lock_rounded, '/vault'),
+      _SidebarItem(tr('nav_credit_book'), Icons.menu_book_rounded, '/ledger'),
+      _SidebarItem(tr('nav_saved_cards'), Icons.credit_card_rounded, '/saved-cards'),
+      _SidebarItem(tr('nav_backup'), Icons.backup_rounded, '/backup'),
     ]),
   ];
 
-  /// Section and label of the menu entry that matches [location], e.g. ('Money', 'Credit cards').
+  /// Section and label of the menu entry that matches [location], e.g. (tr('section_money'), tr('nav_credit_cards')).
   static ({String section, String label})? _currentPage(String location) {
     for (final section in _sidebarSections) {
       for (final item in section.items) {
         if (location.startsWith(item.route)) return (section: section.title, label: item.label);
       }
     }
-    if (location.startsWith('/settings')) return (section: 'Account', label: 'Settings');
+    if (location.startsWith('/settings')) return (section: 'Account', label: tr('nav_settings'));
     return null;
   }
 
@@ -125,8 +126,8 @@ class MainShell extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
             child: Row(
               children: [
-                _NavItem(icon: Icons.home_rounded, label: 'Home', selected: index == 0, onTap: () => context.go('/home')),
-                _NavItem(icon: Icons.swap_vert_rounded, label: 'Activity', selected: index == 1, onTap: () => context.go('/activity')),
+                _NavItem(icon: Icons.home_rounded, label: tr('nav_home'), selected: index == 0, onTap: () => context.go('/home')),
+                _NavItem(icon: Icons.swap_vert_rounded, label: tr('nav_activity'), selected: index == 1, onTap: () => context.go('/activity')),
                 Expanded(
                   child: Center(
                     child: GestureDetector(
@@ -144,8 +145,8 @@ class MainShell extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _NavItem(icon: Icons.groups_rounded, label: 'Groups', selected: index == 2, onTap: () => context.go('/groups')),
-                _NavItem(icon: Icons.insights_rounded, label: 'Insights', selected: index == 3, onTap: () => context.go('/insights')),
+                _NavItem(icon: Icons.groups_rounded, label: tr('nav_groups'), selected: index == 2, onTap: () => context.go('/groups')),
+                _NavItem(icon: Icons.insights_rounded, label: tr('nav_insights'), selected: index == 3, onTap: () => context.go('/insights')),
               ],
             ),
           ),
@@ -296,7 +297,7 @@ class _Sidebar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _SidebarTile(
-                      item: const _SidebarItem('Settings', Icons.settings_rounded, '/settings'),
+                      item: _SidebarItem(tr('nav_settings'), Icons.settings_rounded, '/settings'),
                       selected: location.startsWith('/settings'),
                     ),
                     if (!signedIn && !offline)
@@ -304,7 +305,7 @@ class _Sidebar extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 8),
                         child: FilledButton(
                           onPressed: () => context.go('/auth'),
-                          child: const Text('Sign in'),
+                          child: Text(tr('sign_in')),
                         ),
                       ),
                   ],
@@ -368,7 +369,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final title = page?.label ?? 'Home';
+    final title = page?.label ?? tr('nav_home');
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -381,7 +382,7 @@ class _TopBar extends StatelessWidget {
           FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add entry'),
+            label: Text(tr('add_entry')),
           ),
         ],
       ),

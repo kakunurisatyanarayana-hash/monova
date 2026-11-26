@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/bill_scanner.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
@@ -499,6 +500,7 @@ class _BillFormState extends State<_BillForm> {
   final _amount = TextEditingController();
   final _final = TextEditingController();
   String? _error;
+  String? _scanNote;
 
   @override
   void dispose() {
@@ -507,6 +509,34 @@ class _BillFormState extends State<_BillForm> {
     _amount.dispose();
     _final.dispose();
     super.dispose();
+  }
+
+  /// Reads a bill photo and fills in what it can find. Each value is shown in its box, so the user checks it before saving.
+  Future<void> _scan() async {
+    String note;
+    try {
+      final parsed = await scanBillPhoto(camera: false);
+      setState(() {
+        if (parsed.date != null) _date = dateOnly(parsed.date!);
+        if (parsed.billerName != null && parsed.billerName!.isNotEmpty) _biller.text = parsed.billerName!;
+        if (parsed.amountRupees != null) {
+          _final.text = parsed.amountRupees!.toStringAsFixed(2);
+        }
+      });
+      final found = [
+        if (parsed.date != null) 'date',
+        if (parsed.billerName != null) 'biller',
+        if (parsed.amountRupees != null) 'amount',
+      ];
+      note = found.isEmpty
+          ? 'Nothing could be read from this photo. Type the details by hand.'
+          : 'Read from the bill: ${found.join(', ')}. Check them before saving.';
+    } on BillScanException catch (e) {
+      note = e.message;
+    } catch (e) {
+      note = 'The photo could not be read. $e';
+    }
+    if (mounted) setState(() => _scanNote = note);
   }
 
   void _save() {
@@ -537,6 +567,16 @@ class _BillFormState extends State<_BillForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        OutlinedButton.icon(
+          onPressed: _scan,
+          icon: const Icon(Icons.document_scanner_rounded, size: 18),
+          label: const Text('Scan a bill photo'),
+        ),
+        if (_scanNote != null) ...[
+          const SizedBox(height: 6),
+          Text(_scanNote!, style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+        ],
+        const SizedBox(height: 12),
         DateSelector(label: 'Date of purchase', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),
         TextField(controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name of biller')),
