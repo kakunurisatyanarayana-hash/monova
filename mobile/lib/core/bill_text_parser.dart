@@ -4,13 +4,16 @@
 /// then falls back to the largest amount and the first date. Every value is shown to the user to confirm
 /// before it is saved, so a wrong guess is caught.
 class ParsedBill {
-  const ParsedBill({this.date, this.amountRupees, this.billerName});
+  const ParsedBill({this.date, this.amountRupees, this.billerName, this.itemsText = ''});
 
   final DateTime? date;
   final double? amountRupees;
   final String? billerName;
 
-  bool get isEmpty => date == null && amountRupees == null && (billerName == null || billerName!.isEmpty);
+  /// What was bought, read from the item lines of the bill (for example 'Urea 2 bags, Pesticide 1 L').
+  final String itemsText;
+
+  bool get isEmpty => date == null && amountRupees == null && (billerName == null || billerName!.isEmpty) && itemsText.isEmpty;
 }
 
 const _months = {
@@ -31,6 +34,7 @@ ParsedBill parseBillText(String text) {
     date: _findDate(lines),
     amountRupees: _findAmount(lines),
     billerName: _findName(lines),
+    itemsText: _findItems(lines),
   );
 }
 
@@ -108,4 +112,22 @@ String? _findName(List<String> lines) {
     }
   }
   return null;
+}
+
+const _skipWords = ['total', 'amount', 'gst', 'bill no', 'invoice', 'date', 'name', 'bill to', 'customer', 'phone', 'mobile', 'thank', 'address', 'cgst', 'sgst', 'tax', 'discount', 'balance', 'paid', 'cash', 'gstin', 'm/s'];
+
+/// Item lines: text with letters, then a money amount, and not a total, tax or header line.
+String _findItems(List<String> lines) {
+  final items = <String>[];
+  for (final line in lines) {
+    final lower = line.toLowerCase();
+    if (_skipWords.any(lower.contains)) continue;
+    if (!RegExp(r'[A-Za-z]{3,}').hasMatch(line)) continue;
+    if (!RegExp(r'\d').hasMatch(line)) continue;
+    // Keep the words before the first number, so "Urea 2 bags  Rs 1,200.00" becomes "Urea 2 bags".
+    final name = line.split(RegExp(r'\s{2,}|\s+(?:rs\.?|inr|₹)|\s+\d[\d,.]*\s*$')).first.trim();
+    if (name.length >= 3 && RegExp(r'[A-Za-z]{3,}').hasMatch(name) && !items.contains(name)) items.add(name);
+    if (items.length == 5) break;
+  }
+  return items.join(', ');
 }

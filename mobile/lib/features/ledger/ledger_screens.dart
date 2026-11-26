@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/bill_scanner.dart';
@@ -162,7 +162,7 @@ class _CustomerTile extends StatelessWidget {
                 Text(account.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.annualRatePercent}% a year Â· ${account.compound ? 'compound' : 'simple'} Â· interest ${money(s.interestCents / 100)}',
+                  '${account.annualRatePercent}% a year · ${account.compound ? 'compound' : 'simple'} · interest ${money(s.interestCents / 100)}',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
               ],
@@ -623,6 +623,7 @@ class _BillFormState extends State<_BillForm> {
       setState(() {
         if (parsed.date != null) _date = dateOnly(parsed.date!);
         if (parsed.billerName != null && parsed.billerName!.isNotEmpty) _biller.text = parsed.billerName!;
+        if (parsed.itemsText.isNotEmpty && _description.text.trim().isEmpty) _description.text = parsed.itemsText;
         if (parsed.amountRupees != null) {
           _final.text = parsed.amountRupees!.toStringAsFixed(2);
         }
@@ -652,6 +653,10 @@ class _BillFormState extends State<_BillForm> {
     }
     if (gross != null && gross < finalAmount) {
       setState(() => _error = 'The final price cannot be more than the amount before discount.');
+      return;
+    }
+    if (_description.text.trim().isEmpty) {
+      setState(() => _error = 'Say what was bought, for example "Urea 2 bags" or "Pesticide".');
       return;
     }
     final finalCents = (finalAmount * 100).round();
@@ -693,13 +698,13 @@ class _BillFormState extends State<_BillForm> {
         TextField(
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: 'â‚¹ '),
+          decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _final,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: 'â‚¹ '),
+          decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: '₹ '),
         ),
         if (_error != null) ...[
           const SizedBox(height: 8),
@@ -754,7 +759,7 @@ class _PaymentFormState extends State<_PaymentForm> {
         TextField(
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Amount paid', prefixText: 'â‚¹ '),
+          decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
         TextField(controller: _note, decoration: const InputDecoration(labelText: 'How (cash, UPI, cheque)')),

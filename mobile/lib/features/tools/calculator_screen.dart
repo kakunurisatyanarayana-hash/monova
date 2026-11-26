@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/calculator_engine.dart';
 import '../../core/local_store.dart';
@@ -52,7 +52,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _justEvaluated = false;
         return;
       }
-      if (key == 'âŒ«') {
+      if (key == '⌫') {
         if (_justEvaluated) {
           _expression = '';
           _result = '0';
@@ -70,7 +70,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _engine.degrees = key == 'DEG';
         return;
       }
-      if (_justEvaluated && RegExp(r'^[0-9.(Ï€e]|sin|cos|tan|log|ln|âˆš|cbrt|asin|acos|atan|abs|exp$').hasMatch(key)) {
+      if (_justEvaluated && RegExp(r'^[0-9.(πe]|sin|cos|tan|log|ln|√|cbrt|asin|acos|atan|abs|exp$').hasMatch(key)) {
         _expression = '';
       }
       _justEvaluated = false;
@@ -80,14 +80,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   String _insertText(String key) => switch (key) {
-        'Ã—' => '*',
-        'Ã·' => '/',
-        'âˆ’' => '-',
-        'Ï€' => 'pi',
-        'âˆš' => 'sqrt(',
+        '×' => '*',
+        '÷' => '/',
+        '−' => '-',
+        'π' => 'pi',
+        '√' => 'sqrt(',
         'sin' || 'cos' || 'tan' || 'asin' || 'acos' || 'atan' || 'log' || 'ln' || 'cbrt' || 'abs' || 'exp' => '$key(',
-        'xÂ²' => '^2',
-        'xÊ¸' => '^',
+        'x²' => '^2',
+        'xʸ' => '^',
         'x!' => '!',
         _ => key,
       };
@@ -138,17 +138,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Widget build(BuildContext context) {
     final c = context.monova;
     final basic = [
-      ['C', 'âŒ«', '%', 'Ã·'],
-      ['7', '8', '9', 'Ã—'],
-      ['4', '5', '6', 'âˆ’'],
+      ['C', '⌫', '%', '÷'],
+      ['7', '8', '9', '×'],
+      ['4', '5', '6', '−'],
       ['1', '2', '3', '+'],
       ['(', '0', '.', '='],
     ];
     final scientific = [
-      ['sin', 'cos', 'tan', 'Ï€'],
+      ['sin', 'cos', 'tan', 'π'],
       ['asin', 'acos', 'atan', 'e'],
-      ['log', 'ln', 'âˆš', 'cbrt'],
-      ['xÂ²', 'xÊ¸', 'x!', 'abs'],
+      ['log', 'ln', '√', 'cbrt'],
+      ['x²', 'xʸ', 'x!', 'abs'],
       ['(', ')', '%', 'exp'],
     ];
     return Scaffold(
@@ -265,8 +265,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   _KeyKind _kindOf(String k, bool science) {
     if (k == '=') return _KeyKind.primary;
-    if (k == 'C' || k == 'âŒ«') return _KeyKind.danger;
-    if (k == 'Ã·' || k == 'Ã—' || k == 'âˆ’' || k == '+') return _KeyKind.operator;
+    if (k == 'C' || k == '⌫') return _KeyKind.danger;
+    if (k == '÷' || k == '×' || k == '−' || k == '+') return _KeyKind.operator;
     if (science && !RegExp(r'^[0-9.]$').hasMatch(k)) return _KeyKind.function;
     return _KeyKind.number;
   }
@@ -392,7 +392,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
           TextField(
             controller: _amount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: _addGst ? 'Price before GST' : 'Price including GST', prefixText: 'â‚¹ '),
+            decoration: InputDecoration(labelText: _addGst ? 'Price before GST' : 'Price including GST', prefixText: '₹ '),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 14),
@@ -412,7 +412,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_addGst ? 'Total with GST' : 'Price before GST', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85))),
-                Text('â‚¹ ${(_addGst ? total : base).toStringAsFixed(2)}', style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
+                Text('₹ ${(_addGst ? total : base).toStringAsFixed(2)}', style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
               ],
             ),
           ),
@@ -439,7 +439,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(children: [
           Expanded(child: Text(label, style: TextStyle(color: c.muted, fontWeight: bold ? FontWeight.w800 : FontWeight.w500))),
-          Text('â‚¹ ${value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
+          Text('₹ ${value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: c.ink)),
         ]),
       );
 }

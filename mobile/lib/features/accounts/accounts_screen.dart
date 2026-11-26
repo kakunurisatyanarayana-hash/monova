@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -78,7 +78,7 @@ class AccountsScreen extends ConsumerWidget {
                               children: [
                                 Text(a.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                                 Text(
-                                  '${_accountTypes[a.type] ?? a.type}${a.bankName.isEmpty ? '' : ' Â· ${a.bankName}'}${a.isActive ? '' : ' Â· inactive'}',
+                                  '${_accountTypes[a.type] ?? a.type}${a.bankName.isEmpty ? '' : ' · ${a.bankName}'}${a.isActive ? '' : ' · inactive'}',
                                   style: TextStyle(color: c.muted, fontSize: 12),
                                 ),
                               ],
@@ -161,7 +161,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
           TextFormField(
             controller: _opening,
             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-            decoration: const InputDecoration(labelText: 'Opening balance', prefixText: 'â‚¹ '),
+            decoration: const InputDecoration(labelText: 'Opening balance', prefixText: '₹ '),
             validator: (v) => double.tryParse((v ?? '').replaceAll(',', '')) == null ? 'Enter a number' : null,
           ),
           const SizedBox(height: 20),
@@ -225,7 +225,7 @@ class AccountDetailScreen extends ConsumerWidget {
                     for (final m in page.items)
                       ListTile(
                         title: Text(m.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        subtitle: Text('${m.kind} Â· ${relativeDay(m.date)}', style: TextStyle(color: c.muted)),
+                        subtitle: Text('${m.kind} · ${relativeDay(m.date)}', style: TextStyle(color: c.muted)),
                         trailing: AmountText(
                           moneySigned(m.amount),
                           tone: m.amount >= 0 ? AmountTone.income : AmountTone.neutral,
@@ -285,8 +285,8 @@ class CardsScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Expanded(child: Text('${card.issuer} Â· ${card.name}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-                            Text('â€¢â€¢${card.last4}', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
+                            Expanded(child: Text('${card.issuer} · ${card.name}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+                            Text('••${card.last4}', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
                           ],
                         ),
                         const SizedBox(height: 14),
@@ -307,7 +307,7 @@ class CardsScreen extends ConsumerWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'Next due ${dayLabel(card.nextDueDate)} Â· statement day ${card.statementDay}',
+                                'Next due ${dayLabel(card.nextDueDate)} · statement day ${card.statementDay}',
                                 style: TextStyle(color: c.muted, fontSize: 12),
                               ),
                             ),
@@ -417,7 +417,7 @@ class _CardFormState extends ConsumerState<_CardForm> {
           const SizedBox(height: 12),
           TextFormField(controller: _last4, keyboardType: TextInputType.number, maxLength: 4, decoration: const InputDecoration(labelText: 'Last four digits', counterText: ''), validator: (v) => (v == null || v.length != 4 || int.tryParse(v) == null) ? 'Enter four digits' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Credit limit', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Credit limit', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -493,13 +493,13 @@ class _PayCardFormState extends ConsumerState<_PayCardForm> {
               initialValue: _accountId,
               decoration: const InputDecoration(labelText: 'Pay from'),
               menuMaxHeight: 260,
-              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} Â· ${money(a.currentBalance)}'))],
+              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} · ${money(a.currentBalance)}'))],
               onChanged: (v) => setState(() => _accountId = v),
               validator: (v) => v == null ? 'Choose an account' : null,
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Pay')),
         ],

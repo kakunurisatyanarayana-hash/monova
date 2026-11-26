@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -82,7 +82,7 @@ class GroupsScreen extends ConsumerWidget {
                           height: 48,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(color: c.border, borderRadius: BorderRadius.circular(16)),
-                          child: Text(g.emoji ?? 'ðŸ‘¥', style: const TextStyle(fontSize: 22)),
+                          child: Text(g.emoji ?? '👥', style: const TextStyle(fontSize: 22)),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -137,7 +137,7 @@ class _NewGroupForm extends ConsumerStatefulWidget {
 class _NewGroupFormState extends ConsumerState<_NewGroupForm> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  final _emoji = TextEditingController(text: 'ðŸ‘¥');
+  final _emoji = TextEditingController(text: '👥');
   bool _saving = false;
 
   @override
@@ -242,7 +242,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         Text('Your position', style: TextStyle(color: c.onAccent.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Text(
-                          b.yourNet.abs() < 0.005 ? 'All settled up' : (b.yourNet > 0 ? '+${money(b.yourNet)} owed to you' : 'âˆ’${money(-b.yourNet)} you owe'),
+                          b.yourNet.abs() < 0.005 ? 'All settled up' : (b.yourNet > 0 ? '+${money(b.yourNet)} owed to you' : '−${money(-b.yourNet)} you owe'),
                           style: TextStyle(color: c.onAccent, fontSize: 24, fontWeight: FontWeight.w800),
                         ),
                       ],
@@ -260,7 +260,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         child: MonovaCard(
                           child: Row(
                             children: [
-                              Expanded(child: Text('${s.fromName} â†’ ${s.toName}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                              Expanded(child: Text('${s.fromName} → ${s.toName}', style: const TextStyle(fontWeight: FontWeight.w600))),
                               AmountText(money(s.amount), size: 15),
                               if (detail.maybeWhen(data: (d) => d.members.any((m) => m.isSelf && (m.id == s.fromMemberId || m.id == s.toMemberId)), orElse: () => false)) ...[
                                 const SizedBox(width: 8),
@@ -323,7 +323,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                 refreshAll();
                               },
                               title: Text(e.description, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              subtitle: Text('Paid by ${e.payerNames.join(', ')} Â· ${relativeDay(e.occurredOn)}', style: TextStyle(color: c.muted)),
+                              subtitle: Text('Paid by ${e.payerNames.join(', ')} · ${relativeDay(e.occurredOn)}', style: TextStyle(color: c.muted)),
                               trailing: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -447,7 +447,7 @@ class _SettleFormState extends ConsumerState<_SettleForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('${widget.suggestion.fromName} â†’ ${widget.suggestion.toName}. You can settle part of it now.', style: TextStyle(color: context.monova.muted)),
+          Text('${widget.suggestion.fromName} → ${widget.suggestion.toName}. You can settle part of it now.', style: TextStyle(color: context.monova.muted)),
           const SizedBox(height: 12),
           accounts.when(
             loading: () => const LinearProgressIndicator(),
@@ -456,13 +456,13 @@ class _SettleFormState extends ConsumerState<_SettleForm> {
               initialValue: _accountId,
               decoration: const InputDecoration(labelText: 'Account the money moves through'),
               menuMaxHeight: 260,
-              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} Â· ${money(a.currentBalance)}'))],
+              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} · ${money(a.currentBalance)}'))],
               onChanged: (v) => setState(() => _accountId = v),
               validator: (v) => v == null ? 'Choose an account' : null,
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 16),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record settlement')),
         ],
@@ -577,7 +577,7 @@ class _GroupExpenseFormState extends ConsumerState<_GroupExpenseForm> {
         children: [
           TextFormField(controller: _description, decoration: const InputDecoration(labelText: 'What was it for?'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Total amount', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Total amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _payerId,
@@ -595,7 +595,7 @@ class _GroupExpenseFormState extends ConsumerState<_GroupExpenseForm> {
                 initialValue: _accountId,
                 decoration: const InputDecoration(labelText: 'Paid from account'),
                 menuMaxHeight: 260,
-                items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} Â· ${money(a.currentBalance)}'))],
+                items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} · ${money(a.currentBalance)}'))],
                 onChanged: (v) => setState(() => _accountId = v),
               ),
             ),

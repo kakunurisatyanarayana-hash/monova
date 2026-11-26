@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -324,7 +324,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -431,7 +431,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -476,6 +476,8 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   List<({int index, int cents})> _shares = [];
 
   /// The last calculated bill, waiting to be saved. Null until a calculation succeeds.
+  final _billTitle = TextEditingController();
+  final _billNotes = TextEditingController();
   SavedBill? _pending;
   List<SavedBill> _saved = [];
   bool _savedLoaded = false;
@@ -498,7 +500,8 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   Future<void> _savePending() async {
     final bill = _pending;
     if (bill == null) return;
-    final updated = [bill, ..._saved];
+    final toSave = bill.copyWith(title: _billTitle.text.trim(), notes: _billNotes.text.trim());
+    final updated = [toSave, ..._saved];
     setState(() {
       _saved = updated;
       _pending = null;
@@ -549,6 +552,8 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   @override
   void dispose() {
     _total.dispose();
+    _billTitle.dispose();
+    _billNotes.dispose();
     for (final c in [..._names, ..._values]) {
       c.dispose();
     }
@@ -609,7 +614,8 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
         _shares = shares;
         _pending = SavedBill(
           id: now.microsecondsSinceEpoch.toString(),
-          title: '',
+          title: _billTitle.text.trim(),
+          notes: _billNotes.text.trim(),
           createdAt: now,
           totalCents: totalCents,
           payer: nameOf(payer.toString()),
@@ -640,7 +646,11 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: 'â‚¹ ')),
+          TextField(controller: _billTitle, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was this bill for?', hintText: 'Dinner, Petrol, Flat rent')),
+          const SizedBox(height: 12),
+          TextField(controller: _billNotes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Who had what, anything to remember', alignLabelWithHint: true)),
+          const SizedBox(height: 12),
+          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -739,15 +749,24 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${money(bill.totalCents / 100)} paid by ${bill.payer}',
+                            bill.title.isEmpty ? bill.payer : bill.title,
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
                           Text(
+                            '${money(bill.totalCents / 100)} paid by ${bill.payer}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
                             '${bill.createdAt.day.toString().padLeft(2, '0')}/${bill.createdAt.month.toString().padLeft(2, '0')}/${bill.createdAt.year}'
-                            ' Â· ${bill.people.join(', ')}',
+                            ' · ${bill.people.join(', ')}',
                             style: TextStyle(color: c.muted, fontSize: 12),
                           ),
+                          if (bill.notes.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(bill.notes, style: TextStyle(color: c.muted, fontSize: 12, fontStyle: FontStyle.italic, height: 1.35)),
+                          ],
                           const SizedBox(height: 6),
                           if (bill.settlements.isEmpty)
                             Text('Everyone is settled.', style: TextStyle(color: c.muted, fontSize: 13))
