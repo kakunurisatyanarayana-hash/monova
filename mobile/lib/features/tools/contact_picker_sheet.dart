@@ -74,7 +74,7 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
           onPressed: _selected.isEmpty
               ? null
               : () => Navigator.of(context).pop([for (final i in _selected) widget.contacts[i]]),
-          child: Text(widget.singleSelect ? (_selected.isEmpty ? 'Pick a contact' : 'Use this contact') : (_selected.isEmpty ? 'Tick people to add' : 'Add ${_selected.length} to the bill'))),
+          child: Text(widget.singleSelect ? (_selected.isEmpty ? 'Pick a contact' : 'Use this contact') : (_selected.isEmpty ? 'Tick people to add' : 'Add ${_selected.length} to the bill')),
         ),
       ],
     );
