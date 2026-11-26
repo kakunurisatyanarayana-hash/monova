@@ -122,7 +122,7 @@ class MainShell extends ConsumerWidget {
         child: SizedBox(
           height: 82,
           child: Container(
-            decoration: BoxDecoration(color: c.raised, border: Border(top: BorderSide(color: c.border))),
+            decoration: BoxDecoration(color: c.glassFill, border: Border(top: BorderSide(color: c.border))),
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
             child: Row(
               children: [
@@ -246,7 +246,7 @@ class _Sidebar extends StatelessWidget {
     return SizedBox(
       width: width,
       child: ColoredBox(
-        color: c.raised,
+        color: c.glassFill,
         child: SafeArea(
           right: false,
           child: Column(
@@ -373,7 +373,7 @@ class _TopBar extends StatelessWidget {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(color: c.raised, border: Border(bottom: BorderSide(color: c.border))),
+      decoration: BoxDecoration(color: c.glassFill, border: Border(bottom: BorderSide(color: c.border))),
       child: Row(
         children: [
           // The page's own header shows the title; the bar keeps the breadcrumb only, so the name is not repeated.

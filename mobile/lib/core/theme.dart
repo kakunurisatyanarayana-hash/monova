@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 /// MONOVA design tokens. "Aurora" accent on graphite (dark) and bone (light).
 /// Every colour used by a widget comes from here so both themes stay consistent.
@@ -15,6 +15,9 @@ class MonovaColors {
     required this.expense,
     required this.warning,
     required this.onAccent,
+    required this.glassFill,
+    required this.glowA,
+    required this.glowB,
   });
 
   final Color base;
@@ -29,24 +32,34 @@ class MonovaColors {
   final Color warning;
   final Color onAccent;
 
+  /// Frosted surface for cards and bars: slightly see-through so the background glow shows through.
+  final Color glassFill;
+
+  /// Two soft light sources behind the app. They give the "ambient" feel.
+  final Color glowA;
+  final Color glowB;
+
   static const dark = MonovaColors(
-    base: Color(0xFF0B0D12),
+    base: Color(0xFF070910),
     raised: Color(0xFF14171F),
-    border: Color(0xFF232838),
+    border: Color(0x33A5B4FC),
     ink: Color(0xFFF2F3F7),
-    muted: Color(0xFF8A90A2),
+    muted: Color(0xFF9AA1B5),
     accentStart: Color(0xFF5EEAD4),
     accentEnd: Color(0xFF8B7CF6),
     income: Color(0xFF4ADE80),
     expense: Color(0xFFFB7185),
     warning: Color(0xFFFBBF24),
     onAccent: Color(0xFF0B0D12),
+    glassFill: Color(0xA6161A26),
+    glowA: Color(0x4D5EEAD4),
+    glowB: Color(0x598B7CF6),
   );
 
   static const light = MonovaColors(
-    base: Color(0xFFF5F4F0),
+    base: Color(0xFFF6F4EF),
     raised: Color(0xFFFFFFFF),
-    border: Color(0xFFE4E1D9),
+    border: Color(0xFFE2DED4),
     ink: Color(0xFF12141A),
     muted: Color(0xFF5F6575),
     accentStart: Color(0xFF00756B),
@@ -55,6 +68,9 @@ class MonovaColors {
     expense: Color(0xFFBE123C),
     warning: Color(0xFFB45309),
     onAccent: Color(0xFFFFFFFF),
+    glassFill: Color(0xB8FFFFFF),
+    glowA: Color(0x5200A394),
+    glowB: Color(0x4A6D5BE0),
   );
 
   LinearGradient get aurora => LinearGradient(
@@ -84,7 +100,8 @@ class MonovaTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: c.base,
+      // Transparent, so the ambient background behind the whole app shows through.
+      scaffoldBackgroundColor: Colors.transparent,
       canvasColor: c.base,
       dividerColor: c.border,
       appBarTheme: AppBarTheme(
