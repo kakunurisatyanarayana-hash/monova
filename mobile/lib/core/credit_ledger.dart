@@ -1,11 +1,11 @@
-import 'local_store.dart';
+﻿import 'local_store.dart';
 
 const ledgerKey = 'monova.ledger';
 
 DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// A bill given on credit: the date, the person it was given to (the biller), what it was for,
-/// the amount before any discount and the final price that is owed.
+/// the amount before any discount, the final price that is owed, and any notes kept with it.
 class CreditBill {
   const CreditBill({
     required this.id,
@@ -14,6 +14,7 @@ class CreditBill {
     required this.description,
     required this.amountCents,
     required this.finalCents,
+    this.notes = '',
   });
 
   final String id;
@@ -22,6 +23,17 @@ class CreditBill {
   final String description;
   final int amountCents;
   final int finalCents;
+  final String notes;
+
+  CreditBill copyWith({String? notes}) => CreditBill(
+        id: id,
+        date: date,
+        billerName: billerName,
+        description: description,
+        amountCents: amountCents,
+        finalCents: finalCents,
+        notes: notes ?? this.notes,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -30,6 +42,7 @@ class CreditBill {
         'description': description,
         'amountCents': amountCents,
         'finalCents': finalCents,
+        'notes': notes,
       };
 
   factory CreditBill.fromJson(Map<String, dynamic> j) => CreditBill(
@@ -39,6 +52,7 @@ class CreditBill {
         description: '${j['description'] ?? ''}',
         amountCents: (j['amountCents'] as num).toInt(),
         finalCents: (j['finalCents'] as num).toInt(),
+        notes: '${j['notes'] ?? ''}',
       );
 }
 
@@ -50,6 +64,8 @@ class CreditPayment {
   final DateTime date;
   final int cents;
   final String note;
+
+  CreditPayment copyWith({String? note}) => CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
 
   Map<String, dynamic> toJson() => {'id': id, 'date': _isoDate(date), 'cents': cents, 'note': note};
 
@@ -124,7 +140,7 @@ class CreditAccount {
       );
 }
 
-/// One line of the statement: a bill, a payment, or the interest for a month.
+/// One line of the statement: a bill or a payment, with its id so it can be opened and edited.
 class StatementLine {
   const StatementLine({
     required this.date,
@@ -132,21 +148,51 @@ class StatementLine {
     required this.debitCents,
     required this.creditCents,
     required this.balanceCents,
-    this.isInterest = false,
+    required this.refId,
+    required this.isPayment,
+    this.notes = '',
   });
 
   final DateTime date;
   final String description;
 
-  /// Money added to the balance (bills and interest).
+  /// Money added to the balance (a bill).
   final int debitCents;
 
-  /// Money taken off the balance (payments).
+  /// Money taken off the balance (a payment).
   final int creditCents;
 
   /// Total owed (principal plus interest) after this line.
   final int balanceCents;
-  final bool isInterest;
+
+  /// The id of the bill or payment this line came from.
+  final String refId;
+  final bool isPayment;
+  final String notes;
+}
+
+/// Everything that happened on one day, with the interest since the previous entry and the balance after that day.
+class DayRow {
+  const DayRow({
+    required this.date,
+    required this.bills,
+    required this.payments,
+    required this.interestCents,
+    required this.balanceCents,
+  });
+
+  final DateTime date;
+  final List<CreditBill> bills;
+  final List<CreditPayment> payments;
+
+  /// Interest accrued since the previous row (the days in between), before any payment on this day.
+  final int interestCents;
+
+  /// Total owed (principal plus interest) at the end of this day.
+  final int balanceCents;
+
+  int get billedCents => bills.fold(0, (s, b) => s + b.finalCents);
+  int get paidCents => payments.fold(0, (s, p) => s + p.cents);
 }
 
 /// The result of working out what is owed on a given day.
@@ -156,6 +202,7 @@ class LedgerStatement {
     required this.principalCents,
     required this.interestCents,
     required this.lines,
+    required this.days,
     required this.interestByMonth,
     required this.totalBilledCents,
     required this.totalPaidCents,
@@ -168,7 +215,12 @@ class LedgerStatement {
 
   /// Interest accrued and not yet paid.
   final int interestCents;
+
+  /// Every bill and payment, in date order, with the running balance.
   final List<StatementLine> lines;
+
+  /// One row per day something happened, plus a final row up to [asOf] if interest has run since.
+  final List<DayRow> days;
 
   /// Interest per calendar month (key "yyyy-mm"), in cents.
   final Map<String, int> interestByMonth;
@@ -193,10 +245,9 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   for (final p in account.payments) {
     if (!p.date.isAfter(end)) events.putIfAbsent(p.date, () => []).add(p);
   }
-  final lines = <StatementLine>[];
   if (events.isEmpty) {
     return LedgerStatement(
-      asOf: end, principalCents: 0, interestCents: 0, lines: const [], interestByMonth: const {},
+      asOf: end, principalCents: 0, interestCents: 0, lines: const [], days: const [], interestByMonth: const {},
       totalBilledCents: 0, totalPaidCents: 0,
     );
   }
@@ -207,15 +258,24 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   var interest = 0.0;
   var billed = 0;
   var paid = 0;
+  var accruedSinceRow = 0.0;
+  final lines = <StatementLine>[];
+  final days = <DayRow>[];
   final byMonth = <String, double>{};
-  final monthTotals = <String, int>{};
+  DateTime? lastRowDay;
 
   var day = start;
   while (!day.isAfter(end)) {
     final todays = events[day];
     if (todays != null) {
+      final todaysBills = todays.whereType<CreditBill>().toList();
+      final todaysPayments = todays.whereType<CreditPayment>().toList();
+      // Interest that ran from the previous entry up to today, before today's events.
+      final interestSincePrevious = accruedSinceRow;
+      accruedSinceRow = 0;
+
       // Bills first, then payments, in the order they were entered.
-      for (final e in todays.whereType<CreditBill>()) {
+      for (final e in todaysBills) {
         principal += e.finalCents;
         billed += e.finalCents;
         lines.add(StatementLine(
@@ -226,9 +286,12 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
           debitCents: e.finalCents,
           creditCents: 0,
           balanceCents: 0,
+          refId: e.id,
+          isPayment: false,
+          notes: e.notes,
         ));
       }
-      for (final e in todays.whereType<CreditPayment>()) {
+      for (final e in todaysPayments) {
         var left = e.cents.toDouble();
         final toInterest = left < interest ? left : interest;
         interest -= toInterest;
@@ -241,8 +304,19 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
           debitCents: 0,
           creditCents: e.cents,
           balanceCents: 0,
+          refId: e.id,
+          isPayment: true,
+          notes: e.note,
         ));
       }
+      days.add(DayRow(
+        date: day,
+        bills: todaysBills,
+        payments: todaysPayments,
+        interestCents: interestSincePrevious.round(),
+        balanceCents: (principal + interest).round(),
+      ));
+      lastRowDay = day;
     }
 
     // Interest for this day, on what is owed at the end of the day before the next events.
@@ -250,6 +324,7 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
       final base = account.compound ? principal + interest : principal;
       final accrual = base > 0 ? base * dailyRate : 0.0;
       interest += accrual;
+      accruedSinceRow += accrual;
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}';
       byMonth[key] = (byMonth[key] ?? 0) + accrual;
     }
@@ -257,11 +332,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
     day = DateTime(day.year, day.month, day.day + 1);
   }
 
-  // Interest by month, as whole rupees-and-paisa for display.
-  for (final entry in byMonth.entries) {
-    monthTotals[entry.key] = entry.value.round();
+  // Interest has run since the last entry: show it on the as-of date.
+  if (lastRowDay == null || lastRowDay.isBefore(end)) {
+    days.add(DayRow(
+      date: end,
+      bills: const [],
+      payments: const [],
+      interestCents: accruedSinceRow.round(),
+      balanceCents: (principal + interest).round(),
+    ));
   }
-  // Running balance, in the order the lines were added.
+
+  final monthTotals = <String, int>{for (final e in byMonth.entries) e.key: e.value.round()};
+
+  // Running balance, in date order.
   var running = 0;
   final ordered = [...lines]..sort((a, b) => a.date.compareTo(b.date));
   final withBalance = <StatementLine>[];
@@ -273,6 +357,9 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
       debitCents: line.debitCents,
       creditCents: line.creditCents,
       balanceCents: running,
+      refId: line.refId,
+      isPayment: line.isPayment,
+      notes: line.notes,
     ));
   }
 
@@ -281,6 +368,7 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
     principalCents: principal.round(),
     interestCents: interest.round(),
     lines: withBalance,
+    days: days,
     interestByMonth: monthTotals,
     totalBilledCents: billed,
     totalPaidCents: paid,
