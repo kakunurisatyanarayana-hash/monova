@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/bill_store.dart';
 import '../../core/groups_store.dart';
 import '../../core/profile_store.dart';
 import '../../core/theme.dart';
@@ -266,6 +267,8 @@ class LocalGroupDetailScreen extends StatefulWidget {
 
 class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
   LocalGroup? _group;
+  /// Split bills that belong to this group.
+  List<SavedBill> _bills = [];
   bool _loaded = false;
 
   @override
@@ -276,6 +279,9 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
       setState(() {
         final matches = groups.where((g) => g.id == widget.id).toList();
         _group = matches.isEmpty ? null : matches.first;
+        BillStore.load().then((all) {
+          if (mounted) setState(() => _bills = all.where((b) => b.groupId == widget.id).toList());
+        });
         _loaded = true;
       });
     });
@@ -373,7 +379,7 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                           Text('Balances', style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 4),
                           Text(
-                            'Total spent: ${money(group.expenses.fold<int>(0, (sum, e) => sum + e.cents) / 100)}',
+                            'Total spent: ${money((group.expenses.fold<int>(0, (sum, e) => sum + e.cents) + _bills.fold<int>(0, (sum, b) => sum + b.totalCents)) / 100)}',
                             style: TextStyle(color: c.ink, fontWeight: FontWeight.w800, fontSize: 16),
                           ),
                           const SizedBox(height: 10),
@@ -426,6 +432,33 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    Text('Split bills in this group', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    if (_bills.isEmpty)
+                      Text('Save a split bill and choose this group to see it here.', style: TextStyle(color: c.muted))
+                    else
+                      for (final b in _bills) ...[
+                        MonovaCard(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(b.title.isEmpty ? 'Split bill' : b.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 2),
+                                    Text('Paid by ${b.payer} · ${b.people.length} people', style: TextStyle(color: c.muted, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              Text(money(b.totalCents / 100), style: const TextStyle(fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                     const SizedBox(height: 16),
                     Text('Expenses', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
