@@ -487,18 +487,18 @@ class _CardEditorState extends State<_CardEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _bank,
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(labelText: 'Bank', prefixIcon: Icon(Icons.account_balance_rounded)),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _nickname,
           decoration: const InputDecoration(labelText: 'Nickname (optional)', hintText: 'Travel card, Shopping card', prefixIcon: Icon(Icons.label_outline_rounded)),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _number,
           keyboardType: TextInputType.number,
           autocorrect: false,
@@ -512,7 +512,7 @@ class _CardEditorState extends State<_CardEditor> {
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _holder,
           textCapitalization: TextCapitalization.characters,
           decoration: const InputDecoration(labelText: 'Name on the card', prefixIcon: Icon(Icons.badge_outlined)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -92,20 +93,20 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
+              TextField(textInputAction: TextInputAction.next, 
                 controller: _name,
                 autofocus: !widget.editing,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(labelText: 'Your name', prefixIcon: Icon(Icons.person_outline_rounded)),
               ),
               const SizedBox(height: 12),
-              TextField(
+              TextField(textInputAction: TextInputAction.next, 
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Phone (optional)', prefixIcon: Icon(Icons.phone_outlined)),
               ),
               const SizedBox(height: 12),
-              TextField(
+              TextField(textInputAction: TextInputAction.next, 
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,

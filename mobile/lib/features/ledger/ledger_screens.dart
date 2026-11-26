@@ -102,7 +102,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (_accounts.length > 3)
-                  TextField(
+                  TextField(textInputAction: TextInputAction.next, 
                     onChanged: (v) => setState(() => _query = v),
                     decoration: const InputDecoration(hintText: 'Search customers', prefixIcon: Icon(Icons.search_rounded)),
                   ),
@@ -258,12 +258,15 @@ class _AccountFormState extends State<_AccountForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         OutlinedButton.icon(onPressed: _pickContact, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick from contacts')),
+
+        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
         const SizedBox(height: 12),
-        TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
+
+        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
         const SizedBox(height: 12),
-        TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)')),
+        TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)')),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _rate,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Interest per year (%)', helperText: 'Charged every day on the amount owed, divided by 365.'),
@@ -751,19 +754,19 @@ class _BillFormState extends State<_BillForm> {
         const SizedBox(height: 12),
         DateSelector(label: 'Date of purchase', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),
-        TextField(controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name of biller')),
+        TextField(textInputAction: TextInputAction.next, controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name of biller')),
         const SizedBox(height: 12),
-        TextField(controller: _description, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was bought', hintText: 'Urea 2 bags, pesticide')),
+        TextField(textInputAction: TextInputAction.next, controller: _description, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was bought', hintText: 'Urea 2 bags, pesticide')),
         const SizedBox(height: 12),
         TextField(controller: _notes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Paid half in cash, balance after harvest', alignLabelWithHint: true)),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _final,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: '₹ '),
@@ -818,13 +821,13 @@ class _PaymentFormState extends State<_PaymentForm> {
       children: [
         DateSelector(label: 'Date paid', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _note, decoration: const InputDecoration(labelText: 'How (cash, UPI, cheque)')),
+        TextField(textInputAction: TextInputAction.next, controller: _note, decoration: const InputDecoration(labelText: 'How (cash, UPI, cheque)')),
         if (_error != null) ...[
           const SizedBox(height: 8),
           Text(_error!, style: TextStyle(color: c.expense)),

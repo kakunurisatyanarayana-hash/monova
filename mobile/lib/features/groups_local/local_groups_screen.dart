@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
@@ -165,6 +166,14 @@ class _GroupForm extends StatefulWidget {
 class _GroupFormState extends State<_GroupForm> {
   final _name = TextEditingController();
   final _people = TextEditingController();
+  List<String> _known = [];
+
+  /// Adds a name from an earlier group to the people list, if it is not there yet.
+  void _addSuggested(String name) {
+    final names = _people.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if (!names.contains(name)) names.add(name);
+    setState(() => _people.text = names.join(', '));
+  }
 
   /// Adds people picked from the phone's contacts to the list, separated by commas.
   Future<void> _pickFromContacts() async {
@@ -194,6 +203,11 @@ class _GroupFormState extends State<_GroupForm> {
   @override
   void initState() {
     super.initState();
+    // Names used in earlier groups can be tapped instead of typed.
+    GroupStore.load().then((groups) {
+      final names = <String>{for (final g in groups) for (final m in g.members) m.name}.toList()..sort();
+      if (mounted) setState(() => _known = names);
+    });
     // You are added first, so the group always includes you.
     loadProfile().then((p) {
       if (p != null && mounted && _people.text.trim().isEmpty) _people.text = p.name;
@@ -230,7 +244,7 @@ class _GroupFormState extends State<_GroupForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _name,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(labelText: 'Group name', hintText: 'Goa trip, Flat 4B'),
@@ -238,6 +252,16 @@ class _GroupFormState extends State<_GroupForm> {
         const SizedBox(height: 12),
         OutlinedButton.icon(onPressed: _pickFromContacts, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick people from contacts')),
         const SizedBox(height: 8),
+        if (_known.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final n in _known) ActionChip(label: Text(n), avatar: const Icon(Icons.person_outline_rounded, size: 16), onPressed: () => _addSuggested(n)),
+            ],
+          ),
+          const SizedBox(height: 10),
+        ],
         TextField(
           controller: _people,
           minLines: 2,
@@ -513,7 +537,7 @@ class _PersonNameFormState extends State<_PersonNameForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _name,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
@@ -586,13 +610,13 @@ class _ExpenseFormState extends State<_ExpenseForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _title,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(labelText: 'What was it for?'),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),

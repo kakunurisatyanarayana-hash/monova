@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -328,11 +329,11 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Term (months)'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Term (months)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
           if (_error != null) Text(_error!, style: TextStyle(color: c.expense)),
           if (r != null)
@@ -435,11 +436,11 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(controller: _years, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Time (years)'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _years, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Time (years)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
           if (_error != null) Text(_error!, style: TextStyle(color: c.expense)),
           if (_error == null)
@@ -521,37 +522,31 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
   }
 
-  Future<void> _fromContacts() async {
-    final List<PickedContact> contacts;
-    try {
-      contacts = await loadContacts();
-    } on ContactsException catch (e) {
-      setState(() => _error = e.message);
-      return;
-    } catch (_) {
-      setState(() => _error = 'Contacts could not be opened. Please try again.');
-      return;
+  /// Names used before (in earlier splits and groups) that are not in this bill yet, so they can be tapped instead of typed.
+  List<String> get _suggestions {
+    final names = <String>{};
+    for (final b in _saved) {
+      names.addAll(b.people);
     }
-    if (!mounted) return;
-    final picked = await FormSheet.show<List<PickedContact>>(
-      context,
-      title: 'Pick people from contacts',
-      child: ContactPickerSheet(contacts: contacts),
-    );
-    if (picked == null || picked.isEmpty || !mounted) return;
+    for (final g in _groups) {
+      names.addAll(g.members.map((m) => m.name));
+    }
+    final current = _names.map((c) => c.text.trim()).toSet();
+    return (names.where((n) => n.trim().isNotEmpty && !current.contains(n.trim())).toList()..sort());
+  }
+
+  /// Puts a suggested name into the first empty person box, or adds a new person.
+  void _addKnownName(String name) {
     setState(() {
-      for (final p in picked) {
-        final empty = _names.indexWhere((n) => n.text.trim().isEmpty);
-        if (empty >= 0) {
-          _names[empty].text = p.name;
-          _included[empty] = true;
-        } else {
-          _names.add(TextEditingController(text: p.name));
-          _values.add(TextEditingController());
-          _included.add(true);
-        }
+      final empty = _names.indexWhere((n) => n.text.trim().isEmpty);
+      if (empty >= 0) {
+        _names[empty].text = name;
+        _included[empty] = true;
+      } else {
+        _names.add(TextEditingController(text: name));
+        _values.add(TextEditingController());
+        _included.add(true);
       }
-      _error = null;
     });
   }
   /// Fills the people from a saved group, so the bill can be split among the same people.
@@ -718,11 +713,11 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          TextField(controller: _billTitle, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was this bill for?', hintText: 'Dinner, Petrol, Flat rent')),
+          TextField(textInputAction: TextInputAction.next, controller: _billTitle, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was this bill for?', hintText: 'Dinner, Petrol, Flat rent')),
           const SizedBox(height: 12),
           TextField(controller: _billNotes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Who had what, anything to remember', alignLabelWithHint: true)),
           const SizedBox(height: 12),
-          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: 'â‚¹ ')),
+          TextField(textInputAction: TextInputAction.next, controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -751,7 +746,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               child: Row(
                 children: [
                   Checkbox(value: _included[i], onChanged: (v) => setState(() => _included[i] = v ?? false)),
-                  Expanded(child: TextField(controller: _names[i], decoration: const InputDecoration(isDense: true, labelText: 'Name'), onChanged: (_) => setState(() {}))),
+                  Expanded(child: TextField(textInputAction: TextInputAction.next, controller: _names[i], decoration: const InputDecoration(isDense: true, labelText: 'Name'), onChanged: (_) => setState(() {}))),
                   IconButton(
                     tooltip: 'Remove this person',
                     icon: const Icon(Icons.person_remove_alt_1_rounded),
@@ -761,7 +756,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                     const SizedBox(width: 8),
                     SizedBox(
                       width: 100,
-                      child: TextField(
+                      child: TextField(textInputAction: TextInputAction.next, 
                         controller: _values[i],
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(isDense: true, labelText: _mode == 'percent' ? '%' : (_mode == 'shares' ? 'Shares' : 'Amount')),
@@ -771,8 +766,18 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                 ],
               ),
             ),
-          TextButton.icon(onPressed: _addPerson, icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Add a person')),
-          TextButton.icon(onPressed: _fromContacts, icon: const Icon(Icons.contacts_rounded), label: const Text('Add from contacts')),
+          if (_suggestions.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final n in _suggestions) ActionChip(label: Text(n), avatar: const Icon(Icons.person_outline_rounded, size: 16), onPressed: () => _addKnownName(n)),
+                ],
+              ),
+            ),
+          ],          TextButton.icon(onPressed: _addPerson, icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Add a person')),
           const SizedBox(height: 8),
           FilledButton(onPressed: _calculate, child: const Text('Calculate')),
           const SizedBox(height: 16),

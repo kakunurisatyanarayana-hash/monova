@@ -145,7 +145,7 @@ class _VaultScreenState extends State<VaultScreen> {
               children: [
                 _StorageNotice(encrypted: VaultStore.encrypted),
                 const SizedBox(height: 16),
-                TextField(
+                TextField(textInputAction: TextInputAction.next, 
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
                     hintText: 'Search by title, username, website or note',
@@ -495,7 +495,7 @@ class _EntryEditorState extends State<_EntryEditor> {
           onSelectionChanged: (s) => setState(() => _kind = s.first),
         ),
         const SizedBox(height: 18),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _title,
           autofocus: widget.initial == null,
           textCapitalization: TextCapitalization.sentences,
@@ -510,14 +510,14 @@ class _EntryEditorState extends State<_EntryEditor> {
         ),
         if (isPassword) ...[
           const SizedBox(height: 12),
-          TextField(
+          TextField(textInputAction: TextInputAction.next, 
             controller: _username,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             decoration: const InputDecoration(labelText: 'Username or email', prefixIcon: Icon(Icons.person_outline_rounded)),
           ),
           const SizedBox(height: 12),
-          TextField(
+          TextField(textInputAction: TextInputAction.next, 
             controller: _password,
             obscureText: _obscure,
             autocorrect: false,
@@ -533,7 +533,7 @@ class _EntryEditorState extends State<_EntryEditor> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
+          TextField(textInputAction: TextInputAction.next, 
             controller: _url,
             keyboardType: TextInputType.url,
             autocorrect: false,
