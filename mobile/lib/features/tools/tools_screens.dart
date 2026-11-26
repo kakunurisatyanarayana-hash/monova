@@ -522,6 +522,40 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
   }
 
+  Future<void> _fromContacts() async {
+    final List<PickedContact> contacts;
+    try {
+      contacts = await loadContacts();
+    } on ContactsException catch (e) {
+      setState(() => _error = e.message);
+      return;
+    } catch (_) {
+      setState(() => _error = 'Contacts could not be opened. Please try again.');
+      return;
+    }
+    if (!mounted) return;
+    final picked = await FormSheet.show<List<PickedContact>>(
+      context,
+      title: 'Pick people from contacts',
+      child: ContactPickerSheet(contacts: contacts),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    setState(() {
+      for (final p in picked) {
+        final empty = _names.indexWhere((n) => n.text.trim().isEmpty);
+        if (empty >= 0) {
+          _names[empty].text = p.name;
+          _included[empty] = true;
+        } else {
+          _names.add(TextEditingController(text: p.name));
+          _values.add(TextEditingController());
+          _included.add(true);
+        }
+      }
+      _error = null;
+    });
+  }
+
   /// Names used before (in earlier splits and groups) that are not in this bill yet, so they can be tapped instead of typed.
   List<String> get _suggestions {
     final names = <String>{};
@@ -778,6 +812,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               ),
             ),
           ],          TextButton.icon(onPressed: _addPerson, icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Add a person')),
+          TextButton.icon(onPressed: _fromContacts, icon: const Icon(Icons.contacts_rounded), label: const Text('Add from contacts')),
           const SizedBox(height: 8),
           FilledButton(onPressed: _calculate, child: const Text('Calculate')),
           const SizedBox(height: 16),
