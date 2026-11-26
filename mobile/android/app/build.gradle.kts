@@ -29,6 +29,12 @@ android {
         versionName = flutter.versionName
     }
 
+    // The image picker's lint check crashes on the build machine. Lint is a code-quality check, not needed to build the APK.
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
