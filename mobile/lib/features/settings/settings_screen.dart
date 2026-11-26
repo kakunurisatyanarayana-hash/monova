@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_client.dart';
 import '../../core/app_lock.dart';
 import '../../core/i18n.dart';
+import '../../core/theme_mode.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -144,7 +145,7 @@ class _Link extends StatelessWidget {
   }
 }
 
-/// Lets the user pick the app language. The choice is saved on this device.
+/// Language and theme as chips: one tap each, no hidden menus.
 class _LanguageCard extends ConsumerWidget {
   const _LanguageCard();
 
@@ -152,27 +153,42 @@ class _LanguageCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.monova;
     final lang = ref.watch(languageProvider);
+    final mode = ref.watch(themeModeProvider);
     return MonovaCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Text(tr('settings_language'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Icon(Icons.translate_rounded, color: c.accentStart),
-              const SizedBox(width: 12),
-              Expanded(child: Text(tr('settings_language'), style: const TextStyle(fontWeight: FontWeight.w700))),
-              DropdownButton<AppLang>(
-                value: lang,
-                underline: const SizedBox.shrink(),
-                items: [for (final l in AppLang.values) DropdownMenuItem(value: l, child: Text(l.label))],
-                onChanged: (v) {
-                  if (v != null) ref.read(languageProvider.notifier).set(v);
-                },
-              ),
+              for (final l in AppLang.values)
+                ChoiceChip(
+                  label: Text(l.label),
+                  selected: l == lang,
+                  onSelected: (_) => ref.read(languageProvider.notifier).set(l),
+                ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 16),
+          const Text('Theme', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final m in ThemeMode.values)
+                ChoiceChip(
+                  label: Text(themeLabel(m)),
+                  selected: m == mode,
+                  onSelected: (_) => ref.read(themeModeProvider.notifier).set(m),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Text(tr('settings_language_note'), style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
         ],
       ),
