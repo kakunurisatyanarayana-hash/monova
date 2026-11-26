@@ -43,6 +43,7 @@ const _sections = [
   ]),
   ServiceSection('Credit and lending', subtitle: 'Money you have given on credit or borrowed.', [
     ServiceItem(title: 'Credit book', icon: Icons.menu_book_rounded, route: '/ledger'),
+    ServiceItem(title: 'Income and spending', icon: Icons.swap_vert_rounded, route: '/entries'),
     ServiceItem(title: 'Lending and borrowing', icon: Icons.handshake_rounded, route: '/lending', needsOnline: true),
     ServiceItem(title: 'Loans and EMI tracker', icon: Icons.directions_car_rounded, route: '/loans', needsOnline: true),
     ServiceItem(title: 'Credit cards', icon: Icons.credit_card_rounded, route: '/cards', needsOnline: true),
@@ -58,7 +59,7 @@ const _sections = [
   ServiceSection('Security and data', subtitle: 'Keep your data safe and under your control.', [
     ServiceItem(title: 'Backup and restore', icon: Icons.backup_rounded, route: '/backup'),
     ServiceItem(title: 'App PIN and profile', icon: Icons.lock_outline_rounded, route: '/settings'),
-    ServiceItem(title: 'Export to CSV', icon: Icons.download_rounded, note: 'Planned: spreadsheet export of the credit book, bills and groups.'),
+    ServiceItem(title: 'Purchases and warranty', icon: Icons.verified_user_outlined, route: '/purchases'),
   ]),
   ServiceSection('Coming soon', subtitle: 'Planned. Each needs something outside this app before it can work.', [
     ServiceItem(title: 'Mobile recharge', icon: Icons.smartphone_rounded, note: 'Needs a licensed payment partner (BBPS or an aggregator).'),
