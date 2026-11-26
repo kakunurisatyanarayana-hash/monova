@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/bill_store.dart';
+import '../../core/groups_store.dart';
 import '../../core/finance_calc.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
@@ -477,6 +478,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   /// The last calculated bill, waiting to be saved. Null until a calculation succeeds.
   final _billTitle = TextEditingController();
   final _billNotes = TextEditingController();
+  List<LocalGroup> _groups = [];
   SavedBill? _pending;
   List<SavedBill> _saved = [];
   bool _savedLoaded = false;
@@ -484,6 +486,9 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   @override
   void initState() {
     super.initState();
+    GroupStore.load().then((groups) {
+      if (mounted) setState(() => _groups = groups);
+    });
     BillStore.load().then((bills) {
       if (!mounted) return;
       setState(() {
@@ -507,6 +512,33 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     });
     await BillStore.save(updated);
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
+  }
+
+  /// Fills the people from a saved group, so the bill can be split among the same people.
+  void _useGroup(String id) {
+    final matches = _groups.where((g) => g.id == id).toList();
+    if (matches.isEmpty) return;
+    final members = matches.first.members;
+    setState(() {
+      while (_names.length < members.length) {
+        _names.add(TextEditingController());
+        _values.add(TextEditingController());
+        _included.add(true);
+      }
+      for (var i = 0; i < _names.length; i++) {
+        if (i < members.length) {
+          _names[i].text = members[i].name;
+          _included[i] = true;
+        } else {
+          _names[i].text = '';
+          _included[i] = false;
+        }
+      }
+      _payer = null;
+      _pending = null;
+      _lines = [];
+      _shares = [];
+    });
   }
 
   /// Opens the saved bill for changes; the changed bill replaces the old one and the balances update.
@@ -621,6 +653,20 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
+          if (_groups.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              key: const ValueKey('group-picker'),
+              hint: const Text('Choose a group'),
+              isExpanded: true,
+              menuMaxHeight: 260,
+              decoration: const InputDecoration(labelText: 'Load the people from a group (optional)'),
+              items: [for (final g in _groups) DropdownMenuItem(value: g.id, child: Text(g.name))],
+              onChanged: (id) {
+                if (id != null) _useGroup(id);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
           TextField(controller: _billTitle, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was this bill for?', hintText: 'Dinner, Petrol, Flat rent')),
           const SizedBox(height: 12),
           TextField(controller: _billNotes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Who had what, anything to remember', alignLabelWithHint: true)),
