@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router.dart';
 import 'features/lock/lock_screen.dart';
+import 'core/i18n.dart';
 import 'core/scroll_behavior.dart';
 import 'core/theme.dart';
 
@@ -11,7 +12,10 @@ class MonovaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(languageProvider);
     return MaterialApp.router(
+      // A new key on a language change rebuilds the whole app, so every label switches at once.
+      key: ValueKey(lang),
       title: 'MONOVA',
       debugShowCheckedModeBanner: false,
       theme: MonovaTheme.build(Brightness.light),

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_lock.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -63,6 +64,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          const _LanguageCard(),
+          const SizedBox(height: 12),
           MonovaCard(
             padding: const EdgeInsets.all(14),
             onTap: () => togglePinFromSettings(context, ref),
@@ -136,6 +139,42 @@ class _Link extends StatelessWidget {
             Icon(Icons.chevron_right_rounded, color: context.monova.muted),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Lets the user pick the app language. The choice is saved on this device.
+class _LanguageCard extends ConsumerWidget {
+  const _LanguageCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.monova;
+    final lang = ref.watch(languageProvider);
+    return MonovaCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.translate_rounded, color: c.accentStart),
+              const SizedBox(width: 12),
+              Expanded(child: Text(tr('settings_language'), style: const TextStyle(fontWeight: FontWeight.w700))),
+              DropdownButton<AppLang>(
+                value: lang,
+                underline: const SizedBox.shrink(),
+                items: [for (final l in AppLang.values) DropdownMenuItem(value: l, child: Text(l.label))],
+                onChanged: (v) {
+                  if (v != null) ref.read(languageProvider.notifier).set(v);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(tr('settings_language_note'), style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+        ],
       ),
     );
   }

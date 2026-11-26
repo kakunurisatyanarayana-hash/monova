@@ -9,6 +9,7 @@ import '../../core/card_store.dart';
 import '../../core/photo_picker.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import 'card_visual.dart';
 
 /// Cards saved on this device: the details and an optional photo of the card.
 /// Only the last four digits of the number are kept. The CVV is never asked for.
@@ -221,29 +222,30 @@ class _CardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    return MonovaCard(
+    // The card is drawn like a real one (network colours, chip, masked number); the line below names it.
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
-      padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _CardThumb(card: card, width: 76, height: 48),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          CardVisual(card: card),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Row(
               children: [
-                Text(card.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                const SizedBox(height: 3),
-                Text(
-                  '${card.network} · ${card.masked} · valid ${card.expiryLabel}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: c.muted, fontSize: 13),
+                Expanded(
+                  child: Text(
+                    '${card.title} · ${card.network}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
                 ),
+                Icon(Icons.chevron_right_rounded, color: c.muted),
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: c.muted),
         ],
       ),
     );
@@ -268,6 +270,8 @@ class _CardDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        CardVisual(card: card),
+        const SizedBox(height: 14),
         if (card.hasPhoto)
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -383,8 +387,10 @@ class _CardEditorState extends State<_CardEditor> {
       });
     } on PhotoPickException catch (e) {
       if (mounted) setState(() => _error = e.message);
-    } catch (_) {
-      if (mounted) setState(() => _error = 'The picture could not be opened. Please try again.');
+    } catch (e) {
+      // The real cause is shown so it can be reported; the image plugin error names the missing part.
+      debugPrint('Photo pick failed: $e');
+      if (mounted) setState(() => _error = 'The picture could not be opened. Details: $e');
     }
   }
 
