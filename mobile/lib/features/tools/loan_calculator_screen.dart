@@ -192,7 +192,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
           if (r != null) ...[
             const SizedBox(height: 12),
             MonovaCard(
-              gradient: c.aurora,
+              gradient: c.hero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

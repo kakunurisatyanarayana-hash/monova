@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 /// MONOVA design tokens. "Aurora" accent on graphite (dark) and bone (light).
 /// Every colour used by a widget comes from here so both themes stay consistent.
@@ -73,7 +73,11 @@ class MonovaColors {
     glowB: Color(0x4A6D5BE0),
   );
 
-  LinearGradient get aurora => LinearGradient(
+  /// The accent as a flat colour. Used for icon badges, buttons and small marks, so the app keeps one calm accent.
+  LinearGradient get aurora => LinearGradient(colors: [accentStart, accentStart]);
+
+  /// The full two-colour gradient. Used only for hero cards at the top of a page.
+  LinearGradient get hero => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [accentStart, accentEnd],

@@ -336,7 +336,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
           if (_error != null) Text(_error!, style: TextStyle(color: c.expense)),
           if (r != null)
             MonovaCard(
-              gradient: c.aurora,
+              gradient: c.hero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

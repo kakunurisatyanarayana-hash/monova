@@ -243,7 +243,7 @@ class _NetWorthLine extends StatelessWidget {
             spots: spots,
             isCurved: true,
             barWidth: 3,
-            gradient: c.aurora,
+            gradient: c.hero,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [c.accentStart.withValues(alpha: 0.25), Colors.transparent])),
           ),

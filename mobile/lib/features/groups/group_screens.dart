@@ -235,7 +235,7 @@ class GroupDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   MonovaCard(
-                    gradient: c.aurora,
+                    gradient: c.hero,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

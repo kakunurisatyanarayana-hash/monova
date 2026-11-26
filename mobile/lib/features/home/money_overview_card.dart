@@ -98,13 +98,10 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
           else if (t == null)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
           else
-            GridView.count(
-              crossAxisCount: 2,
+            GridView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.55,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, mainAxisExtent: 104),
               children: [
                 _Tile(
                   label: 'Credit book due',

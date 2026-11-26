@@ -543,7 +543,7 @@ class _GuestHome extends StatelessWidget {
           const SizedBox(height: 14),
           const SizedBox(height: 16),
           MonovaCard(
-            gradient: c.aurora,
+            gradient: c.hero,
             padding: const EdgeInsets.all(22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

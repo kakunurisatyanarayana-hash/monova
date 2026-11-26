@@ -101,7 +101,7 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
             Text(error, style: TextStyle(color: c.expense, fontWeight: FontWeight.w600))
           else if (result != null) ...[
             MonovaCard(
-              gradient: c.aurora,
+              gradient: c.hero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -287,7 +287,7 @@ class _RentCalculatorScreenState extends State<RentCalculatorScreen> {
             MonovaCard(child: Text('Enter the monthly rent and the lease length to see the totals.', style: TextStyle(color: c.muted))),
           if (result != null) ...[
             MonovaCard(
-              gradient: c.aurora,
+              gradient: c.hero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

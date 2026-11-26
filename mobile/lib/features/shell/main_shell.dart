@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -137,7 +137,7 @@ class MainShell extends ConsumerWidget {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          gradient: c.aurora,
+                          gradient: c.hero,
                           shape: BoxShape.circle,
                           boxShadow: [BoxShadow(color: c.accentStart.withValues(alpha: 0.35), blurRadius: 22, offset: const Offset(0, 8))],
                         ),
