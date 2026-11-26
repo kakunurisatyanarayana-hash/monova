@@ -407,7 +407,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
           ),
           const SizedBox(height: 18),
           MonovaCard(
-            gradient: c.aurora,
+            gradient: c.hero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

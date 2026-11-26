@@ -455,7 +455,7 @@ class _Brand extends StatelessWidget {
           width: 68,
           height: 68,
           decoration: BoxDecoration(
-            gradient: c.aurora,
+            gradient: c.hero,
             borderRadius: BorderRadius.circular(22),
             boxShadow: [BoxShadow(color: c.accentStart.withValues(alpha: 0.4), blurRadius: 28, offset: const Offset(0, 10))],
           ),

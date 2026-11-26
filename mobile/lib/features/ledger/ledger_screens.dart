@@ -83,7 +83,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: [
                 MonovaCard(
-                  gradient: c.aurora,
+                  gradient: c.hero,
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,7 +391,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
         MonovaCard(
-          gradient: c.aurora,
+          gradient: c.hero,
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

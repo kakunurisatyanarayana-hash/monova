@@ -41,7 +41,7 @@ class AccountsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               children: [
                 MonovaCard(
-                  gradient: c.aurora,
+                  gradient: c.hero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
