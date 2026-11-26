@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/groups_store.dart';
+import '../../core/profile_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
@@ -161,6 +162,15 @@ class _GroupForm extends StatefulWidget {
 class _GroupFormState extends State<_GroupForm> {
   final _name = TextEditingController();
   final _people = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // You are added first, so the group always includes you.
+    loadProfile().then((p) {
+      if (p != null && mounted && _people.text.trim().isEmpty) _people.text = p.name;
+    });
+  }
   String? _error;
 
   @override

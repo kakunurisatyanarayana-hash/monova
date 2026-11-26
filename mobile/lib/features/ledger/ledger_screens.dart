@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/bill_scanner.dart';
@@ -409,7 +410,19 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(money(s.totalCents / 100), style: TextStyle(color: c.onAccent, fontSize: 34, fontWeight: FontWeight.w800)),
+              Row(
+                children: [
+                  Expanded(child: Text(money(s.totalCents / 100), style: TextStyle(color: c.onAccent, fontSize: 34, fontWeight: FontWeight.w800))),
+                  IconButton(
+                    tooltip: 'Copy final amount',
+                    icon: Icon(Icons.copy_rounded, color: c.onAccent),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: ':  on '));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Final amount copied')));
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 10),
               _sum('Bills and unpaid amount', money(s.principalCents / 100), c),
               _sum('Interest so far (${account.annualRatePercent}% a year)', money(s.interestCents / 100), c),

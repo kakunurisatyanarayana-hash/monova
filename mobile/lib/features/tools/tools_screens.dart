@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_client.dart';
 import '../../core/bill_store.dart';
 import '../../core/groups_store.dart';
+import '../../core/profile_store.dart';
 import '../../core/finance_calc.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
@@ -486,6 +487,9 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   @override
   void initState() {
     super.initState();
+    loadProfile().then((p) {
+      if (p != null && mounted && _names.first.text.trim().isEmpty) _names.first.text = p.name;
+    });
     GroupStore.load().then((groups) {
       if (mounted) setState(() => _groups = groups);
     });

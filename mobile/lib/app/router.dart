@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -25,6 +25,8 @@ import '../features/tools/calculator_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
 import '../features/vault/vault_screen.dart';
+import '../core/profile_store.dart';
+import '../features/setup/setup_screens.dart';
 import '../state/providers.dart';
 
 /// Pages that are forms or calculators read best at a fixed width, centred, on wide screens.
@@ -39,13 +41,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       // Deep links (for example a reload on /groups in the browser) keep their page while the session restores.
       if (ApiConfig.offline && loc == '/auth') return '/tools';
-      if (loc == '/') return '/home';
+      // First open with no profile yet: ask for the name before anything else.
+      final profile = ref.read(profileProvider);
+      if (ApiConfig.offline && profile.loaded && profile.profile == null && loc != '/setup' && loc != '/') return '/setup';
       if (loc == '/auth' && session.isSignedIn) return '/home';
       return null;
     },
     routes: [
       GoRoute(path: '/', builder: (_, __) => const _Splash()),
       GoRoute(path: '/auth', builder: (_, __) => const AuthScreen()),
+      GoRoute(path: '/setup', builder: (_, __) => const SetupScreen()),
       // Everything below sits inside the app frame, so the menu and top bar stay visible on web and desktop.
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
@@ -83,25 +88,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/tools/age', builder: (_, __) => _form(const AgeCalculatorScreen())),
           GoRoute(path: '/tools/rent', builder: (_, __) => _form(const RentCalculatorScreen())),
           GoRoute(path: '/settings', builder: (_, __) => _form(const SettingsScreen())),
+          GoRoute(path: '/profile', builder: (_, __) => _form(const SetupScreen(editing: true))),
         ],
       ),
     ],
   );
 });
 
-class _Splash extends ConsumerStatefulWidget {
+/// The first page. Waits for the saved profile, then goes to the setup page (first open) or to Home.
+class _Splash extends ConsumerWidget {
   const _Splash();
 
   @override
-  ConsumerState<_Splash> createState() => _SplashState();
-}
-
-class _SplashState extends ConsumerState<_Splash> {
-  @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider);
+    final online = !ApiConfig.offline;
+    if (profile.loaded) {
+      final target = (!online && profile.profile == null) ? '/setup' : '/home';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go(target);
+      });
+    }
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: CircularProgressIndicator()));
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +6,7 @@ import '../../core/api_client.dart';
 import '../../core/app_lock.dart';
 import '../../core/build_info.dart';
 import '../../core/i18n.dart';
+import '../../core/profile_store.dart';
 import '../../core/theme_mode.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -67,6 +68,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Center(child: Text(buildLabel, style: TextStyle(color: context.monova.muted, fontSize: 11))),
+          const SizedBox(height: 12),
+          const _ProfileCard(),
           const SizedBox(height: 12),
           const _LanguageCard(),
           const SizedBox(height: 12),
@@ -193,6 +196,45 @@ class _LanguageCard extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           Text(tr('settings_language_note'), style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+        ],
+      ),
+    );
+  }
+}
+/// The profile at the top of Settings. Tap to edit the name and contact details.
+class _ProfileCard extends ConsumerWidget {
+  const _ProfileCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.monova;
+    final p = ref.watch(profileProvider).profile;
+    final details = [if (p != null && p.phone.isNotEmpty) p.phone, if (p != null && p.email.isNotEmpty) p.email].join(' · ');
+    return MonovaCard(
+      padding: const EdgeInsets.all(14),
+      onTap: () => context.push('/profile'),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: c.accentStart,
+            child: Text(
+              p == null || p.name.isEmpty ? '?' : p.name[0].toUpperCase(),
+              style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(p == null ? 'Add your name' : p.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                const SizedBox(height: 2),
+                Text(details.isEmpty ? 'Tap to edit your profile' : details, style: TextStyle(color: c.muted, fontSize: 12)),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: c.muted),
         ],
       ),
     );

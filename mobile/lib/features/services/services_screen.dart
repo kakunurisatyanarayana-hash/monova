@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
@@ -97,6 +97,8 @@ const _sections = [
 ];
 
 /// Every feature in one menu. On wide screens the sections sit side by side in columns.
+/// Every feature as a grid of tiles: two columns on a phone, four on a wide screen.
+/// Working services open when tapped; planned ones explain what they need.
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
@@ -107,42 +109,30 @@ class ServicesScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('All services')),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
-          final gap = 16.0;
-          final available = constraints.maxWidth - 32;
-          final columnWidth = wide ? (available - gap * 2) / 3 : available;
-          return SingleChildScrollView(
+          final cols = constraints.maxWidth >= 900 ? 4 : 2;
+          const gap = 12.0;
+          final inner = constraints.maxWidth - 32;
+          final tileWidth = (inner - gap * (cols - 1)) / cols;
+          return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            child: Wrap(
-              spacing: gap,
-              runSpacing: gap,
-              children: [
-                SizedBox(
-                  width: available,
-                  child: Text(
-                    'Tap any working service to open it. "Coming soon" items are planned and show what they need first.',
-                    style: TextStyle(color: c.muted, fontSize: 12),
-                  ),
+            children: [
+              Text(
+                'Tap a service to open it. Tiles marked "Soon" are planned; tap them to see what they need.',
+                style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+              ),
+              for (final section in _sections) ...[
+                const SizedBox(height: 18),
+                SectionTitle(section.title),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final item in section.items) SizedBox(width: tileWidth, height: 118, child: _ServiceTile(item: item)),
+                  ],
                 ),
-                for (final section in _sections)
-                  SizedBox(
-                    width: columnWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SectionTitle(section.title),
-                        const SizedBox(height: 8),
-                        MonovaCard(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Column(
-                            children: [for (final item in section.items) _ServiceRow(item: item)],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
-            ),
+            ],
           );
         },
       ),
@@ -150,8 +140,8 @@ class ServicesScreen extends StatelessWidget {
   }
 }
 
-class _ServiceRow extends StatelessWidget {
-  const _ServiceRow({required this.item});
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({required this.item});
 
   final ServiceItem item;
 
@@ -159,24 +149,52 @@ class _ServiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final available = item.route != null;
-    return ListTile(
-      enabled: available,
-      onTap: available ? () => context.push(item.route!) : null,
-      leading: CircleAvatar(
-        backgroundColor: c.border,
-        child: Icon(item.icon, color: available ? c.accentStart : c.muted, size: 18),
+    return MonovaCard(
+      padding: const EdgeInsets.all(12),
+      onTap: () {
+        if (available) {
+          context.push(item.route!);
+        } else {
+          FormSheet.show<void>(
+            context,
+            title: item.title,
+            child: Text(item.note ?? 'This is planned and not ready yet.', style: const TextStyle(height: 1.45)),
+          );
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: available ? c.aurora : null,
+                  color: available ? null : c.border,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(item.icon, size: 20, color: available ? c.onAccent : c.muted),
+              ),
+              const Spacer(),
+              if (!available)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: c.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
+                  child: Text('Soon', style: TextStyle(color: c.warning, fontSize: 10, fontWeight: FontWeight.w700)),
+                ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            item.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, height: 1.25, color: available ? c.ink : c.muted),
+          ),
+        ],
       ),
-      title: Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, color: available ? c.ink : c.muted)),
-      subtitle: available
-          ? null
-          : Text(item.note ?? 'Coming soon', style: TextStyle(color: c.muted, fontSize: 12)),
-      trailing: available
-          ? Icon(Icons.chevron_right_rounded, color: c.muted)
-          : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: c.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
-              child: Text('Coming soon', style: TextStyle(color: c.warning, fontSize: 11, fontWeight: FontWeight.w700)),
-            ),
     );
   }
 }
