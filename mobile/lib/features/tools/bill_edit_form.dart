@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/bill_store.dart';
 import '../../core/finance_calc.dart';
@@ -77,15 +78,15 @@ class _BillEditFormState extends State<BillEditForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(controller: _title, decoration: const InputDecoration(labelText: 'What was this bill for?')),
+        TextField(textInputAction: TextInputAction.next, controller: _title, decoration: const InputDecoration(labelText: 'What was this bill for?')),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _total,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Total amount', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(textInputAction: TextInputAction.next, 
           controller: _people,
           onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(labelText: 'People (separate with commas)', helperText: 'Each person shares the bill equally.'),
