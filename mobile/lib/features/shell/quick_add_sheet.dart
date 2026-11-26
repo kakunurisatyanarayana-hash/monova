@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -147,7 +147,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
-            decoration: const InputDecoration(prefixText: '₹ ', labelText: 'Amount'),
+            decoration: const InputDecoration(prefixText: 'â‚¹ ', labelText: 'Amount'),
             validator: validateAmount,
           ),
           const SizedBox(height: 12),
@@ -168,6 +168,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
               data: (list) => DropdownButtonFormField<String>(
                 initialValue: _categoryId,
                 decoration: const InputDecoration(labelText: 'Category'),
+                menuMaxHeight: 260,
                 items: [for (final CategoryItem c in list) DropdownMenuItem(value: c.id, child: Text(c.name))],
                 onChanged: (v) => setState(() => _categoryId = v),
               ),
@@ -193,7 +194,8 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
               data: (list) => DropdownButtonFormField<String>(
                 initialValue: _cardId,
                 decoration: const InputDecoration(labelText: 'Credit card'),
-                items: [for (final CardItem card in list) DropdownMenuItem(value: card.id, child: Text('${card.name} ••${card.last4}'))],
+                menuMaxHeight: 260,
+                items: [for (final CardItem card in list) DropdownMenuItem(value: card.id, child: Text('${card.name} â€¢â€¢${card.last4}'))],
                 onChanged: (v) => setState(() => _cardId = v),
                 validator: (v) => v == null ? 'Choose a card' : null,
               ),
@@ -205,6 +207,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
               data: (list) => DropdownButtonFormField<String>(
                 initialValue: _accountId,
                 decoration: InputDecoration(labelText: _kind == _Kind.transfer ? 'From account' : (isMoneyIn ? 'Receive into' : 'Account')),
+                menuMaxHeight: 260,
                 items: [for (final AccountItem a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text(a.name))],
                 onChanged: (v) => setState(() => _accountId = v),
                 validator: (v) => v == null ? 'Choose an account' : null,
@@ -218,6 +221,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
               data: (list) => DropdownButtonFormField<String>(
                 initialValue: _toAccountId,
                 decoration: const InputDecoration(labelText: 'To account'),
+                menuMaxHeight: 260,
                 items: [for (final AccountItem a in list.where((a) => a.isActive && a.id != _accountId)) DropdownMenuItem(value: a.id, child: Text(a.name))],
                 onChanged: (v) => setState(() => _toAccountId = v),
                 validator: (v) => v == null ? 'Choose the destination' : null,

@@ -646,6 +646,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
             initialValue: _payer,
             hint: const Text('Choose who paid'),
             decoration: const InputDecoration(labelText: 'Who paid the bill?'),
+            menuMaxHeight: 260,
             items: [for (var i = 0; i < _names.length; i++) DropdownMenuItem(value: i, child: Text(_names[i].text.trim().isEmpty ? 'Person ${i + 1}' : _names[i].text.trim()))],
             onChanged: (v) => setState(() => _payer = v),
           ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
@@ -75,7 +75,7 @@ class RecurringScreen extends ConsumerWidget {
                             children: [
                               Text(r.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                               Text(
-                                '${r.frequency} · next ${dayLabel(r.nextRunOn)}',
+                                '${r.frequency} Â· next ${dayLabel(r.nextRunOn)}',
                                 style: TextStyle(color: c.muted, fontSize: 12),
                               ),
                             ],
@@ -168,7 +168,7 @@ class _RecurringFormState extends ConsumerState<_RecurringForm> {
           TextFormField(
             controller: _amount,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
+            decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '),
             validator: validateAmount,
           ),
           const SizedBox(height: 12),
@@ -188,6 +188,7 @@ class _RecurringFormState extends ConsumerState<_RecurringForm> {
             data: (list) => DropdownButtonFormField<String>(
               initialValue: _accountId,
               decoration: InputDecoration(labelText: _type == 'Income' ? 'Received into' : 'Paid from'),
+              menuMaxHeight: 260,
               items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text(a.name))],
               onChanged: (v) => setState(() => _accountId = v),
               validator: (v) => v == null ? 'Choose an account' : null,

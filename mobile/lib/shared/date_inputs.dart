@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -89,6 +89,7 @@ class _DateSelectorState extends State<DateSelector> {
                 isExpanded: true,
                 // Narrow fields keep little inner padding, so a two-digit day is not cut to its first digit.
                 decoration: const InputDecoration(labelText: 'Day', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                menuMaxHeight: 260,
                 items: [for (var d = 1; d <= maxDay; d++) DropdownMenuItem(value: d, child: Text('$d'))],
                 onChanged: (v) {
                   setState(() => _day = v);
@@ -104,6 +105,7 @@ class _DateSelectorState extends State<DateSelector> {
                 initialValue: _month,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Month', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                menuMaxHeight: 260,
                 items: [
                   for (var m = 1; m <= 12; m++) DropdownMenuItem(value: m, child: Text(_monthNames[m - 1])),
                 ],
@@ -121,6 +123,7 @@ class _DateSelectorState extends State<DateSelector> {
                 initialValue: _year,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Year'),
+                menuMaxHeight: 260,
                 items: [
                   for (var y = _lastYear; y >= widget.firstYear; y--) DropdownMenuItem(value: y, child: Text('$y')),
                 ],
@@ -181,6 +184,7 @@ class TermInput extends StatelessWidget {
               initialValue: unit,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Unit'),
+              menuMaxHeight: 260,
               items: [for (final u in TermUnit.values) DropdownMenuItem(value: u, child: Text(u.label))],
               onChanged: (u) {
                 if (u != null) onUnitChanged(u);
