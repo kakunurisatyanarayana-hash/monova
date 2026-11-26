@@ -1,4 +1,4 @@
-# Builds the offline MONOVA tools APK in the cloud (GitHub-hosted Linux runner).
+﻿# Builds the offline MONOVA tools APK in the cloud (GitHub-hosted Linux runner).
 # No Android Studio, Developer Mode or local licence acceptance is needed on your PC.
 # Run it from the GitHub "Actions" tab (Run workflow), then download "monova-offline-apk" from the run's Artifacts.
 name: Offline tools APK
@@ -38,7 +38,14 @@ jobs:
         run: flutter test
 
       - name: Build offline release APK
-        run: flutter build apk --release --dart-define=MONOVA_OFFLINE=true
+        # Gradle downloads are sometimes rate-limited (HTTP 429) on the build machine; retry instead of failing at once.
+        run: |
+          for attempt in 1 2 3; do
+            flutter build apk --release --dart-define=MONOVA_OFFLINE=true && exit 0
+            echo "Attempt $attempt failed. Waiting before trying again."
+            sleep $((attempt * 60))
+          done
+          exit 1
 
       - name: Build offline web app
         run: flutter build web --release --dart-define=MONOVA_OFFLINE=true
