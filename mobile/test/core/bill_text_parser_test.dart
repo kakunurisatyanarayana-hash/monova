@@ -54,4 +54,20 @@ Bag fee 40
     expect(parseBillText('').isEmpty, isTrue);
     expect(parseBillText('hello world').isEmpty, isTrue);
   });
+  test('reads the item lines of a bill as what was bought', () {
+    const text = '''
+SHRI RAM FERTILIZERS
+Bill No: 1043
+Date: 12/09/2026
+Name: Ramesh Kumar
+Urea 2 bags        Rs 1,200.00
+Pesticide 1 L      Rs 350.00
+Total Amount: Rs 1,550.00
+''';
+    final p = parseBillText(text);
+    expect(p.itemsText, contains('Urea 2 bags'));
+    expect(p.itemsText, contains('Pesticide 1 L'));
+    expect(p.itemsText, isNot(contains('Total')));
+    expect(p.amountRupees, 1550);
+  });
 }

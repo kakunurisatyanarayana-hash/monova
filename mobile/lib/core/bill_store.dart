@@ -1,4 +1,4 @@
-import 'local_store.dart';
+﻿import 'local_store.dart';
 
 const billsKey = 'monova.bills';
 
@@ -29,7 +29,12 @@ class SavedBill {
     required this.payer,
     required this.people,
     required this.settlements,
+    this.notes = '',
   });
+
+  final String notes;
+
+  SavedBill copyWith({String? title, String? notes}) => SavedBill(id: id, title: title ?? this.title, createdAt: createdAt, totalCents: totalCents, payer: payer, people: people, settlements: settlements, notes: notes ?? this.notes);
 
   final String id;
   final String title;
@@ -47,12 +52,14 @@ class SavedBill {
         'payer': payer,
         'people': people,
         'settlements': settlements.map((s) => s.toJson()).toList(),
+        'notes': notes,
       };
 
   factory SavedBill.fromJson(Map<String, dynamic> j) => SavedBill(
         id: '${j['id']}',
         title: '${j['title'] ?? ''}',
         createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
+        notes: '${j['notes'] ?? ''}',
         totalCents: (j['totalCents'] as num?)?.toInt() ?? 0,
         payer: '${j['payer'] ?? ''}',
         people: [for (final p in (j['people'] as List<dynamic>? ?? const [])) '$p'],

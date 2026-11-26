@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -236,7 +236,7 @@ class _CardTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${card.title} Â· ${card.network}',
+                    '${card.title} · ${card.network}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
@@ -474,7 +474,7 @@ class _CardEditorState extends State<_CardEditor> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)],
           decoration: InputDecoration(
             labelText: 'Card number',
-            hintText: initial != null ? 'Leave empty to keep â€¢â€¢â€¢â€¢ ${initial.last4}' : '16 digits',
+            hintText: initial != null ? 'Leave empty to keep •••• ${initial.last4}' : '16 digits',
             prefixIcon: const Icon(Icons.credit_card_rounded),
             helperText: 'Only the last four digits are kept.',
           ),

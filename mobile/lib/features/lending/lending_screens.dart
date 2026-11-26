@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
@@ -187,7 +187,7 @@ class _AccountPicker extends ConsumerWidget {
         initialValue: value,
         decoration: InputDecoration(labelText: label),
         menuMaxHeight: 260,
-        items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} Â· ${money(a.currentBalance)}'))],
+        items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} · ${money(a.currentBalance)}'))],
         onChanged: onChanged,
         validator: (v) => v == null ? 'Choose an account' : null,
       ),
@@ -248,7 +248,7 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
         children: [
           TextFormField(controller: _who, decoration: const InputDecoration(labelText: 'Borrowed from'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           TextFormField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Annual interest % (0 if none)')),
           const SizedBox(height: 12),
@@ -316,7 +316,7 @@ class _RepayFormState extends ConsumerState<_RepayForm> {
           const SizedBox(height: 16),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Pay from'),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Repayment', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Repayment', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record repayment')),
         ],
@@ -375,7 +375,7 @@ class _ReceivableFormState extends ConsumerState<_ReceivableForm> {
         children: [
           TextFormField(controller: _who, decoration: const InputDecoration(labelText: 'Lent to'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Money left from'),
           const SizedBox(height: 12),
@@ -441,7 +441,7 @@ class _CollectFormState extends ConsumerState<_CollectForm> {
           const SizedBox(height: 16),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Money arrives in'),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount received', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount received', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record collection')),
         ],
@@ -500,7 +500,7 @@ class LoansScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(child: Text('EMI ${money(loan.emiAmount)} Â· ${loan.paidInstallments}/${loan.termMonths} paid', style: TextStyle(color: c.muted, fontSize: 12))),
+                          Expanded(child: Text('EMI ${money(loan.emiAmount)} · ${loan.paidInstallments}/${loan.termMonths} paid', style: TextStyle(color: c.muted, fontSize: 12))),
                           AmountText('Outstanding ${money(loan.outstanding)}', tone: AmountTone.expense, size: 13),
                         ],
                       ),
@@ -552,7 +552,7 @@ class _LoanDetailSheetState extends ConsumerState<_LoanDetailSheet> {
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: c.border, borderRadius: BorderRadius.circular(4)))),
               const SizedBox(height: 12),
               Text(loan.name, style: Theme.of(context).textTheme.titleLarge),
-              Text('Principal ${money(loan.principal)} Â· ${loan.annualRate.toStringAsFixed(2)}% Â· ${loan.termMonths} months', style: TextStyle(color: c.muted)),
+              Text('Principal ${money(loan.principal)} · ${loan.annualRate.toStringAsFixed(2)}% · ${loan.termMonths} months', style: TextStyle(color: c.muted)),
               const SizedBox(height: 8),
               Text('Total interest ${money(loan.totalInterest)}', style: TextStyle(color: c.muted)),
               const SizedBox(height: 12),
@@ -564,8 +564,8 @@ class _LoanDetailSheetState extends ConsumerState<_LoanDetailSheet> {
                       ListTile(
                         dense: true,
                         leading: Icon(i.isPaid ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: i.isPaid ? c.income : c.muted),
-                        title: Text('EMI ${i.number} Â· ${dayLabel(i.dueOn)}'),
-                        subtitle: Text('Principal ${money(i.principalComponent)} Â· Interest ${money(i.interestComponent)}', style: TextStyle(color: c.muted, fontSize: 12)),
+                        title: Text('EMI ${i.number} · ${dayLabel(i.dueOn)}'),
+                        subtitle: Text('Principal ${money(i.principalComponent)} · Interest ${money(i.interestComponent)}', style: TextStyle(color: c.muted, fontSize: 12)),
                         trailing: AmountText(money(i.amount), size: 13),
                       ),
                   ],
@@ -590,7 +590,7 @@ class _LoanDetailSheetState extends ConsumerState<_LoanDetailSheet> {
                           setState(() => _busy = false);
                           if (ok) Navigator.of(context).maybePop();
                         },
-                  child: Text('Pay EMI ${next.number} Â· ${money(next.amount)}'),
+                  child: Text('Pay EMI ${next.number} · ${money(next.amount)}'),
                 ),
               ],
             ],
@@ -661,7 +661,7 @@ class _LoanFormState extends ConsumerState<_LoanForm> {
           const SizedBox(height: 12),
           TextFormField(controller: _lender, decoration: const InputDecoration(labelText: 'Lender'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), validator: validateAmount),
+          TextFormField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -672,7 +672,7 @@ class _LoanFormState extends ConsumerState<_LoanForm> {
                   decoration: const InputDecoration(labelText: 'Interest % a year'),
                   validator: (v) {
                     final r = double.tryParse(v ?? '');
-                    return (r == null || r < 0 || r > 100) ? '0â€“100' : null;
+                    return (r == null || r < 0 || r > 100) ? '0–100' : null;
                   },
                 ),
               ),
@@ -684,7 +684,7 @@ class _LoanFormState extends ConsumerState<_LoanForm> {
                   decoration: const InputDecoration(labelText: 'Months'),
                   validator: (v) {
                     final t = int.tryParse(v ?? '');
-                    return (t == null || t < 1 || t > 600) ? '1â€“600' : null;
+                    return (t == null || t < 1 || t > 600) ? '1–600' : null;
                   },
                 ),
               ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -147,7 +147,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
-            decoration: const InputDecoration(prefixText: 'â‚¹ ', labelText: 'Amount'),
+            decoration: const InputDecoration(prefixText: '₹ ', labelText: 'Amount'),
             validator: validateAmount,
           ),
           const SizedBox(height: 12),
@@ -195,7 +195,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
                 initialValue: _cardId,
                 decoration: const InputDecoration(labelText: 'Credit card'),
                 menuMaxHeight: 260,
-                items: [for (final CardItem card in list) DropdownMenuItem(value: card.id, child: Text('${card.name} â€¢â€¢${card.last4}'))],
+                items: [for (final CardItem card in list) DropdownMenuItem(value: card.id, child: Text('${card.name} ••${card.last4}'))],
                 onChanged: (v) => setState(() => _cardId = v),
                 validator: (v) => v == null ? 'Choose a card' : null,
               ),
