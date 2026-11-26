@@ -66,6 +66,7 @@ class _BillEditFormState extends State<BillEditForm> {
       payer: payer,
       people: names,
       notes: _notes.text.trim(),
+      groupId: widget.bill.groupId,
       settlements: [for (final p in payments) Settlement(from: p.from, to: p.to, cents: p.cents)],
     ));
   }

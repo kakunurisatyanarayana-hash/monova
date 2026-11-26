@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:monova_app/core/bill_store.dart';
 import 'package:monova_app/core/card_rules.dart';
 
@@ -47,5 +47,12 @@ void main() {
     expect(cardNumberError('411111111111'), contains('check digit'), reason: '12 digits is a valid length, so only the check fails');
     expect(cardNumberError('41111111111'), contains('You entered 11'));
     expect(cardNumberError('4111111111111112'), contains('check digit'));
+  });
+  test('a split bill keeps its group through a save and reload', () {
+    final bill = SavedBill(id: 'g1', title: 'Dinner', createdAt: DateTime.utc(2026, 11, 27), totalCents: 30000, payer: 'Asha', people: const ['Asha', 'Ravi'], settlements: const [Settlement(from: 'Ravi', to: 'Asha', cents: 15000)], groupId: 'trip');
+    final back = SavedBill.fromJson(bill.toJson());
+    expect(back.groupId, 'trip');
+    expect(bill.copyWith(title: 'Lunch').groupId, 'trip');
+    expect(SavedBill.fromJson({'id': 'old', 'title': '', 'totalCents': 0}).groupId, '');
   });
 }

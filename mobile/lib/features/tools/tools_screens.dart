@@ -485,6 +485,13 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   final _billNotes = TextEditingController();
   List<LocalGroup> _groups = [];
   SavedBill? _pending;
+  /// The group the bill being saved belongs to; empty for no group.
+  String _billGroupId = '';
+
+  /// Total spent on all saved split bills.
+  int get _splitTotal => _saved.fold<int>(0, (sum, b) => sum + b.totalCents);
+
+  int _groupSplitTotal(String groupId) => _saved.where((b) => b.groupId == groupId).fold<int>(0, (sum, b) => sum + b.totalCents);
   List<SavedBill> _saved = [];
   bool _savedLoaded = false;
 
@@ -512,7 +519,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
   Future<void> _savePending() async {
     final bill = _pending;
     if (bill == null) return;
-    final toSave = bill.copyWith(title: _billTitle.text.trim(), notes: _billNotes.text.trim());
+    final toSave = bill.copyWith(title: _billTitle.text.trim(), notes: _billNotes.text.trim(), groupId: _billGroupId);
     final updated = [toSave, ..._saved];
     setState(() {
       _saved = updated;
@@ -838,6 +845,21 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               ),
             ),
             const SizedBox(height: 12),
+          if (_groups.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: DropdownButtonFormField<String>(
+                key: const ValueKey('bill-group'),
+                initialValue: _billGroupId,
+                menuMaxHeight: 260,
+                decoration: const InputDecoration(labelText: 'Add this bill to a group'),
+                items: [
+                  const DropdownMenuItem(value: '', child: Text('No group')),
+                  for (final g in _groups) DropdownMenuItem(value: g.id, child: Text(g.name)),
+                ],
+                onChanged: (v) => setState(() => _billGroupId = v ?? ''),
+              ),
+            ),
             FilledButton.icon(
               onPressed: _pending == null ? null : _savePending,
               icon: const Icon(Icons.bookmark_add_rounded, size: 18),
@@ -848,6 +870,40 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
           const BillBalanceCard(),
           const SizedBox(height: 16),
           if (_savedLoaded && _saved.isNotEmpty) ...[
+            MonovaCard(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Total spent on split bills', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(money(_splitTotal / 100), style: TextStyle(color: c.ink, fontSize: 26, fontWeight: FontWeight.w800)),
+                  for (final g in _groups)
+                    if (_groupSplitTotal(g.id) > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            Expanded(child: Text(g.name, style: const TextStyle(fontWeight: FontWeight.w600))),
+                            Text(money(_groupSplitTotal(g.id) / 100), style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                  if (_saved.any((b) => b.groupId.isEmpty))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('No group', style: TextStyle(color: c.muted, fontWeight: FontWeight.w600))),
+                          Text(money(_saved.where((b) => b.groupId.isEmpty).fold<int>(0, (sum, b) => sum + b.totalCents) / 100), style: const TextStyle(fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
             Text('Saved bills', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             for (final bill in _saved) ...[

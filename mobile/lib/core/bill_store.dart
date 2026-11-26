@@ -1,4 +1,4 @@
-﻿import 'local_store.dart';
+import 'local_store.dart';
 
 const billsKey = 'monova.bills';
 
@@ -30,11 +30,15 @@ class SavedBill {
     required this.people,
     required this.settlements,
     this.notes = '',
+    this.groupId = '',
   });
+
+  /// The group this bill belongs to, or empty when it is not part of a group.
+  final String groupId;
 
   final String notes;
 
-  SavedBill copyWith({String? title, String? notes}) => SavedBill(id: id, title: title ?? this.title, createdAt: createdAt, totalCents: totalCents, payer: payer, people: people, settlements: settlements, notes: notes ?? this.notes);
+  SavedBill copyWith({String? title, String? notes, String? groupId}) => SavedBill(id: id, title: title ?? this.title, createdAt: createdAt, totalCents: totalCents, payer: payer, people: people, settlements: settlements, notes: notes ?? this.notes, groupId: groupId ?? this.groupId);
 
   final String id;
   final String title;
@@ -53,6 +57,7 @@ class SavedBill {
         'people': people,
         'settlements': settlements.map((s) => s.toJson()).toList(),
         'notes': notes,
+        'groupId': groupId,
       };
 
   factory SavedBill.fromJson(Map<String, dynamic> j) => SavedBill(
@@ -60,6 +65,7 @@ class SavedBill {
         title: '${j['title'] ?? ''}',
         createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
         notes: '${j['notes'] ?? ''}',
+        groupId: '${j['groupId'] ?? ''}',
         totalCents: (j['totalCents'] as num?)?.toInt() ?? 0,
         payer: '${j['payer'] ?? ''}',
         people: [for (final p in (j['people'] as List<dynamic>? ?? const [])) '$p'],
