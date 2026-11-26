@@ -56,7 +56,7 @@ jobs:
         # Gradle downloads are sometimes rate-limited (HTTP 429) on the build machine; retry instead of failing at once.
         run: |
           for attempt in 1 2 3; do
-            flutter build apk --release --dart-define=MONOVA_OFFLINE=true && exit 0
+            flutter build apk --release --dart-define=MONOVA_OFFLINE=true --dart-define=BUILD_REF=${{ github.ref_name }} --dart-define=BUILD_COMMIT=${{ github.sha }} && exit 0
             echo "Attempt $attempt failed. Waiting before trying again."
             sleep $((attempt * 60))
           done

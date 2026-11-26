@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_lock.dart';
+import '../../core/build_info.dart';
 import '../../core/i18n.dart';
 import '../../core/theme_mode.dart';
 import '../../core/theme.dart';
@@ -65,6 +66,8 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          Center(child: Text(buildLabel, style: TextStyle(color: context.monova.muted, fontSize: 11))),
+          const SizedBox(height: 12),
           const _LanguageCard(),
           const SizedBox(height: 12),
           MonovaCard(
