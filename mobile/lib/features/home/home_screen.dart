@@ -13,6 +13,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../tools/bill_balance_card.dart';
+import 'recent_activity_card.dart';
 import 'money_overview_card.dart';
 import '../tools/tools_screens.dart';
 
@@ -522,41 +523,19 @@ class _GuestHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.monova;
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 12, 16, 96),
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: ShaderMask(
-                  shaderCallback: (r) => c.aurora.createShader(r),
-                  child: const Text('MONOVA', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 2.5, color: Colors.white)),
-                ),
-              ),
-              if (!ApiConfig.offline)
-                TextButton(onPressed: () => context.push('/auth'), child: Text('Sign in', style: TextStyle(color: c.accentStart, fontWeight: FontWeight.w700))),
-            ],
-          ),
-          const ProfileGreeting(),
-          const SizedBox(height: 14),
+          const _HomeHero(),
           const SizedBox(height: 16),
-          MonovaCard(
-            gradient: c.hero,
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Know where you stand.', style: TextStyle(color: c.onAccent, fontSize: 24, fontWeight: FontWeight.w800, height: 1.15)),
-                const SizedBox(height: 8),
-                Text(
-                  'Plan loans, work out interest and split bills right away. No account needed.',
-                  style: TextStyle(color: c.onAccent.withValues(alpha: 0.9), height: 1.4),
-                ),
-              ],
-            ),
-          ),
+          const _QuickActions(),
+          const SizedBox(height: 20),
+          const MoneyOverviewCard(),
+          const SizedBox(height: 14),
+          const RecentActivityCard(),
+          const SizedBox(height: 14),
+          const BillBalanceCard(),
           const SizedBox(height: 22),
           SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),
@@ -566,16 +545,12 @@ class _GuestHome extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(child: _ToolCard(icon: Icons.percent_rounded, label: 'Interest', onTap: () => context.push('/tools/interest'))),
               const SizedBox(width: 12),
-              Expanded(child: _ToolCard(icon: Icons.call_split_rounded, label: 'Split bill', onTap: () => context.push('/tools/split'))),
+              Expanded(child: _ToolCard(icon: Icons.receipt_long_rounded, label: 'GST', onTap: () => context.push('/tools/gst'))),
             ],
           ),
           const SizedBox(height: 22),
-          const MoneyOverviewCard(),
-          const SizedBox(height: 12),
-          const BillBalanceCard(),
-          const SizedBox(height: 24),
           // The offline build has no accounts, so the sign-in prompt is hidden there.
-          if (!ApiConfig.offline) SignInGate(
+          if (!ApiConfig.offline) const SignInGate(
             title: 'Track everything in one place',
             message: 'Accounts, credit cards, groups, loans, budgets and insights sync to your account. Create one in under a minute.',
             actionLabel: 'Create account or sign in',
@@ -586,6 +561,88 @@ class _GuestHome extends StatelessWidget {
   }
 }
 
+/// The top of the home page: the wordmark, a glowing panel, and the greeting.
+class _HomeHero extends StatelessWidget {
+  const _HomeHero();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+      decoration: BoxDecoration(
+        gradient: c.hero,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: c.accentStart.withValues(alpha: 0.25), blurRadius: 30, offset: const Offset(0, 12))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('MONOVA', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 2.5)),
+          const SizedBox(height: 14),
+          ProfileGreeting(color: c.onAccent),
+          const SizedBox(height: 6),
+          Text(
+            'Your money, your records, on this phone.',
+            style: TextStyle(color: c.onAccent.withValues(alpha: 0.9), fontSize: 14, height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Four one-tap shortcuts, styled like the action row in banking apps.
+class _QuickActions extends StatelessWidget {
+  const _QuickActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _ActionCircle(icon: Icons.call_split_rounded, label: 'Split', onTap: () => context.push('/tools/split')),
+        _ActionCircle(icon: Icons.menu_book_rounded, label: 'Credit book', onTap: () => context.push('/ledger')),
+        _ActionCircle(icon: Icons.credit_card_rounded, label: 'Cards', onTap: () => context.push('/saved-cards')),
+        _ActionCircle(icon: Icons.lock_rounded, label: 'Notes', onTap: () => context.push('/vault')),
+      ],
+    );
+  }
+}
+
+class _ActionCircle extends StatelessWidget {
+  const _ActionCircle({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Column(
+        children: [
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: c.accentStart.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+              border: Border.all(color: c.accentStart.withValues(alpha: 0.35)),
+            ),
+            child: Icon(icon, color: c.accentStart, size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(color: c.ink, fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
 class _ToolCard extends StatelessWidget {
   const _ToolCard({required this.icon, required this.label, required this.onTap});
 
@@ -619,13 +676,16 @@ class _HomeSkeleton extends StatelessWidget {
 
 /// "Hello, Name" on the home page, from the profile set on first open.
 class ProfileGreeting extends ConsumerWidget {
-  const ProfileGreeting({super.key});
+  const ProfileGreeting({super.key, this.color});
+
+  /// Text colour. Defaults to the normal ink; the hero passes a light colour for its dark background.
+  final Color? color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.monova;
     final name = ref.watch(profileProvider).profile?.name ?? '';
     if (name.isEmpty) return const SizedBox.shrink();
-    return Text('Hello, $name', style: TextStyle(color: c.ink, fontSize: 18, fontWeight: FontWeight.w700));
+    return Text('Hello, $name', style: TextStyle(color: color ?? c.ink, fontSize: 18, fontWeight: FontWeight.w700));
   }
 }
