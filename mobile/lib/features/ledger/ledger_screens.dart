@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/bill_scanner.dart';
@@ -162,7 +162,7 @@ class _CustomerTile extends StatelessWidget {
                 Text(account.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.annualRatePercent}% a year · ${account.compound ? 'compound' : 'simple'} · interest ${money(s.interestCents / 100)}',
+                  '${account.annualRatePercent}% a year Â· ${account.compound ? 'compound' : 'simple'} Â· interest ${money(s.interestCents / 100)}',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
               ],
@@ -428,28 +428,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Statement', style: Theme.of(context).textTheme.titleMedium),
+        Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        if (s.lines.isEmpty)
+        if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)
           Text('No bills or payments yet. Tap "Add bill" to start.', style: TextStyle(color: c.muted))
         else
-          MonovaCard(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              children: [
-                for (final line in s.lines.where((l) => !l.date.isAfter(_asOf)))
-                  ListTile(
-                    dense: true,
-                    title: Text(line.description, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    subtitle: Text(_dateText(line.date), style: TextStyle(color: c.muted, fontSize: 12)),
-                    trailing: Text(
-                      line.creditCents > 0 ? '- ${money(line.creditCents / 100)}' : '+ ${money(line.debitCents / 100)}',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: line.creditCents > 0 ? c.income : c.expense),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          for (final day in s.days.where((d) => !d.date.isAfter(_asOf))) ...[
+            _dayCard(account, day, c),
+            const SizedBox(height: 10),
+          ],
+        const SizedBox(height: 8),
+        Text('Tap a bill or payment to read or edit its notes.', style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 16),
         Text('Interest by month', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -473,6 +462,119 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
   }
 
+  Widget _dayCard(CreditAccount account, DayRow day, MonovaColors c) {
+    return MonovaCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(_dateText(day.date), style: const TextStyle(fontWeight: FontWeight.w800))),
+              Text('Owed ${money(day.balanceCents / 100)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+            ],
+          ),
+          for (final b in day.bills)
+            _entryRow(
+              title: b.billerName.isEmpty ? (b.description.isEmpty ? 'Bill' : b.description) : '${b.billerName}${b.description.isEmpty ? '' : ' - ${b.description}'}',
+              notes: b.notes,
+              amount: '+ ${money(b.finalCents / 100)}',
+              color: c.expense,
+              onTap: () => _editNotes(account, bill: b),
+              c: c,
+            ),
+          for (final p in day.payments)
+            _entryRow(
+              title: p.note.isEmpty ? 'Payment received' : 'Payment: ${p.note}',
+              notes: p.note.isEmpty ? '' : '',
+              amount: '- ${money(p.cents / 100)}',
+              color: c.income,
+              onTap: () => _editNotes(account, payment: p),
+              c: c,
+            ),
+          if (day.interestCents > 0)
+            _entryRow(
+              title: 'Interest since the previous entry',
+              notes: '${account.annualRatePercent}% a year, worked out per day',
+              amount: '+ ${money(day.interestCents / 100)}',
+              color: c.warning,
+              onTap: null,
+              c: c,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _entryRow({required String title, required String notes, required String amount, required Color color, required VoidCallback? onTap, required MonovaColors c}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  if (notes.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(notes, style: TextStyle(color: c.muted, fontSize: 12, fontStyle: FontStyle.italic, height: 1.35)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+            if (onTap != null) Icon(Icons.chevron_right_rounded, color: c.muted, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Opens a bill or payment so its notes can be read, changed, or the entry deleted.
+  Future<void> _editNotes(CreditAccount account, {CreditBill? bill, CreditPayment? payment}) async {
+    final initial = bill?.notes ?? payment?.note ?? '';
+    final result = await FormSheet.show<({String notes, bool delete})>(
+      context,
+      title: bill != null ? 'Bill notes' : 'Payment note',
+      child: _NotesForm(initial: initial, isBill: bill != null),
+    );
+    if (result == null) return;
+    if (result.delete) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Delete this entry?'),
+          content: const Text('It will be removed from the statement and from the interest calculation.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      if (bill != null) {
+        await _save(account.copyWith(bills: account.bills.where((b) => b.id != bill.id).toList()));
+      } else if (payment != null) {
+        await _save(account.copyWith(payments: account.payments.where((p) => p.id != payment.id).toList()));
+      }
+      return;
+    }
+    if (bill != null) {
+      await _save(account.copyWith(bills: [for (final b in account.bills) b.id == bill.id ? b.copyWith(notes: result.notes) : b]));
+    } else if (payment != null) {
+      await _save(account.copyWith(payments: [for (final p in account.payments) p.id == payment.id ? p.copyWith(note: result.notes) : p]));
+    }
+  }
   Widget _sum(String label, String value, MonovaColors c) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
@@ -499,6 +601,7 @@ class _BillFormState extends State<_BillForm> {
   final _description = TextEditingController();
   final _amount = TextEditingController();
   final _final = TextEditingController();
+  final _notes = TextEditingController();
   String? _error;
   String? _scanNote;
 
@@ -508,6 +611,7 @@ class _BillFormState extends State<_BillForm> {
     _description.dispose();
     _amount.dispose();
     _final.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
@@ -558,6 +662,7 @@ class _BillFormState extends State<_BillForm> {
       description: _description.text.trim(),
       amountCents: gross == null ? finalCents : (gross * 100).round(),
       finalCents: finalCents,
+      notes: _notes.text.trim(),
     ));
   }
 
@@ -583,16 +688,18 @@ class _BillFormState extends State<_BillForm> {
         const SizedBox(height: 12),
         TextField(controller: _description, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was bought', hintText: 'Urea 2 bags, pesticide')),
         const SizedBox(height: 12),
+        TextField(controller: _notes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Paid half in cash, balance after harvest', alignLabelWithHint: true)),
+        const SizedBox(height: 12),
         TextField(
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: '₹ '),
+          decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: 'â‚¹ '),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _final,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: '₹ '),
+          decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: 'â‚¹ '),
         ),
         if (_error != null) ...[
           const SizedBox(height: 8),
@@ -647,7 +754,7 @@ class _PaymentFormState extends State<_PaymentForm> {
         TextField(
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ '),
+          decoration: const InputDecoration(labelText: 'Amount paid', prefixText: 'â‚¹ '),
         ),
         const SizedBox(height: 12),
         TextField(controller: _note, decoration: const InputDecoration(labelText: 'How (cash, UPI, cheque)')),
@@ -657,6 +764,60 @@ class _PaymentFormState extends State<_PaymentForm> {
         ],
         const SizedBox(height: 14),
         FilledButton(onPressed: _save, child: const Text('Record payment')),
+      ],
+    );
+  }
+}
+
+/// Notes for a bill or payment: read, change, or delete.
+class _NotesForm extends StatefulWidget {
+  const _NotesForm({required this.initial, required this.isBill});
+
+  final String initial;
+  final bool isBill;
+
+  @override
+  State<_NotesForm> createState() => _NotesFormState();
+}
+
+class _NotesFormState extends State<_NotesForm> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _controller,
+          autofocus: true,
+          minLines: 3,
+          maxLines: 8,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: widget.isBill ? 'Notes for this bill' : 'Note for this payment',
+            alignLabelWithHint: true,
+            hintText: 'Anything to remember about it',
+          ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop((notes: _controller.text.trim(), delete: false)),
+          child: const Text('Save notes'),
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => Navigator.of(context).pop((notes: '', delete: true)),
+          icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+          label: Text('Delete this entry', style: TextStyle(color: c.expense)),
+        ),
       ],
     );
   }

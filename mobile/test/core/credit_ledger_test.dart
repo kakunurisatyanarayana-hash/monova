@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:monova_app/core/credit_ledger.dart';
 
 CreditAccount account({double rate = 12, bool compound = false, List<CreditBill> bills = const [], List<CreditPayment> payments = const []}) =>
@@ -86,5 +86,31 @@ void main() {
     expect(back.compound, isTrue);
     expect(back.bills.single.finalCents, 25000);
     expect(back.bills.single.date, DateTime(2026, 5, 5));
+  });
+  test('daily rows show each day with its bills, payments, interest and balance', () {
+    final s = computeStatement(
+      account(
+        bills: [CreditBill(id: 'b', date: DateTime(2026, 1, 1), billerName: 'Ramesh', description: 'Urea', amountCents: 100000, finalCents: 100000, notes: 'Two bags, pay after harvest')],
+        payments: [CreditPayment(id: 'p', date: DateTime(2026, 1, 31), cents: 20000, note: 'cash')],
+      ),
+      DateTime(2026, 1, 31),
+    );
+    expect(s.days, hasLength(2));
+    expect(s.days[0].billedCents, 100000);
+    expect(s.days[0].interestCents, 0);
+    expect(s.days[0].balanceCents, 100000);
+    expect(s.days[1].paidCents, 20000);
+    expect(s.days[1].interestCents, closeTo(986, 1), reason: 'thirty days of interest before the payment');
+    expect(s.days[1].balanceCents, closeTo(80986, 2));
+  });
+
+  test('bill notes are kept on the statement line', () {
+    final s = computeStatement(
+      account(bills: [CreditBill(id: 'b', date: DateTime(2026, 2, 1), billerName: 'Meena', description: 'Seed', amountCents: 5000, finalCents: 5000, notes: 'Check weight')]),
+      DateTime(2026, 2, 1),
+    );
+    expect(s.lines.single.notes, 'Check weight');
+    expect(s.lines.single.refId, 'b');
+    expect(s.lines.single.isPayment, isFalse);
   });
 }
