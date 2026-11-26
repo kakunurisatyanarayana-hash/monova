@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +12,7 @@ import '../../state/providers.dart';
 import 'bill_balance_card.dart';
 import 'contact_picker_sheet.dart';
 import '../../core/contacts_picker.dart';
+import 'bill_edit_form.dart';
 
 /// Offline calculators. Open to everyone, signed in or not.
 class ToolsScreen extends ConsumerWidget {
@@ -324,7 +325,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -431,7 +432,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: 'â‚¹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
@@ -543,6 +544,15 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
       _error = null;
     });
   }
+  /// Opens the saved bill for changes; the changed bill replaces the old one and the balances update.
+  Future<void> _editBill(SavedBill bill) async {
+    final changed = await editSavedBill(context, bill);
+    if (changed == null) return;
+    final updated = [for (final b in _saved) b.id == bill.id ? changed : b];
+    setState(() => _saved = updated);
+    await BillStore.save(updated);
+  }
+
   Future<void> _deleteBill(String id) async {
     final updated = _saved.where((b) => b.id != id).toList();
     setState(() => _saved = updated);
@@ -650,7 +660,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
           const SizedBox(height: 12),
           TextField(controller: _billNotes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Who had what, anything to remember', alignLabelWithHint: true)),
           const SizedBox(height: 12),
-          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
+          TextField(controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: 'â‚¹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -760,7 +770,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '${bill.createdAt.day.toString().padLeft(2, '0')}/${bill.createdAt.month.toString().padLeft(2, '0')}/${bill.createdAt.year}'
-                            ' · ${bill.people.join(', ')}',
+                            ' Â· ${bill.people.join(', ')}',
                             style: TextStyle(color: c.muted, fontSize: 12),
                           ),
                           if (bill.notes.isNotEmpty) ...[
@@ -776,10 +786,20 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Delete this bill',
-                      icon: Icon(Icons.delete_outline_rounded, color: c.expense),
-                      onPressed: () => _deleteBill(bill.id),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Edit this bill',
+                          icon: Icon(Icons.edit_rounded, color: c.accentStart),
+                          onPressed: () => _editBill(bill),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete this bill',
+                          icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+                          onPressed: () => _deleteBill(bill.id),
+                        ),
+                      ],
                     ),
                   ],
                 ),

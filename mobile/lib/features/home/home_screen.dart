@@ -12,6 +12,7 @@ import '../../core/widgets.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../tools/bill_balance_card.dart';
+import 'money_overview_card.dart';
 import '../tools/tools_screens.dart';
 
 /// Home: the daily answer to "where do I stand?" The Halo shows liquid cash at the centre, card use on the inner ring,
@@ -566,9 +567,12 @@ class _GuestHome extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22),
+          const MoneyOverviewCard(),
+          const SizedBox(height: 12),
           const BillBalanceCard(),
           const SizedBox(height: 24),
-          SignInGate(
+          // The offline build has no accounts, so the sign-in prompt is hidden there.
+          if (!ApiConfig.offline) SignInGate(
             title: 'Track everything in one place',
             message: 'Accounts, credit cards, groups, loans, budgets and insights sync to your account. Create one in under a minute.',
             actionLabel: 'Create account or sign in',
