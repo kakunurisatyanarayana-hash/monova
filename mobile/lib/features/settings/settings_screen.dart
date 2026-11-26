@@ -19,34 +19,13 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(sessionProvider).user;
     final c = context.monova;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          MonovaCard(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: c.accentStart,
-                  child: Text((user?.displayName.isNotEmpty ?? false) ? user!.displayName[0].toUpperCase() : '?', style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w800, fontSize: 18)),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(user?.displayName ?? '', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                      Text(user?.email ?? '', style: TextStyle(color: c.muted)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const _ProfileCard(),
           const SizedBox(height: 16),
           const SectionTitle('Money'),
           const SizedBox(height: 8),
@@ -68,8 +47,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Center(child: Text(buildLabel, style: TextStyle(color: context.monova.muted, fontSize: 11))),
-          const SizedBox(height: 12),
-          const _ProfileCard(),
           const SizedBox(height: 12),
           const _LanguageCard(),
           const SizedBox(height: 12),
