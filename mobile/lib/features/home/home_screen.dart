@@ -539,6 +539,8 @@ class _GuestHome extends StatelessWidget {
                 TextButton(onPressed: () => context.push('/auth'), child: Text('Sign in', style: TextStyle(color: c.accentStart, fontWeight: FontWeight.w700))),
             ],
           ),
+          const ProfileGreeting(),
+          const SizedBox(height: 14),
           const SizedBox(height: 16),
           MonovaCard(
             gradient: c.aurora,
@@ -556,8 +558,6 @@ class _GuestHome extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 22),
-          const ProfileGreeting(),
-          const SizedBox(height: 12),
           SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),
           Row(

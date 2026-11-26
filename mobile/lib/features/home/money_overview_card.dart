@@ -10,8 +10,8 @@ import '../../core/theme.dart';
 import '../../core/vault_store.dart';
 import '../../core/widgets.dart';
 
-/// One place for everything the app is tracking: what customers owe, what groups and bills still need to settle,
-/// and how many cards, passwords and notes are saved. Every figure is read from this device.
+/// Everything the app is tracking, read from this device: what customers owe, what groups and split bills
+/// still need to settle, and how many cards and notes are saved. Each tile opens its page.
 class MoneyOverviewCard extends StatefulWidget {
   const MoneyOverviewCard({super.key});
 
@@ -31,8 +31,8 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
 
   Future<void> _load() async {
     try {
-      final accounts = await CreditLedgerStore.load();
       final today = dateOnly(DateTime.now());
+      final accounts = await CreditLedgerStore.load();
       var creditDue = 0;
       for (final a in accounts) {
         creditDue += computeStatement(a, today).totalCents;
@@ -42,21 +42,24 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
       var groupsToSettle = 0;
       var groupPayments = 0;
       for (final g in groups) {
-        final s = g.settlements;
-        groupPayments += s.length;
-        for (final p in s) {
+        for (final p in g.settlements) {
           groupsToSettle += p.cents;
+          groupPayments++;
         }
       }
 
       final bills = await BillStore.load();
+      var billsToSettle = 0;
       var billPayments = 0;
       for (final b in bills) {
-        billPayments += b.settlements.length;
+        for (final s in b.settlements) {
+          billsToSettle += s.cents;
+          billPayments++;
+        }
       }
 
       final cards = await CardStore.load();
-      final vault = await VaultStore.load();
+      final notes = await VaultStore.load();
 
       if (mounted) {
         setState(() => _totals = _Totals(
@@ -64,10 +67,11 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
               creditCustomers: accounts.length,
               groupsToSettle: groupsToSettle,
               groupPayments: groupPayments,
-              billsSaved: bills.length,
+              billsToSettle: billsToSettle,
               billPayments: billPayments,
+              billsSaved: bills.length,
               cards: cards.length,
-              vault: vault.length,
+              notes: notes.length,
             ));
       }
     } catch (e) {
@@ -86,72 +90,52 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Money overview', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text('Everything is read from this device.', style: TextStyle(color: c.muted, fontSize: 12)),
+          const SizedBox(height: 2),
+          Text('Read from this device only', style: TextStyle(color: c.muted, fontSize: 12)),
           const SizedBox(height: 14),
           if (_error != null)
             Text('The overview could not be read. Your data has not changed.', style: TextStyle(color: c.expense))
           else if (t == null)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
-          else ...[
-            Row(
+          else
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.55,
               children: [
-                Expanded(
-                  child: _Tile(
-                    label: 'Credit book due today',
-                    value: money(t.creditDue / 100),
-                    note: '${t.creditCustomers} ${t.creditCustomers == 1 ? 'customer' : 'customers'}',
-                    color: t.creditDue > 0 ? c.expense : c.income,
-                    onTap: () => context.push('/ledger'),
-                  ),
+                _Tile(
+                  label: 'Credit book due',
+                  value: money(t.creditDue / 100),
+                  note: '${t.creditCustomers} ${t.creditCustomers == 1 ? 'customer' : 'customers'}',
+                  color: t.creditDue > 0 ? c.expense : c.income,
+                  onTap: () => context.push('/ledger'),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _Tile(
-                    label: 'Groups to settle',
-                    value: money(t.groupsToSettle / 100),
-                    note: '${t.groupPayments} ${t.groupPayments == 1 ? 'payment' : 'payments'} to make',
-                    color: t.groupsToSettle > 0 ? c.warning : c.income,
-                    onTap: () => context.push('/groups'),
-                  ),
+                _Tile(
+                  label: 'Groups to settle',
+                  value: money(t.groupsToSettle / 100),
+                  note: '${t.groupPayments} ${t.groupPayments == 1 ? 'payment' : 'payments'}',
+                  color: t.groupsToSettle > 0 ? c.warning : c.income,
+                  onTap: () => context.push('/groups'),
+                ),
+                _Tile(
+                  label: 'Split bills to settle',
+                  value: money(t.billsToSettle / 100),
+                  note: '${t.billsSaved} saved, ${t.billPayments} ${t.billPayments == 1 ? 'payment' : 'payments'}',
+                  color: t.billsToSettle > 0 ? c.warning : c.income,
+                  onTap: () => context.push('/tools/split'),
+                ),
+                _Tile(
+                  label: 'Cards and notes',
+                  value: '${t.cards} · ${t.notes}',
+                  note: 'cards saved · notes saved',
+                  color: c.accentStart,
+                  onTap: () => context.push('/saved-cards'),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _Tile(
-                    label: 'Split bills saved',
-                    value: '${t.billsSaved}',
-                    note: '${t.billPayments} ${t.billPayments == 1 ? 'payment' : 'payments'} to make',
-                    color: c.accentStart,
-                    onTap: () => context.push('/tools/split'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _Tile(
-                    label: 'Saved cards',
-                    value: '${t.cards}',
-                    note: 'details and photos',
-                    color: c.accentStart,
-                    onTap: () => context.push('/saved-cards'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _Tile(
-                    label: 'Passwords and notes',
-                    value: '${t.vault}',
-                    note: 'stored on this device',
-                    color: c.accentStart,
-                    onTap: () => context.push('/vault'),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -164,20 +148,22 @@ class _Totals {
     required this.creditCustomers,
     required this.groupsToSettle,
     required this.groupPayments,
-    required this.billsSaved,
+    required this.billsToSettle,
     required this.billPayments,
+    required this.billsSaved,
     required this.cards,
-    required this.vault,
+    required this.notes,
   });
 
   final int creditDue;
   final int creditCustomers;
   final int groupsToSettle;
   final int groupPayments;
-  final int billsSaved;
+  final int billsToSettle;
   final int billPayments;
+  final int billsSaved;
   final int cards;
-  final int vault;
+  final int notes;
 }
 
 class _Tile extends StatelessWidget {
@@ -200,15 +186,18 @@ class _Tile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 2),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w800)),
+            ),
             Text(note, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 11)),
           ],
         ),
