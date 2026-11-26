@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/contacts_picker.dart';
 import '../../core/groups_store.dart';
+import '../tools/contact_picker_sheet.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
@@ -161,6 +163,33 @@ class _GroupForm extends StatefulWidget {
 class _GroupFormState extends State<_GroupForm> {
   final _name = TextEditingController();
   final _people = TextEditingController();
+
+  /// Adds people picked from the phone's contacts to the list, separated by commas.
+  Future<void> _pickFromContacts() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final List<PickedContact> contacts;
+    try {
+      contacts = await loadContacts();
+    } on ContactsException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Contacts could not be opened. Details: $e')));
+      return;
+    }
+    if (!mounted) return;
+    final picked = await FormSheet.show<List<PickedContact>>(
+      context,
+      title: 'Pick people',
+      child: ContactPickerSheet(contacts: contacts),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    final names = _people.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    for (final p in picked) {
+      if (!names.contains(p.name)) names.add(p.name);
+    }
+    setState(() => _people.text = names.join(', '));
+  }
   String? _error;
 
   @override
@@ -198,6 +227,8 @@ class _GroupFormState extends State<_GroupForm> {
           decoration: const InputDecoration(labelText: 'Group name', hintText: 'Goa trip, Flat 4B'),
         ),
         const SizedBox(height: 12),
+        OutlinedButton.icon(onPressed: _pickFromContacts, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick people from contacts')),
+        const SizedBox(height: 8),
         TextField(
           controller: _people,
           minLines: 2,
