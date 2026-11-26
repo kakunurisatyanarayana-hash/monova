@@ -6,6 +6,7 @@ import '../../core/contacts_picker.dart';
 import '../../core/groups_store.dart';
 import '../tools/contact_picker_sheet.dart';
 import '../../core/profile_store.dart';
+import '../../core/share_text.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
@@ -310,6 +311,19 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
     await _saveGroup(group.copyWith(expenses: group.expenses.where((x) => x.id != e.id).toList()));
   }
 
+  Future<void> _shareGroup() async {
+    final group = _group;
+    if (group == null) return;
+    final total = group.expenses.fold<int>(0, (sum, e) => sum + e.cents);
+    final lines = <String>[
+      group.name,
+      'Total spent: ${money(total / 100)}',
+      for (final m in group.members) '${m.name}: ${_balanceText(group.netByMember[m.id] ?? 0)}',
+      group.settlements.isEmpty ? 'Everyone is settled.' : 'Who pays whom:',
+      for (final s in group.settlements) '${group.nameOf(s.from)} pays ${group.nameOf(s.to)} ${money(s.cents / 100)}',
+    ];
+    await shareText(lines.join('\n'), subject: group.name);
+  }
   /// Adds one person to the group. Existing expenses keep their shares; the new person starts with a clean balance.
   Future<void> _addMember() async {
     final group = _group;
@@ -353,6 +367,7 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
         title: Text(group?.name ?? 'Group'),
         actions: [
           if (group != null)
+            IconButton(tooltip: 'Share balances', icon: const Icon(Icons.share_rounded), onPressed: _shareGroup),
             IconButton(tooltip: 'Delete group', icon: Icon(Icons.delete_outline_rounded, color: c.expense), onPressed: _deleteGroup),
         ],
       ),

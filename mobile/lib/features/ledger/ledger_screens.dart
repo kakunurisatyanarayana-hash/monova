@@ -7,6 +7,7 @@ import '../../core/contacts_picker.dart';
 import '../tools/contact_picker_sheet.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
+import '../../core/share_text.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
@@ -389,6 +390,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         title: Text(account?.name ?? 'Customer'),
         actions: [
           if (account != null) ...[
+            IconButton(tooltip: 'Share statement', icon: const Icon(Icons.share_rounded), onPressed: () => _shareStatement(account)),
             IconButton(tooltip: 'Edit interest and details', icon: const Icon(Icons.tune_rounded), onPressed: _editTerms),
             IconButton(tooltip: 'Delete customer', icon: Icon(Icons.delete_outline_rounded, color: c.expense), onPressed: _deleteCustomer),
           ],
@@ -503,6 +505,23 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
       ],
     );
+  }
+
+  Future<void> _shareStatement(CreditAccount account) async {
+    final s = computeStatement(account, _asOf);
+    final b = StringBuffer()
+      ..writeln('Statement: ${account.name}')
+      ..writeln('As of ${_dateText(s.asOf)}')
+      ..writeln('Final amount: ${money(s.totalCents / 100)} (bills ${money(s.principalCents / 100)} + interest ${money(s.interestCents / 100)})')
+      ..writeln();
+    for (final d in s.days.where((d) => !d.date.isAfter(s.asOf))) {
+      b.write('${_dateText(d.date)}: owed ${money(d.balanceCents / 100)}');
+      if (d.billedCents > 0) b.write(', bills +${money(d.billedCents / 100)}');
+      if (d.paidCents > 0) b.write(', paid -${money(d.paidCents / 100)}');
+      if (d.interestCents > 0) b.write(', interest +${money(d.interestCents / 100)}');
+      b.writeln();
+    }
+    await shareText(b.toString(), subject: 'Statement: ${account.name}');
   }
 
   Widget _dayCard(CreditAccount account, DayRow day, MonovaColors c) {

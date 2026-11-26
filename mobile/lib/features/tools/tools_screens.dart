@@ -8,6 +8,7 @@ import '../../core/groups_store.dart';
 import '../../core/profile_store.dart';
 import '../../core/finance_calc.dart';
 import '../../core/format.dart';
+import '../../core/share_text.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -580,6 +581,17 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     });
   }
 
+  Future<void> _shareBill(SavedBill bill) async {
+    final lines = <String>[
+      bill.title.isEmpty ? 'Bill split' : bill.title,
+      'Total ${money(bill.totalCents / 100)}, paid by ${bill.payer}',
+      'Shared by: ${bill.people.join(', ')}',
+      if (bill.notes.isNotEmpty) 'Notes: ${bill.notes}',
+      bill.settlements.isEmpty ? 'Everyone is settled.' : 'Who pays whom:',
+      for (final s in bill.settlements) '${s.from} pays ${s.to} ${money(s.cents / 100)}',
+    ];
+    await shareText(lines.join('\n'), subject: lines.first);
+  }
   /// Opens the saved bill for changes; the changed bill replaces the old one and the balances update.
   Future<void> _editBill(SavedBill bill) async {
     final changed = await editSavedBill(context, bill);
@@ -839,6 +851,11 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        IconButton(
+                          tooltip: 'Share this bill',
+                          icon: Icon(Icons.share_rounded, color: c.accentStart),
+                          onPressed: () => _shareBill(bill),
+                        ),
                         IconButton(
                           tooltip: 'Edit this bill',
                           icon: Icon(Icons.edit_rounded, color: c.accentStart),
