@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
 import 'bill_balance_card.dart';
+import 'bill_edit_form.dart';
 
 /// Offline calculators. Open to everyone, signed in or not.
 class ToolsScreen extends ConsumerWidget {
@@ -508,6 +509,15 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
   }
 
+  /// Opens the saved bill for changes; the changed bill replaces the old one and the balances update.
+  Future<void> _editBill(SavedBill bill) async {
+    final changed = await editSavedBill(context, bill);
+    if (changed == null) return;
+    final updated = [for (final b in _saved) b.id == bill.id ? changed : b];
+    setState(() => _saved = updated);
+    await BillStore.save(updated);
+  }
+
   Future<void> _deleteBill(String id) async {
     final updated = _saved.where((b) => b.id != id).toList();
     setState(() => _saved = updated);
@@ -740,10 +750,20 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Delete this bill',
-                      icon: Icon(Icons.delete_outline_rounded, color: c.expense),
-                      onPressed: () => _deleteBill(bill.id),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Edit this bill',
+                          icon: Icon(Icons.edit_rounded, color: c.accentStart),
+                          onPressed: () => _editBill(bill),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete this bill',
+                          icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+                          onPressed: () => _deleteBill(bill.id),
+                        ),
+                      ],
                     ),
                   ],
                 ),

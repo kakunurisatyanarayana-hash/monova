@@ -271,6 +271,16 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
     await _saveGroup(group.copyWith(expenses: group.expenses.where((x) => x.id != e.id).toList()));
   }
 
+  /// Adds one person to the group. Existing expenses keep their shares; the new person starts with a clean balance.
+  Future<void> _addMember() async {
+    final group = _group;
+    if (group == null) return;
+    final name = await FormSheet.show<String>(context, title: 'Add a person', child: const _PersonNameForm());
+    if (name == null || name.isEmpty) return;
+    final id = '${DateTime.now().microsecondsSinceEpoch}_m';
+    await _saveGroup(group.copyWith(members: [...group.members, GroupMember(id: id, name: name)]));
+  }
+
   Future<void> _deleteGroup() async {
     final group = _group;
     if (group == null) return;
@@ -329,24 +339,32 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                           Text('Balances', style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 10),
                           if (group.expenses.isEmpty)
-                            Text('Add an expense to see who is owed and who owes.', style: TextStyle(color: c.muted))
-                          else
-                            for (final m in group.members)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                child: Row(
-                                  children: [
-                                    Expanded(child: Text(m.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-                                    Text(
-                                      _balanceText(group.netByMember[m.id] ?? 0),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: (group.netByMember[m.id] ?? 0) >= 0 ? c.income : c.expense,
-                                      ),
+                            Text('Add an expense to see who is owed and who owes.', style: TextStyle(color: c.muted)),
+                          for (final m in group.members)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: Row(
+                                children: [
+                                  Expanded(child: Text(m.name, style: const TextStyle(fontWeight: FontWeight.w600))),
+                                  Text(
+                                    _balanceText(group.netByMember[m.id] ?? 0),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: (group.netByMember[m.id] ?? 0) >= 0 ? c.income : c.expense,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                            ),
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: _addMember,
+                              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                              label: const Text('Add a person'),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -411,6 +429,45 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
   String _balanceText(int cents) {
     if (cents == 0) return 'settled';
     return cents > 0 ? 'is owed ${money(cents / 100)}' : 'owes ${money(-cents / 100)}';
+  }
+}
+
+/// Asks for one person's name.
+class _PersonNameForm extends StatefulWidget {
+  const _PersonNameForm();
+
+  @override
+  State<_PersonNameForm> createState() => _PersonNameFormState();
+}
+
+class _PersonNameFormState extends State<_PersonNameForm> {
+  final _name = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _name,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Name'),
+          onSubmitted: (_) => Navigator.of(context).pop(_name.text.trim()),
+        ),
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_name.text.trim()),
+          child: const Text('Add to the group'),
+        ),
+      ],
+    );
   }
 }
 
