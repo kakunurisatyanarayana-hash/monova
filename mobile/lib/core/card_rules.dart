@@ -1,4 +1,4 @@
-/// Rules for saved cards. Pure functions, so they can be tested without a device.
+﻿/// Rules for saved cards. Pure functions, so they can be tested without a device.
 library;
 
 /// Keeps digits only, so "4111 1111 1111 1111" and "4111111111111111" are the same.
@@ -62,6 +62,6 @@ String? expiryError(int month, int year, DateTime now) {
 /// Null when the photo is acceptable: PNG or JPEG, and at most 1.5 MB after resizing.
 String? photoError(String mimeType, int byteCount) {
   if (mimeType != 'image/png' && mimeType != 'image/jpeg') return 'Only PNG or JPEG pictures can be saved.';
-  if (byteCount > 1500 * 1024) return 'This picture is too large. Take it again closer, or pick a smaller image.';
+  if (byteCount > 1500 * 1024) return 'This picture is over 1.5 MB, which is too big to store. Choose a smaller picture, or take the photo again with a lower camera resolution.';
   return null;
 }
