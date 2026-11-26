@@ -10,8 +10,6 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
 import 'bill_balance_card.dart';
-import 'contact_picker_sheet.dart';
-import '../../core/contacts_picker.dart';
 
 /// Offline calculators. Open to everyone, signed in or not.
 class ToolsScreen extends ConsumerWidget {
@@ -507,39 +505,6 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill saved. Balances on the dashboard are updated.')));
   }
 
-  Future<void> _fromContacts() async {
-    final List<PickedContact> contacts;
-    try {
-      contacts = await loadContacts();
-    } on ContactsException catch (e) {
-      setState(() => _error = e.message);
-      return;
-    } catch (_) {
-      setState(() => _error = 'Contacts could not be opened. Please try again.');
-      return;
-    }
-    if (!mounted) return;
-    final picked = await FormSheet.show<List<PickedContact>>(
-      context,
-      title: 'Pick people from contacts',
-      child: ContactPickerSheet(contacts: contacts),
-    );
-    if (picked == null || picked.isEmpty || !mounted) return;
-    setState(() {
-      for (final p in picked) {
-        final empty = _names.indexWhere((n) => n.text.trim().isEmpty);
-        if (empty >= 0) {
-          _names[empty].text = p.name;
-          _included[empty] = true;
-        } else {
-          _names.add(TextEditingController(text: p.name));
-          _values.add(TextEditingController());
-          _included.add(true);
-        }
-      }
-      _error = null;
-    });
-  }
   Future<void> _deleteBill(String id) async {
     final updated = _saved.where((b) => b.id != id).toList();
     setState(() => _saved = updated);
@@ -689,7 +654,6 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               ),
             ),
           TextButton.icon(onPressed: _addPerson, icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('Add a person')),
-          TextButton.icon(onPressed: _fromContacts, icon: const Icon(Icons.contacts_rounded), label: const Text('Add from contacts')),
           const SizedBox(height: 8),
           FilledButton(onPressed: _calculate, child: const Text('Calculate')),
           const SizedBox(height: 16),

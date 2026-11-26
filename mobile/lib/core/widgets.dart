@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import 'api_client.dart';
@@ -16,20 +18,27 @@ class MonovaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final content = Padding(padding: padding, child: child);
-    return Material(
-      color: gradient == null ? c.raised : Colors.transparent,
+    final card = Material(
+      color: gradient == null ? c.glassFill : Colors.transparent,
       borderRadius: BorderRadius.circular(20),
       child: Ink(
         decoration: BoxDecoration(
           gradient: gradient,
-          color: gradient == null ? c.raised : null,
+          color: gradient == null ? c.glassFill : null,
           borderRadius: BorderRadius.circular(20),
+          // A thin light edge makes the glass read as a surface, the way frosted cards do.
           border: Border.all(color: gradient == null ? c.border : Colors.transparent),
         ),
         child: onTap == null
             ? content
             : InkWell(borderRadius: BorderRadius.circular(20), onTap: onTap, child: content),
       ),
+    );
+    if (gradient != null) return card;
+    // Frosted glass: blur whatever is behind the card, so the ambient light softly shows through.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: card),
     );
   }
 }
