@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/i18n.dart';
+import 'quick_prefs.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -379,6 +380,11 @@ class _TopBar extends StatelessWidget {
           // The page's own header shows the title; the bar keeps the breadcrumb only, so the name is not repeated.
           Text('MONOVA${page == null ? '' : ' / ${page!.section} / $title'}', style: TextStyle(color: c.muted, fontSize: 13)),
           const Spacer(),
+          // Language and theme are one tap away on every page, like a web app's header controls.
+          const LanguageMenuButton(),
+          const SizedBox(width: 8),
+          const ThemeMenuButton(),
+          const SizedBox(width: 12),
           FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_rounded, size: 18),
