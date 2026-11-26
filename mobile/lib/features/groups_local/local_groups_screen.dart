@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
@@ -137,7 +137,7 @@ class _GroupTile extends StatelessWidget {
                 Text(group.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  '${group.members.length} people · ${group.expenses.length} expenses · '
+                  '${group.members.length} people Â· ${group.expenses.length} expenses Â· '
                   '${payments == 0 ? 'settled' : '$payments payment${payments == 1 ? '' : 's'} to settle'}',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
@@ -387,7 +387,7 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                                     Text(e.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${money(e.cents / 100)} paid by ${group.nameOf(e.paidBy)} · split ${e.shares.length} ways',
+                                      '${money(e.cents / 100)} paid by ${group.nameOf(e.paidBy)} Â· split ${e.shares.length} ways',
                                       style: TextStyle(color: c.muted, fontSize: 12),
                                     ),
                                   ],
@@ -479,12 +479,13 @@ class _ExpenseFormState extends State<_ExpenseForm> {
         TextField(
           controller: _amount,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
+          decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _paidBy,
           decoration: const InputDecoration(labelText: 'Who paid?'),
+          menuMaxHeight: 260,
           items: [for (final m in widget.members) DropdownMenuItem(value: m.id, child: Text(m.name))],
           onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
         ),

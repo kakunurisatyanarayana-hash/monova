@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
@@ -218,7 +218,7 @@ class _BudgetFormState extends ConsumerState<_BudgetForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Monthly amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Monthly amount', prefixText: 'â‚¹ '), validator: validateAmount),
           const SizedBox(height: 16),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Save budget')),
         ],
@@ -274,13 +274,14 @@ class _CategoryBudgetFormState extends ConsumerState<_CategoryBudgetForm> {
             data: (list) => DropdownButtonFormField<String>(
               initialValue: _categoryId,
               decoration: const InputDecoration(labelText: 'Category'),
+              menuMaxHeight: 260,
               items: [for (final cat in list) DropdownMenuItem(value: cat.id, child: Text(cat.name))],
               onChanged: (v) => setState(() => _categoryId = v),
               validator: (v) => v == null ? 'Choose a category' : null,
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Monthly limit', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Monthly limit', prefixText: 'â‚¹ '), validator: validateAmount),
           const SizedBox(height: 16),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Save')),
         ],
@@ -331,7 +332,7 @@ class _GoalFormState extends ConsumerState<_GoalForm> {
         children: [
           TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Goal (e.g. Emergency fund)'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _target, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Target', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _target, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Target', prefixText: 'â‚¹ '), validator: validateAmount),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () async {
@@ -414,13 +415,14 @@ class _ContributeFormState extends ConsumerState<_ContributeForm> {
             data: (list) => DropdownButtonFormField<String>(
               initialValue: _accountId,
               decoration: InputDecoration(labelText: _withdraw ? 'Return to account' : 'Take from account'),
-              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} · ${money(a.currentBalance)}'))],
+              menuMaxHeight: 260,
+              items: [for (final a in list.where((a) => a.isActive)) DropdownMenuItem(value: a.id, child: Text('${a.name} Â· ${money(a.currentBalance)}'))],
               onChanged: (v) => setState(() => _accountId = v),
               validator: (v) => v == null ? 'Choose an account' : null,
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: 'â‚¹ '), validator: validateAmount),
           const SizedBox(height: 16),
           FilledButton(onPressed: _saving ? null : _save, child: Text(_withdraw ? 'Withdraw' : 'Add to goal')),
         ],
