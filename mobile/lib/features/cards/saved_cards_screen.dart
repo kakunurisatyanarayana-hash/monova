@@ -328,6 +328,14 @@ class _Line extends StatelessWidget {
         children: [
           SizedBox(width: 120, child: Text(label, style: TextStyle(color: c.muted, fontSize: 13))),
           Expanded(child: Text(value, style: TextStyle(color: c.ink, fontWeight: FontWeight.w600))),
+          IconButton(
+            tooltip: 'Copy $label',
+            icon: Icon(Icons.copy_rounded, size: 18, color: c.accentStart),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
+            },
+          ),
         ],
       ),
     );

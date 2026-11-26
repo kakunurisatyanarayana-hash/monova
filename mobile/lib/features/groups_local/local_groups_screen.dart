@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/contacts_picker.dart';
 import '../../core/groups_store.dart';
 import '../tools/contact_picker_sheet.dart';
+import '../../core/profile_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
@@ -189,6 +190,13 @@ class _GroupFormState extends State<_GroupForm> {
       if (!names.contains(p.name)) names.add(p.name);
     }
     setState(() => _people.text = names.join(', '));
+  @override
+  void initState() {
+    super.initState();
+    // You are added first, so the group always includes you.
+    loadProfile().then((p) {
+      if (p != null && mounted && _people.text.trim().isEmpty) _people.text = p.name;
+    });
   }
   String? _error;
 

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/format.dart';
+import '../../core/profile_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../data/models.dart';
@@ -555,6 +556,8 @@ class _GuestHome extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 22),
+          const ProfileGreeting(),
+          const SizedBox(height: 12),
           SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),
           Row(
@@ -612,4 +615,17 @@ class _HomeSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(child: CircularProgressIndicator());
+}
+
+/// "Hello, Name" on the home page, from the profile set on first open.
+class ProfileGreeting extends ConsumerWidget {
+  const ProfileGreeting({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.monova;
+    final name = ref.watch(profileProvider).profile?.name ?? '';
+    if (name.isEmpty) return const SizedBox.shrink();
+    return Text('Hello, $name', style: TextStyle(color: c.ink, fontSize: 18, fontWeight: FontWeight.w700));
+  }
 }
