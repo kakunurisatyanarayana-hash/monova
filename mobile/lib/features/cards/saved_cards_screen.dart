@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 
 import '../../core/card_rules.dart';
 import '../../core/card_store.dart';
+import '../../core/bill_scanner.dart';
+import '../../core/card_scanner.dart';
 import '../../core/photo_picker.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -363,6 +365,7 @@ class _CardEditorState extends State<_CardEditor> {
   PickedPhoto? _newPhoto;
   bool _removePhoto = false;
   bool _busy = false;
+  String? _scanNote;
   String? _error;
 
   late final List<int> _years = () {
@@ -381,27 +384,48 @@ class _CardEditorState extends State<_CardEditor> {
     super.dispose();
   }
 
+  /// Takes or picks a card photo, reads the number, expiry, name and bank from it, and fills them in for checking.
   Future<void> _takePhoto({required bool camera}) async {
     try {
-      final photo = await pickPhoto(camera: camera);
-      if (photo == null || !mounted) return;
+      final result = await scanCardPhoto(camera: camera);
+      final photo = result.photo;
+      final p = result.parsed;
       final problem = photoError(photo.mimeType, photo.bytes.length);
+      if (!mounted) return;
       setState(() {
         _error = problem;
         if (problem == null) {
           _newPhoto = photo;
           _removePhoto = false;
         }
+        if (p.digits != null) _number.text = p.digits!;
+        if (p.holder != null && _holder.text.trim().isEmpty) _holder.text = p.holder!;
+        if (p.bank != null && _bank.text.trim().isEmpty) _bank.text = p.bank!;
+        if (p.expiryMonth != null) _month = p.expiryMonth!;
+        if (p.expiryYear != null) {
+          _year = p.expiryYear!;
+          if (!_years.contains(_year)) {
+            _years.add(_year);
+            _years.sort();
+          }
+        }
+        final found = [
+          if (p.digits != null) 'number',
+          if (p.expiryMonth != null) 'expiry',
+          if (p.holder != null) 'name',
+          if (p.bank != null) 'bank',
+        ];
+        _scanNote = found.isEmpty
+            ? 'Nothing could be read from this photo. Type the details by hand.'
+            : 'Read from the card: ${found.join(', ')}. Check them before saving.';
       });
-    } on PhotoPickException catch (e) {
+    } on BillScanException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      // The real cause is shown so it can be reported; the image plugin error names the missing part.
-      debugPrint('Photo pick failed: $e');
-      if (mounted) setState(() => _error = 'The picture could not be opened. Details: $e');
+      debugPrint('Card photo failed: $e');
+      if (mounted) setState(() => _error = 'The card photo could not be read. Details: $e');
     }
   }
-
   void _save() {
     final initial = widget.initial;
     final digits = digitsOnly(_number.text);
@@ -499,6 +523,7 @@ class _CardEditorState extends State<_CardEditor> {
             Expanded(
               child: DropdownButtonFormField<int>(
                 isDense: true,
+                key: ValueKey('month-$_month'),
                 initialValue: _month,
                 decoration: const InputDecoration(labelText: 'Expiry month'),
                 menuMaxHeight: 260,
@@ -510,6 +535,7 @@ class _CardEditorState extends State<_CardEditor> {
             Expanded(
               child: DropdownButtonFormField<int>(
                 isDense: true,
+                key: ValueKey('year-$_year'),
                 initialValue: _years.contains(_year) ? _year : _years.first,
                 decoration: const InputDecoration(labelText: 'Expiry year'),
                 menuMaxHeight: 260,
@@ -560,6 +586,10 @@ class _CardEditorState extends State<_CardEditor> {
             icon: Icon(Icons.delete_outline_rounded, color: c.expense, size: 18),
             label: Text('Remove photo', style: TextStyle(color: c.expense)),
           ),
+        ],
+        if (_scanNote != null) ...[
+          const SizedBox(height: 10),
+          Text(_scanNote!, style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
         ],
         if (_error != null) ...[
           const SizedBox(height: 12),
