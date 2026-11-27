@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.monova.monova_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
