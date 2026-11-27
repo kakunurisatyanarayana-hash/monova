@@ -1,5 +1,6 @@
 import 'entry_store.dart';
 import 'local_store.dart';
+import 'reminders.dart';
 
 const budgetsKey = 'monova.budgets';
 const goalsKey = 'monova.goals';
@@ -238,6 +239,7 @@ class PlansStore {
   static Future<void> saveRecurring(List<RecurringEntry> list) async {
     final store = await LocalStore.open();
     await store.writeList(recurringKey, [for (final r in list) r.toJson()]);
+    await syncRecurringReminders(list);
   }
 
   /// Creates any recurring entries that are due, saves them to Monova Finance, and remembers the months done.
@@ -253,4 +255,34 @@ class PlansStore {
     await saveRecurring(updated);
     return created.length;
   }
+}
+
+/// Reminder for a recurring bill or income: due on its day each month, at 9 in the morning.
+/// It is the next occurrence from [today], so a bill whose day has passed this month shows next month.
+Reminder recurringReminder(RecurringEntry r, DateTime today) {
+  final thisLast = DateTime(today.year, today.month + 1, 0).day;
+  var due = DateTime(today.year, today.month, r.dayOfMonth > thisLast ? thisLast : r.dayOfMonth, 9);
+  if (due.isBefore(today)) {
+    final next = DateTime(today.year, today.month + 1);
+    final nextLast = DateTime(next.year, next.month + 1, 0).day;
+    due = DateTime(next.year, next.month, r.dayOfMonth > nextLast ? nextLast : r.dayOfMonth, 9);
+  }
+  final amount = 'Rs ${(r.cents / 100).toStringAsFixed(0)}';
+  return Reminder(
+    id: 'rec-rem-${r.id}',
+    title: '${r.income ? 'Expected' : 'Pay'} ${r.title}: $amount',
+    notes: 'Every month, on day ${r.dayOfMonth}.',
+    dueAt: due,
+    createdAt: today,
+    repeat: 'monthly',
+    route: '/plans',
+  );
+}
+
+/// One monthly reminder per recurring item. Replaces the old ones, so changes take effect at once.
+Future<void> syncRecurringReminders(List<RecurringEntry> items, {DateTime? now}) async {
+  final today = now ?? DateTime.now();
+  final reminders = await ReminderStore.load();
+  final kept = [for (final r in reminders) if (!r.id.startsWith('rec-rem-')) r];
+  await ReminderStore.save([...kept, for (final r in items) recurringReminder(r, today)]);
 }

@@ -23,7 +23,7 @@ class AllFeaturesCard extends StatelessWidget {
           const SizedBox(height: 12),
           for (final section in allServiceSections) ...[
             if (section.items.any((i) => i.available(offline))) ...[
-              Text(section.title, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+              if (section.items.length > 1) Text(section.title, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
