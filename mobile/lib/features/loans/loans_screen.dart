@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/loans.dart';
+import '../../core/rate_input.dart';
+import '../../core/rate_units.dart';
 import '../../core/reminders.dart' show addMonths;
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -431,6 +433,7 @@ class _LoanFormState extends State<_LoanForm> {
     text: widget.initial == null ? '' : (widget.initial!.principalCents / 100).toStringAsFixed(0),
   );
   late final _rate = TextEditingController(text: widget.initial == null ? '' : '${widget.initial!.annualRatePercent}');
+  RateUnit _unit = RateUnit.percentYear;
   late final _months = TextEditingController(text: widget.initial == null || widget.initial!.months == 0 ? '' : '${widget.initial!.months}');
   late final _notes = TextEditingController(text: widget.initial?.notes ?? '');
   late String _kind = widget.initial?.kind ?? 'emi';
@@ -450,7 +453,7 @@ class _LoanFormState extends State<_LoanForm> {
   void _save() {
     final name = _name.text.trim();
     final principal = _cents(_principal.text);
-    final rate = double.tryParse(_rate.text.trim()) ?? 0;
+    final rate = toAnnualPercent(double.tryParse(_rate.text.trim()) ?? 0, _unit);
     final months = int.tryParse(_months.text.trim()) ?? 0;
     if (name.isEmpty) {
       setState(() => _error = _kind == 'emi' ? 'Name the lender, for example "HDFC Bank".' : 'Name who you borrowed from.');
@@ -509,13 +512,14 @@ class _LoanFormState extends State<_LoanForm> {
         TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: isEmi ? 'Loan amount *' : 'Amount borrowed *', prefixText: '₹ ')),
         if (isEmi) ...[
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: TextField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest a year (%)'))),
-              const SizedBox(width: 12),
-              Expanded(child: TextField(controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monthly instalments *'))),
-            ],
+          RateInput(
+            controller: _rate,
+            unit: _unit,
+            onUnitChanged: (u) => setState(() => _unit = u),
+            onChanged: () => setState(() {}),
           ),
+          const SizedBox(height: 12),
+          TextField(controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monthly instalments *')),
         ],
         const SizedBox(height: 12),
         DateSelector(label: isEmi ? 'Loan started on' : 'Borrowed on', value: _start, firstYear: DateTime.now().year - 30, lastYear: DateTime.now().year + 1, onChanged: (d) => setState(() => _start = d)),

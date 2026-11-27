@@ -10,6 +10,8 @@ import '../../core/profile_store.dart';
 import '../../core/finance_calc.dart';
 import '../../core/format.dart';
 import '../../core/share_text.dart';
+import '../../core/rate_input.dart';
+import '../../core/rate_units.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../state/providers.dart';
@@ -285,6 +287,7 @@ class EmiCalculatorScreen extends StatefulWidget {
 class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   final _principal = TextEditingController(text: '1000000');
   final _rate = TextEditingController(text: '8.5');
+  RateUnit _unit = RateUnit.percentYear;
   final _months = TextEditingController(text: '240');
   EmiResult? _result;
   String? _error;
@@ -306,7 +309,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   void _calculate() {
     try {
       final p = double.parse(_principal.text.replaceAll(',', ''));
-      final r = double.parse(_rate.text);
+      final r = toAnnualPercent(double.parse(_rate.text), _unit);
       final m = int.parse(_months.text);
       setState(() {
         _result = FinanceCalc.emi(principal: p, annualRatePercent: r, months: m);
@@ -331,7 +334,7 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
         children: [
           TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(textInputAction: TextInputAction.next, controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
+          RateInput(controller: _rate, unit: _unit, onUnitChanged: (u) => setState(() => _unit = u), onChanged: _calculate),
           const SizedBox(height: 12),
           TextField(textInputAction: TextInputAction.next, controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Term (months)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
@@ -368,6 +371,7 @@ class InterestCalculatorScreen extends StatefulWidget {
 class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
   final _principal = TextEditingController();
   final _rate = TextEditingController();
+  RateUnit _unit = RateUnit.percentYear;
   final _years = TextEditingController();
   bool _compound = true;
   String? _error;
@@ -400,7 +404,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
     }
     try {
       final p = double.parse(_principal.text.replaceAll(',', ''));
-      final r = double.parse(_rate.text);
+      final r = toAnnualPercent(double.parse(_rate.text), _unit);
       final y = double.parse(_years.text);
       if (p <= 0 || r < 0 || y <= 0) throw ArgumentError('invalid');
       setState(() {
@@ -438,7 +442,7 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
           const SizedBox(height: 16),
           TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
-          TextField(textInputAction: TextInputAction.next, controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Interest rate % per year'), onChanged: (_) => _calculate()),
+          RateInput(controller: _rate, unit: _unit, onUnitChanged: (u) => setState(() => _unit = u), onChanged: _calculate),
           const SizedBox(height: 12),
           TextField(textInputAction: TextInputAction.next, controller: _years, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Time (years)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
