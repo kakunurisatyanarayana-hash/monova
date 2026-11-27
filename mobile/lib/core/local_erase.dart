@@ -5,6 +5,7 @@ import 'card_store.dart';
 import 'credit_ledger.dart';
 import 'groups_store.dart';
 import 'local_store.dart';
+import 'property_store.dart';
 import 'vault_store.dart';
 
 /// Deletes everything this app keeps on the device: passwords and notes, cards, saved bills,
@@ -18,4 +19,7 @@ Future<void> eraseLocalData() async {
   final store = await LocalStore.open();
   await store.writeList(loanScenariosKey, []);
   await store.writeList(calcHistoryKey, []);
+  await store.writeList(propertiesKey, []);
+  await store.writeList(roomsKey, []);
+  await store.writeList(tenanciesKey, []);
 }

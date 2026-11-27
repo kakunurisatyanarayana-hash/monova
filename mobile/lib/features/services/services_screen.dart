@@ -29,6 +29,9 @@ class ServiceSection {
 }
 
 const _sections = [
+  ServiceSection('Property and rooms', subtitle: 'Hostels, PGs, hotels and rentals: who is in which room, and which beds are free.', [
+    ServiceItem(title: 'Properties and rooms', icon: Icons.apartment_rounded, route: '/property'),
+  ]),
   ServiceSection('Calculators', subtitle: 'Work things out before you decide. No account needed.', [
     ServiceItem(title: 'Loan and EMI', icon: Icons.account_balance_rounded, route: '/tools/emi'),
     ServiceItem(title: 'Interest', icon: Icons.percent_rounded, route: '/tools/interest'),

@@ -11,6 +11,7 @@ import '../features/backup/backup_screen.dart';
 import '../features/cards/saved_cards_screen.dart';
 import '../features/entries/entries_screens.dart';
 import '../features/entries/purchases_screen.dart';
+import '../features/property/property_screens.dart';
 import '../features/ledger/ledger_screens.dart';
 import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
@@ -79,6 +80,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/ledger/:id', builder: (_, s) => LedgerAccountScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/entries', builder: (_, __) => const EntriesScreen()),
           GoRoute(path: '/purchases', builder: (_, __) => const PurchasesScreen()),
+          GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),
+          GoRoute(path: '/property/:id', builder: (_, s) => PropertyDashboardScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/saved-cards', builder: (_, __) => const SavedCardsScreen()),
           GoRoute(path: '/backup', builder: (_, __) => _form(const BackupScreen())),
           GoRoute(path: '/vault', builder: (_, __) => const VaultScreen()),
