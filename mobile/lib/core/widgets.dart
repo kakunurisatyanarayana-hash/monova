@@ -204,7 +204,7 @@ class FormSheet extends StatelessWidget {
             SizedBox(height: asDialog ? 4 : 16),
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            child,
+            _UnsavedGuard(child: child),
           ],
         ),
       ),
@@ -273,6 +273,84 @@ class ProgressBar extends StatelessWidget {
         backgroundColor: c.border,
         color: color ?? c.accentStart,
       ),
+    );
+  }
+}
+
+/// Watches the text typed in a form. Closing the form while text has changed asks first: Stay, or Discard.
+/// Changes made only with dropdowns, switches or date pickers are not counted.
+class _UnsavedGuard extends StatefulWidget {
+  const _UnsavedGuard({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_UnsavedGuard> createState() => _UnsavedGuardState();
+}
+
+class _UnsavedGuardState extends State<_UnsavedGuard> {
+  /// The text as it was when the form opened, taken after its first frame so prefilled values count as saved.
+  List<String>? _initial;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _initial = _typedText();
+    });
+  }
+
+  /// Every text field's text under this guard, in screen order.
+  List<String> _typedText() {
+    final out = <String>[];
+    void visit(Element e) {
+      final w = e.widget;
+      if (w is EditableText) out.add(w.controller.text);
+      e.visitChildren(visit);
+    }
+
+    (context as Element).visitChildren(visit);
+    return out;
+  }
+
+  bool get _hasUnsavedChanges {
+    final initial = _initial;
+    if (initial == null) return false;
+    final now = _typedText();
+    if (now.length != initial.length) return true;
+    for (var i = 0; i < now.length; i++) {
+      if (now[i] != initial[i]) return true;
+    }
+    return false;
+  }
+
+  Future<void> _close() async {
+    if (!_hasUnsavedChanges) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('You have changes that are not saved yet. Stay to keep editing, or discard them.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+        ],
+      ),
+    );
+    if (discard == true && mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _close();
+      },
+      child: widget.child,
     );
   }
 }
