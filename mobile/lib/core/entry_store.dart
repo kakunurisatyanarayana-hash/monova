@@ -118,7 +118,8 @@ MonthSummary monthSummary(List<MoneyEntry> entries, int year, int month) {
   var spent = 0;
   for (final e in entries) {
     if (e.date.year != year || e.date.month != month) continue;
-    if (e.income) {
+    if (e.category == 'Loan received') continue;
+    if (e.income && e.category != 'Loan received') {
       income += e.cents;
     } else {
       spent += e.cents;
