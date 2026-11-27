@@ -18,6 +18,7 @@ import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/money/money_hub.dart';
+import '../features/loans/loans_screen.dart';
 import '../features/plans/plans_screen.dart';
 import '../features/reminders/reminders_screen.dart';
 import '../features/insights/insights_screen.dart';
@@ -77,7 +78,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/accounts/:id', builder: (_, s) => RequiresAccount(title: 'Account', child: AccountDetailScreen(id: s.pathParameters['id']!))),
           GoRoute(path: '/cards', builder: (_, __) => const RequiresAccount(title: 'Credit cards', child: CardsScreen())),
           GoRoute(path: '/lending', builder: (_, __) => const RequiresAccount(title: 'Lending & borrowing', child: LendingScreen())),
-          GoRoute(path: '/loans', builder: (_, __) => const RequiresAccount(title: 'Loans & EMI', child: LoansScreen())),
           GoRoute(path: '/planning', builder: (_, __) => const RequiresAccount(title: 'Budgets & savings', child: PlanningScreen())),
           GoRoute(path: '/recurring', builder: (_, __) => const RequiresAccount(title: 'Recurring', child: RecurringScreen())),
           GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
@@ -87,6 +87,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/money', builder: (_, __) => const MoneyHubScreen()),
           GoRoute(path: '/reminders', builder: (_, __) => const RemindersScreen()),
           GoRoute(path: '/plans', builder: (_, __) => const PlansScreen()),
+          GoRoute(path: '/loans', builder: (_, __) => const LoanTrackerScreen()),
+          GoRoute(path: '/loans/:id', builder: (_, s) => LoanDetailScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),
           GoRoute(path: '/property/:id', builder: (_, s) => PropertyDashboardScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/person/:id', builder: (_, s) => PersonScreen(id: s.pathParameters['id']!)),

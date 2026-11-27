@@ -71,6 +71,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
           const SizedBox(height: 8),
           _MoneyTile(icon: Icons.swap_vert_rounded, title: 'Income and spending', subtitle: 'Add what came in or went out, and see the month', route: '/entries'),
           _MoneyTile(icon: Icons.receipt_long_rounded, title: 'Purchases and warranties', subtitle: 'What you bought, its warranty and return date', route: '/purchases'),
+          _MoneyTile(icon: Icons.account_balance_outlined, title: 'Loans and borrowing', subtitle: 'Loan instalments, overdue ones, and money you borrowed', route: '/loans'),
           _MoneyTile(icon: Icons.event_repeat_rounded, title: 'Budgets, goals and recurring', subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
           _MoneyTile(icon: Icons.menu_book_rounded, title: 'Credit book', subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),
           _MoneyTile(icon: Icons.call_split_rounded, title: 'Split bills and groups', subtitle: 'Share costs and see who pays whom', route: '/tools/split'),
