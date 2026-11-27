@@ -5,6 +5,9 @@ import '../../core/attention.dart';
 import '../../core/entry_store.dart';
 import '../../core/i18n.dart';
 import '../../core/money_plans.dart';
+import '../../core/sip.dart';
+import '../../core/format.dart';
+import '../../core/attention.dart';
 import '../../core/notify.dart';
 import '../../core/reminders.dart';
 import '../../core/property_store.dart';
@@ -45,6 +48,7 @@ class _AttentionCardState extends State<AttentionCard> {
       final items = [
         ...attentionItems(purchases: purchases, book: book, today: now),
         ...reminderAttentionItems(reminders, now),
+        ...sipAttention(await SipStore.load(), now),
       ];
       if (mounted) setState(() {
         _items = items;
@@ -124,4 +128,18 @@ class _AttentionCardState extends State<AttentionCard> {
       ),
     );
   }
+}
+
+/// SIPs that are due today and unpaid, or with earlier months unpaid.
+List<AttentionItem> sipAttention(List<SipPlan> plans, DateTime now) {
+  return [
+    for (final p in plans)
+      if (pendingCents(p, now) > 0)
+        AttentionItem(
+          title: sipStateFor(p, now) == SipState.pending ? 'SIP due today: ${p.name}' : 'SIP unpaid: ${p.name}',
+          detail: '${money(pendingCents(p, now) / 100)} unpaid · tap to mark paid',
+          route: '/sip',
+          urgent: sipStateFor(p, now) == SipState.pending,
+        ),
+  ];
 }

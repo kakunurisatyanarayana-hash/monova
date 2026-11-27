@@ -75,6 +75,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
           _MoneyTile(icon: Icons.account_balance_outlined, title: tr('money_loans'), subtitle: 'Loan instalments, overdue ones, and money you borrowed', route: '/loans'),
           _MoneyTile(icon: Icons.folder_open_rounded, title: tr('money_documents'), subtitle: 'Photos of papers, bills and warranty cards', route: '/documents'),
           _MoneyTile(icon: Icons.picture_as_pdf_rounded, title: tr('money_report'), subtitle: 'Money in and out, spending, budgets and loans as a PDF', route: '/report'),
+          _MoneyTile(icon: Icons.trending_up_rounded, title: 'SIP and monthly savings', subtitle: 'Monthly investments due, unpaid months, and what you have put in', route: '/sip'),
           _MoneyTile(icon: Icons.event_repeat_rounded, title: tr('money_plans'), subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
           _MoneyTile(icon: Icons.menu_book_rounded, title: tr('money_credit_book'), subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),
           _MoneyTile(icon: Icons.call_split_rounded, title: tr('money_split'), subtitle: 'Share costs and see who pays whom', route: '/tools/split'),

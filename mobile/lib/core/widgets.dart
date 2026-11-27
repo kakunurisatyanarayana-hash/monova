@@ -354,3 +354,15 @@ class _UnsavedGuardState extends State<_UnsavedGuard> {
     );
   }
 }
+
+/// Shows a message as a dialog. Used where a snackbar would be hidden behind an open form sheet (for example, contacts access).
+Future<void> showContactsProblem(BuildContext context, String message) {
+  return showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Contacts'),
+      content: Text(message),
+      actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+    ),
+  );
+}

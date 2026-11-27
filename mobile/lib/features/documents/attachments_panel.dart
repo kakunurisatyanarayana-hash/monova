@@ -140,7 +140,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
                     child: SizedBox(
                       width: 64,
                       height: 64,
-                      child: Image.memory(Uint8List.fromList(a.bytes), fit: BoxFit.cover, gaplessPlayback: true),
+                      child: Image.memory(Uint8List.fromList(a.bytes), fit: BoxFit.cover, gaplessPlayback: true, cacheWidth: 160),
                     ),
                   ),
                   const SizedBox(width: 12),

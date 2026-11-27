@@ -21,10 +21,10 @@ Future<PickedContact?> pickOneContact(BuildContext context) async {
   try {
     contacts = await loadContacts();
   } on ContactsException catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    await showContactsProblem(context, e.message);
     return null;
   } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text('Contacts could not be opened. Details: $e')));
+    await showContactsProblem(context, 'Contacts could not be opened. $e');
     return null;
   }
   if (!context.mounted) return null;

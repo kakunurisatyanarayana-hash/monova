@@ -20,6 +20,7 @@ import '../features/home/home_screen.dart';
 import '../features/money/money_hub.dart';
 import '../features/documents/documents_screen.dart';
 import '../features/loans/loans_screen.dart';
+import '../features/plans/sip_screen.dart';
 import '../features/qr/guest_screens.dart';
 import '../features/qr/invitation_screens.dart';
 import '../features/qr/qr_tools.dart';
@@ -95,6 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/report', builder: (_, __) => const ReportScreen()),
           GoRoute(path: '/documents', builder: (_, __) => const DocumentsScreen()),
           GoRoute(path: '/qr', builder: (_, __) => const QrHubScreen()),
+          GoRoute(path: '/sip', builder: (_, __) => const SipScreen()),
           GoRoute(path: '/qr/invites', builder: (_, __) => const InvitationListScreen()),
           GoRoute(path: '/qr/invites/:id', builder: (_, s) => InvitationDetailScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/qr/guests/:id', builder: (_, s) => GuestListScreen(eventId: s.pathParameters['id']!)),

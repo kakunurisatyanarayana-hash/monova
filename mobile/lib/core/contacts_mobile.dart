@@ -6,7 +6,7 @@ import 'contacts_picker.dart';
 Future<List<PickedContact>> loadContacts() async {
   final granted = await FlutterContacts.requestPermission(readonly: true);
   if (!granted) {
-    throw const ContactsException('Allow MONOVA to read your contacts in phone settings to pick people.');
+    throw const ContactsException('Contacts access is off for MONOVA. Turn it on in phone Settings, then Apps, then MONOVA, then Permissions, then Contacts. Then try again.');
   }
   final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
   final picked = [
