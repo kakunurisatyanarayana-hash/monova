@@ -85,6 +85,14 @@ class Property {
     this.ownerPhone = '',
     this.ownerEmail = '',
     this.ownerAddress = '',
+    this.state = '',
+    this.district = '',
+    this.cityVillage = '',
+    this.mandal = '',
+    this.pinCode = '',
+    this.latitude,
+    this.longitude,
+    this.showExactLocation = false,
   });
 
   final String id;
@@ -100,6 +108,18 @@ class Property {
   final String ownerPhone;
   final String ownerEmail;
   final String ownerAddress;
+  final String state;
+  final String district;
+  final String cityVillage;
+  final String mandal;
+  final String pinCode;
+  final double? latitude;
+  final double? longitude;
+
+  /// When false, public listings show only the locality, not the exact point.
+  final bool showExactLocation;
+
+  bool get hasLocation => latitude != null && longitude != null;
 
   bool get retainsGuestData => retentionCategories.contains(category);
 
@@ -117,6 +137,14 @@ class Property {
         'ownerPhone': ownerPhone,
         'ownerEmail': ownerEmail,
         'ownerAddress': ownerAddress,
+        'state': state,
+        'district': district,
+        'cityVillage': cityVillage,
+        'mandal': mandal,
+        'pinCode': pinCode,
+        'latitude': latitude,
+        'longitude': longitude,
+        'showExactLocation': showExactLocation,
       };
 
   factory Property.fromJson(Map<String, dynamic> j) => Property(
@@ -133,6 +161,14 @@ class Property {
         ownerPhone: '${j['ownerPhone'] ?? ''}',
         ownerEmail: '${j['ownerEmail'] ?? ''}',
         ownerAddress: '${j['ownerAddress'] ?? ''}',
+        state: '${j['state'] ?? ''}',
+        district: '${j['district'] ?? ''}',
+        cityVillage: '${j['cityVillage'] ?? ''}',
+        mandal: '${j['mandal'] ?? ''}',
+        pinCode: '${j['pinCode'] ?? ''}',
+        latitude: (j['latitude'] as num?)?.toDouble(),
+        longitude: (j['longitude'] as num?)?.toDouble(),
+        showExactLocation: j['showExactLocation'] == true,
       );
 }
 

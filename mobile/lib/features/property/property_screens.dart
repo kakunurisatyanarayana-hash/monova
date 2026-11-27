@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../core/format.dart';
 import '../../core/property_money.dart';
@@ -7,6 +8,7 @@ import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
+import 'map_picker.dart';
 import 'property_payments.dart';
 import 'property_person.dart';
 
@@ -371,6 +373,19 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
             ),
           ],
           const SizedBox(height: 18),
+          if (property.hasLocation) ...[
+            PropertyMapPreview(latitude: property.latitude!, longitude: property.longitude!, exact: property.showExactLocation),
+            const SizedBox(height: 6),
+            Text(
+              [property.address, property.cityVillage, property.mandal, property.district, property.state, property.pinCode].where((s) => s.isNotEmpty).join(', '),
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 14),
+          ],
+          if (!property.hasLocation && property.address.isNotEmpty) ...[
+            Text(property.address, style: TextStyle(color: c.muted, fontSize: 12)),
+            const SizedBox(height: 14),
+          ],
           MoneyThisMonth(book: _book, propertyId: property.id),
           const SizedBox(height: 14),
           PaymentsSection(
@@ -1235,7 +1250,7 @@ class _RoomFormState extends State<_RoomForm> {
   }
 }
 
-/// Adds or edits a property: category, address and contact, and the owner's details.
+/// Adds or edits a property: category, address and location, contact, and the owner's details.
 class _PropertyForm extends StatefulWidget {
   const _PropertyForm({this.initial});
 
@@ -1248,6 +1263,13 @@ class _PropertyForm extends StatefulWidget {
 class _PropertyFormState extends State<_PropertyForm> {
   late final _name = TextEditingController(text: widget.initial?.name ?? '');
   late final _address = TextEditingController(text: widget.initial?.address ?? '');
+  late final _state = TextEditingController(text: widget.initial?.state ?? '');
+  late final _district = TextEditingController(text: widget.initial?.district ?? '');
+  late final _cityVillage = TextEditingController(text: widget.initial?.cityVillage ?? '');
+  late final _mandal = TextEditingController(text: widget.initial?.mandal ?? '');
+  late final _pin = TextEditingController(text: widget.initial?.pinCode ?? '');
+  late final _lat = TextEditingController(text: widget.initial?.latitude?.toStringAsFixed(6) ?? '');
+  late final _lng = TextEditingController(text: widget.initial?.longitude?.toStringAsFixed(6) ?? '');
   late final _phone = TextEditingController(text: widget.initial?.phone ?? '');
   late final _floors = TextEditingController(text: '${widget.initial?.floors ?? 1}');
   late final _description = TextEditingController(text: widget.initial?.description ?? '');
@@ -1260,11 +1282,15 @@ class _PropertyFormState extends State<_PropertyForm> {
   late final _ownerEmail = TextEditingController(text: widget.initial?.ownerEmail ?? '');
   late final _ownerAddress = TextEditingController(text: widget.initial?.ownerAddress ?? '');
   late String _category = widget.initial?.category ?? propertyCategories.first;
+  late bool _exact = widget.initial?.showExactLocation ?? false;
   String? _error;
 
   @override
   void dispose() {
-    for (final c in [_name, _address, _phone, _floors, _description, _rent, _notes, _ownerName, _ownerPhone, _ownerEmail, _ownerAddress]) {
+    for (final c in [
+      _name, _address, _state, _district, _cityVillage, _mandal, _pin, _lat, _lng,
+      _phone, _floors, _description, _rent, _notes, _ownerName, _ownerPhone, _ownerEmail, _ownerAddress,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -1279,14 +1305,53 @@ class _PropertyFormState extends State<_PropertyForm> {
     });
   }
 
+  /// Opens the map. The owner can search, move the pin, or use the device's location; the address fields are then filled.
+  Future<void> _pickOnMap() async {
+    final start = double.tryParse(_lat.text.trim()) != null && double.tryParse(_lng.text.trim()) != null
+        ? LatLng(double.parse(_lat.text.trim()), double.parse(_lng.text.trim()))
+        : null;
+    final pick = await Navigator.of(context).push<MapPick>(
+      MaterialPageRoute(builder: (_) => MapPickerScreen(initial: start)),
+    );
+    if (pick == null || !mounted) return;
+    setState(() {
+      _lat.text = pick.point.latitude.toStringAsFixed(6);
+      _lng.text = pick.point.longitude.toStringAsFixed(6);
+      final p = pick.place;
+      if (p != null) {
+        if (p.state.isNotEmpty) _state.text = p.state;
+        if (p.district.isNotEmpty) _district.text = p.district;
+        if (p.cityVillage.isNotEmpty) _cityVillage.text = p.cityVillage;
+        if (p.mandal.isNotEmpty) _mandal.text = p.mandal;
+        if (p.pinCode.isNotEmpty) _pin.text = p.pinCode;
+        if (_address.text.trim().isEmpty && p.displayName.isNotEmpty) _address.text = p.displayName;
+      }
+    });
+    if (pick.place == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('The point is saved. The address could not be looked up, so type it in.'),
+      ));
+    }
+  }
+
   void _save() {
     final name = _name.text.trim();
     final floors = int.tryParse(_floors.text.trim());
+    final pin = _pin.text.trim();
+    final latText = _lat.text.trim();
+    final lngText = _lng.text.trim();
+    final lat = latText.isEmpty ? null : double.tryParse(latText);
+    final lng = lngText.isEmpty ? null : double.tryParse(lngText);
     String? problem;
     if (name.isEmpty) {
       problem = 'Give the property a name, for example "Monova Residency".';
     } else if (floors == null || floors < 1 || floors > 200) {
       problem = 'Enter the number of floors (1 or more).';
+    } else if (pin.isNotEmpty && !RegExp(r'^\d{6}$').hasMatch(pin)) {
+      problem = 'The PIN code is 6 digits.';
+    } else if ((latText.isNotEmpty || lngText.isNotEmpty) &&
+        (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180)) {
+      problem = 'Enter both latitude (-90 to 90) and longitude (-180 to 180), or leave both empty.';
     } else if (_ownerName.text.trim().isEmpty || !_validPhone(_ownerPhone.text)) {
       problem = 'Enter the owner\'s name and a mobile number with at least 10 digits.';
     } else if (_ownerAddress.text.trim().isEmpty) {
@@ -1301,6 +1366,14 @@ class _PropertyFormState extends State<_PropertyForm> {
       name: name,
       category: _category,
       address: _address.text.trim(),
+      state: _state.text.trim(),
+      district: _district.text.trim(),
+      cityVillage: _cityVillage.text.trim(),
+      mandal: _mandal.text.trim(),
+      pinCode: pin,
+      latitude: lat,
+      longitude: lng,
+      showExactLocation: _exact && lat != null && lng != null,
       phone: _phone.text.trim(),
       floors: floors!,
       description: _description.text.trim(),
@@ -1316,6 +1389,7 @@ class _PropertyFormState extends State<_PropertyForm> {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
+    final hasPoint = double.tryParse(_lat.text.trim()) != null && double.tryParse(_lng.text.trim()) != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1331,8 +1405,56 @@ class _PropertyFormState extends State<_PropertyForm> {
         ),
         const SizedBox(height: 14),
         TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Property name *')),
+        const SizedBox(height: 14),
+        Text('Address', style: TextStyle(fontWeight: FontWeight.w800, color: c.ink)),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _pickOnMap,
+          icon: const Icon(Icons.map_outlined, size: 18),
+          label: Text(hasPoint ? 'Change location on map' : 'Pick location on map'),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          hasPoint
+              ? 'Location saved: ${_lat.text.trim()}, ${_lng.text.trim()}'
+              : 'Optional. Maps need internet. You can type the address below instead.',
+          style: TextStyle(color: c.muted, fontSize: 12),
+        ),
+        const SizedBox(height: 10),
+        TextField(controller: _address, textCapitalization: TextCapitalization.sentences, maxLines: 2, decoration: const InputDecoration(labelText: 'Full address')),
         const SizedBox(height: 12),
-        TextField(controller: _address, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Property address')),
+        Row(
+          children: [
+            Expanded(child: TextField(controller: _cityVillage, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'City or village'))),
+            const SizedBox(width: 12),
+            Expanded(child: TextField(controller: _mandal, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Mandal or locality'))),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: TextField(controller: _district, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'District'))),
+            const SizedBox(width: 12),
+            Expanded(child: TextField(controller: _state, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'State'))),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(controller: _pin, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'PIN code', helperText: '6 digits')),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: TextField(controller: _lat, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), decoration: const InputDecoration(labelText: 'Latitude (optional)'))),
+            const SizedBox(width: 12),
+            Expanded(child: TextField(controller: _lng, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), decoration: const InputDecoration(labelText: 'Longitude (optional)'))),
+          ],
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Show the exact location publicly'),
+          subtitle: const Text('Off shows only the area around the property. Use it only with the owner\'s consent.'),
+          value: _exact,
+          onChanged: hasPoint ? (v) => setState(() => _exact = v) : null,
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
