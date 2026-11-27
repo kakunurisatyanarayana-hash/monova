@@ -12,13 +12,17 @@ class LocalProfile {
   final String phone;
   final String email;
 
-  Map<String, dynamic> toJson() => {'name': name, 'phone': phone, 'email': email};
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'phone': phone,
+    'email': email,
+  };
 
   factory LocalProfile.fromJson(Map<String, dynamic> j) => LocalProfile(
-        name: '${j['name'] ?? ''}',
-        phone: '${j['phone'] ?? ''}',
-        email: '${j['email'] ?? ''}',
-      );
+    name: '${j['name'] ?? ''}',
+    phone: '${j['phone'] ?? ''}',
+    email: '${j['email'] ?? ''}',
+  );
 }
 
 /// Reads the saved profile, or null if none has been set.
@@ -61,4 +65,6 @@ class ProfileController extends Notifier<ProfileState> {
   }
 }
 
-final profileProvider = NotifierProvider<ProfileController, ProfileState>(ProfileController.new);
+final profileProvider = NotifierProvider<ProfileController, ProfileState>(
+  ProfileController.new,
+);

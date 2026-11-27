@@ -53,18 +53,90 @@ class HoroscopeReport {
 
 const _westernSigns = [
   // Ordered from 21 March, so a date can be matched by scanning down the list.
-  SunSign('Aries', '21 Mar - 19 Apr', 'Fire', 'Mars', 'Bold, quick to start things, direct and energetic.'),
-  SunSign('Taurus', '20 Apr - 20 May', 'Earth', 'Venus', 'Patient, dependable, loves comfort and steady progress.'),
-  SunSign('Gemini', '21 May - 20 Jun', 'Air', 'Mercury', 'Curious, quick with words, adapts easily, enjoys variety.'),
-  SunSign('Cancer', '21 Jun - 22 Jul', 'Water', 'Moon', 'Caring and intuitive, deeply loyal to family and home.'),
-  SunSign('Leo', '23 Jul - 22 Aug', 'Fire', 'Sun', 'Warm, generous, confident, likes to lead and be appreciated.'),
-  SunSign('Virgo', '23 Aug - 22 Sep', 'Earth', 'Mercury', 'Careful, practical, detail-minded, helps others improve.'),
-  SunSign('Libra', '23 Sep - 22 Oct', 'Air', 'Venus', 'Fair-minded, social, values harmony and good partnerships.'),
-  SunSign('Scorpio', '23 Oct - 21 Nov', 'Water', 'Mars and Pluto', 'Intense, private, determined, loyal once trust is earned.'),
-  SunSign('Sagittarius', '22 Nov - 21 Dec', 'Fire', 'Jupiter', 'Optimistic, adventurous, honest, enjoys learning and travel.'),
-  SunSign('Capricorn', '22 Dec - 19 Jan', 'Earth', 'Saturn', 'Disciplined, ambitious, responsible, builds slowly and well.'),
-  SunSign('Aquarius', '20 Jan - 18 Feb', 'Air', 'Saturn and Uranus', 'Independent, inventive, friendly, thinks about the bigger picture.'),
-  SunSign('Pisces', '19 Feb - 20 Mar', 'Water', 'Jupiter and Neptune', 'Compassionate, imaginative, gentle, sensitive to moods.'),
+  SunSign(
+    'Aries',
+    '21 Mar - 19 Apr',
+    'Fire',
+    'Mars',
+    'Bold, quick to start things, direct and energetic.',
+  ),
+  SunSign(
+    'Taurus',
+    '20 Apr - 20 May',
+    'Earth',
+    'Venus',
+    'Patient, dependable, loves comfort and steady progress.',
+  ),
+  SunSign(
+    'Gemini',
+    '21 May - 20 Jun',
+    'Air',
+    'Mercury',
+    'Curious, quick with words, adapts easily, enjoys variety.',
+  ),
+  SunSign(
+    'Cancer',
+    '21 Jun - 22 Jul',
+    'Water',
+    'Moon',
+    'Caring and intuitive, deeply loyal to family and home.',
+  ),
+  SunSign(
+    'Leo',
+    '23 Jul - 22 Aug',
+    'Fire',
+    'Sun',
+    'Warm, generous, confident, likes to lead and be appreciated.',
+  ),
+  SunSign(
+    'Virgo',
+    '23 Aug - 22 Sep',
+    'Earth',
+    'Mercury',
+    'Careful, practical, detail-minded, helps others improve.',
+  ),
+  SunSign(
+    'Libra',
+    '23 Sep - 22 Oct',
+    'Air',
+    'Venus',
+    'Fair-minded, social, values harmony and good partnerships.',
+  ),
+  SunSign(
+    'Scorpio',
+    '23 Oct - 21 Nov',
+    'Water',
+    'Mars and Pluto',
+    'Intense, private, determined, loyal once trust is earned.',
+  ),
+  SunSign(
+    'Sagittarius',
+    '22 Nov - 21 Dec',
+    'Fire',
+    'Jupiter',
+    'Optimistic, adventurous, honest, enjoys learning and travel.',
+  ),
+  SunSign(
+    'Capricorn',
+    '22 Dec - 19 Jan',
+    'Earth',
+    'Saturn',
+    'Disciplined, ambitious, responsible, builds slowly and well.',
+  ),
+  SunSign(
+    'Aquarius',
+    '20 Jan - 18 Feb',
+    'Air',
+    'Saturn and Uranus',
+    'Independent, inventive, friendly, thinks about the bigger picture.',
+  ),
+  SunSign(
+    'Pisces',
+    '19 Feb - 20 Mar',
+    'Water',
+    'Jupiter and Neptune',
+    'Compassionate, imaginative, gentle, sensitive to moods.',
+  ),
 ];
 
 /// Western sun sign for a date. Boundaries are the usual ones; days on the edge can differ by one by year.
@@ -85,15 +157,48 @@ SunSign westernSign(DateTime d) {
 }
 
 const rashiNames = [
-  'Mesha (Aries)', 'Vrishabha (Taurus)', 'Mithuna (Gemini)', 'Karka (Cancer)', 'Simha (Leo)', 'Kanya (Virgo)',
-  'Tula (Libra)', 'Vrishchika (Scorpio)', 'Dhanu (Sagittarius)', 'Makara (Capricorn)', 'Kumbha (Aquarius)', 'Meena (Pisces)',
+  'Mesha (Aries)',
+  'Vrishabha (Taurus)',
+  'Mithuna (Gemini)',
+  'Karka (Cancer)',
+  'Simha (Leo)',
+  'Kanya (Virgo)',
+  'Tula (Libra)',
+  'Vrishchika (Scorpio)',
+  'Dhanu (Sagittarius)',
+  'Makara (Capricorn)',
+  'Kumbha (Aquarius)',
+  'Meena (Pisces)',
 ];
 
 const nakshatraNames = [
-  'Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha',
-  'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha',
-  'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada',
-  'Uttara Bhadrapada', 'Revati',
+  'Ashwini',
+  'Bharani',
+  'Krittika',
+  'Rohini',
+  'Mrigashira',
+  'Ardra',
+  'Punarvasu',
+  'Pushya',
+  'Ashlesha',
+  'Magha',
+  'Purva Phalguni',
+  'Uttara Phalguni',
+  'Hasta',
+  'Chitra',
+  'Swati',
+  'Vishakha',
+  'Anuradha',
+  'Jyeshtha',
+  'Mula',
+  'Purva Ashadha',
+  'Uttara Ashadha',
+  'Shravana',
+  'Dhanishta',
+  'Shatabhisha',
+  'Purva Bhadrapada',
+  'Uttara Bhadrapada',
+  'Revati',
 ];
 
 /// Julian day for a UTC moment (Meeus, chapter 7).
@@ -107,7 +212,11 @@ double julianDay(DateTime utc) {
   }
   final a = (y / 100).floor();
   final b = 2 - a + (a / 4).floor();
-  return (365.25 * (y + 4716)).floor() + (30.6001 * (m + 1)).floor() + day + b - 1524.5;
+  return (365.25 * (y + 4716)).floor() +
+      (30.6001 * (m + 1)).floor() +
+      day +
+      b -
+      1524.5;
 }
 
 double _norm(double deg) {
@@ -125,7 +234,8 @@ double moonLongitude(double jd) {
   final m = 357.5291092 + 35999.0502909 * t;
   final mp = 134.9633964 + 477198.8675055 * t;
   final f = 93.2720950 + 483202.0175233 * t;
-  final lon = lp +
+  final lon =
+      lp +
       6.288774 * _sin(mp) +
       1.274027 * _sin(2 * d - mp) +
       0.658314 * _sin(2 * d) +
@@ -147,7 +257,10 @@ double sunLongitude(double jd) {
   final t = (jd - 2451545.0) / 36525;
   final l0 = 280.46646 + 36000.76983 * t;
   final m = 357.52911 + 35999.05029 * t;
-  final c = (1.914602 - 0.004817 * t) * _sin(m) + 0.019993 * _sin(2 * m) + 0.000289 * _sin(3 * m);
+  final c =
+      (1.914602 - 0.004817 * t) * _sin(m) +
+      0.019993 * _sin(2 * m) +
+      0.000289 * _sin(3 * m);
   return _norm(l0 + c - 0.00569);
 }
 
@@ -157,7 +270,8 @@ double lahiriAyanamsa(double jd) {
   return 23.853 + 0.013969 * (year - 2000);
 }
 
-String _rashiOf(double siderealDeg) => rashiNames[(siderealDeg / 30).floor() % 12];
+String _rashiOf(double siderealDeg) =>
+    rashiNames[(siderealDeg / 30).floor() % 12];
 
 class _Nakshatra {
   const _Nakshatra(this.name, this.pada);
@@ -176,7 +290,18 @@ _Nakshatra _nakshatraOf(double siderealDeg) {
 
 /// Chinese zodiac from the calendar year. Dates before Lunar New Year belong to the previous animal; that is not handled here.
 const _chineseAnimals = [
-  'Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig',
+  'Rat',
+  'Ox',
+  'Tiger',
+  'Rabbit',
+  'Dragon',
+  'Snake',
+  'Horse',
+  'Goat',
+  'Monkey',
+  'Rooster',
+  'Dog',
+  'Pig',
 ];
 
 String chineseAnimal(int year) => _chineseAnimals[(year - 4) % 12];
@@ -202,7 +327,8 @@ int lifePathNumber(DateTime d) {
   return n;
 }
 
-int _digitSum(String s) => s.split('').fold(0, (sum, ch) => sum + (int.tryParse(ch) ?? 0));
+int _digitSum(String s) =>
+    s.split('').fold(0, (sum, ch) => sum + (int.tryParse(ch) ?? 0));
 
 const _lifePathMeanings = {
   1: 'Independent and driven, a natural starter.',
@@ -221,10 +347,19 @@ const _lifePathMeanings = {
 
 /// Full birth details. [birth] is the local date and time of birth. [utcOffsetHours] is the place's offset (India: 5.5).
 /// Without a birth time (hasBirthTime false), the time is ignored and the moon sign is left empty.
-HoroscopeReport horoscopeFor(DateTime birth, {bool hasBirthTime = false, double utcOffsetHours = 5.5}) {
+HoroscopeReport horoscopeFor(
+  DateTime birth, {
+  bool hasBirthTime = false,
+  double utcOffsetHours = 5.5,
+}) {
   final offsetMinutes = (utcOffsetHours * 60).round();
-  final utc = DateTime.utc(birth.year, birth.month, birth.day, hasBirthTime ? birth.hour : 12, hasBirthTime ? birth.minute : 0)
-      .subtract(Duration(minutes: offsetMinutes));
+  final utc = DateTime.utc(
+    birth.year,
+    birth.month,
+    birth.day,
+    hasBirthTime ? birth.hour : 12,
+    hasBirthTime ? birth.minute : 0,
+  ).subtract(Duration(minutes: offsetMinutes));
   final jd = julianDay(utc);
   final ayan = lahiriAyanamsa(jd);
   final sunSid = _norm(sunLongitude(jd) - ayan);

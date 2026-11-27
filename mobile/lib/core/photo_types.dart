@@ -1,4 +1,4 @@
-﻿/// A picture chosen by the user, ready to be stored.
+/// A picture chosen by the user, ready to be stored.
 class PickedPhoto {
   const PickedPhoto(this.bytes, this.mimeType);
 

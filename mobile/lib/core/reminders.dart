@@ -41,16 +41,23 @@ class Reminder {
     return !done && dueAt.isBefore(endOfToday);
   }
 
-  Reminder copyWith({String? title, String? notes, DateTime? dueAt, String? repeat, String? route, bool? done}) => Reminder(
-        id: id,
-        title: title ?? this.title,
-        notes: notes ?? this.notes,
-        dueAt: dueAt ?? this.dueAt,
-        repeat: repeat ?? this.repeat,
-        route: route ?? this.route,
-        done: done ?? this.done,
-        createdAt: createdAt,
-      );
+  Reminder copyWith({
+    String? title,
+    String? notes,
+    DateTime? dueAt,
+    String? repeat,
+    String? route,
+    bool? done,
+  }) => Reminder(
+    id: id,
+    title: title ?? this.title,
+    notes: notes ?? this.notes,
+    dueAt: dueAt ?? this.dueAt,
+    repeat: repeat ?? this.repeat,
+    route: route ?? this.route,
+    done: done ?? this.done,
+    createdAt: createdAt,
+  );
 
   /// The reminder moved to its next occurrence, still not done. Only meaningful for repeating reminders.
   Reminder advanced() {
@@ -63,26 +70,26 @@ class Reminder {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'notes': notes,
-        'dueAt': dueAt.toIso8601String(),
-        'repeat': repeat,
-        'route': route,
-        'done': done,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'notes': notes,
+    'dueAt': dueAt.toIso8601String(),
+    'repeat': repeat,
+    'route': route,
+    'done': done,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory Reminder.fromJson(Map<String, dynamic> j) => Reminder(
-        id: '${j['id']}',
-        title: '${j['title'] ?? ''}',
-        notes: '${j['notes'] ?? ''}',
-        dueAt: DateTime.tryParse('${j['dueAt']}') ?? DateTime.now(),
-        repeat: reminderRepeats.contains(j['repeat']) ? '${j['repeat']}' : 'none',
-        route: '${j['route'] ?? ''}',
-        done: j['done'] == true,
-        createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
-      );
+    id: '${j['id']}',
+    title: '${j['title'] ?? ''}',
+    notes: '${j['notes'] ?? ''}',
+    dueAt: DateTime.tryParse('${j['dueAt']}') ?? DateTime.now(),
+    repeat: reminderRepeats.contains(j['repeat']) ? '${j['repeat']}' : 'none',
+    route: '${j['route'] ?? ''}',
+    done: j['done'] == true,
+    createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
+  );
 }
 
 /// Adds months to a date, keeping the time. A date past the end of the target month (31 January + 1 month) stops at its last day.
@@ -96,7 +103,11 @@ DateTime addMonths(DateTime d, int months) {
 }
 
 /// Reminders that need a look now: not done, and due within [upcomingDays] days (overdue ones included), soonest first.
-List<Reminder> remindersNeedingAttention(List<Reminder> all, DateTime now, {int upcomingDays = 3}) {
+List<Reminder> remindersNeedingAttention(
+  List<Reminder> all,
+  DateTime now, {
+  int upcomingDays = 3,
+}) {
   final horizon = DateTime(now.year, now.month, now.day + upcomingDays + 1);
   final list = [
     for (final r in all)
@@ -115,6 +126,8 @@ class ReminderStore {
 
   static Future<void> save(List<Reminder> reminders) async {
     final store = await LocalStore.open();
-    await store.writeList(remindersKey, [for (final r in reminders) r.toJson()]);
+    await store.writeList(remindersKey, [
+      for (final r in reminders) r.toJson(),
+    ]);
   }
 }

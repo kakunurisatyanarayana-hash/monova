@@ -1,4 +1,5 @@
 import 'data_revision.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -56,9 +57,11 @@ class CardRecord {
     return buffer.toString();
   }
 
-  String get expiryLabel => '${expiryMonth.toString().padLeft(2, '0')}/${(expiryYear % 100).toString().padLeft(2, '0')}';
+  String get expiryLabel =>
+      '${expiryMonth.toString().padLeft(2, '0')}/${(expiryYear % 100).toString().padLeft(2, '0')}';
 
-  String get title => nickname.isNotEmpty ? nickname : (bank.isNotEmpty ? bank : network);
+  String get title =>
+      nickname.isNotEmpty ? nickname : (bank.isNotEmpty ? bank : network);
 
   CardRecord copyWith({
     String? nickname,
@@ -90,25 +93,25 @@ class CardRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        ...toJsonWithoutPhoto(),
-        'photoBase64': photoBase64,
-        'photoType': photoType,
-      };
+    ...toJsonWithoutPhoto(),
+    'photoBase64': photoBase64,
+    'photoType': photoType,
+  };
 
   /// Same details without the photo. Used for backups, where a photo would make the text too large to copy.
   /// Backups are encrypted with a passphrase, so the full number can go in them.
   Map<String, dynamic> toJsonWithoutPhoto() => {
-        'id': id,
-        'nickname': nickname,
-        'bank': bank,
-        'network': network,
-        'number': number,
-        'last4': last4,
-        'holder': holder,
-        'expiryMonth': expiryMonth,
-        'expiryYear': expiryYear,
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'nickname': nickname,
+    'bank': bank,
+    'network': network,
+    'number': number,
+    'last4': last4,
+    'holder': holder,
+    'expiryMonth': expiryMonth,
+    'expiryYear': expiryYear,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory CardRecord.fromJson(Map<String, dynamic> j) {
     return CardRecord(
@@ -148,7 +151,9 @@ class CardStore {
     if (raw == null || raw.isEmpty) return [];
     // Damaged data throws here; the screen reports it instead of silently overwriting the saved cards.
     final list = jsonDecode(raw) as List<dynamic>;
-    final cards = list.map((e) => CardRecord.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    final cards = list
+        .map((e) => CardRecord.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
     cards.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return cards;
   }
@@ -161,7 +166,8 @@ class CardStore {
   static Future<void> _saveRaw(List<CardRecord> cards) async {
     // The web build never writes the full number to browser storage.
     final raw = jsonEncode([
-      for (final c in cards) (keepsFullNumber ? c : c.copyWith(number: '')).toJson(),
+      for (final c in cards)
+        (keepsFullNumber ? c : c.copyWith(number: '')).toJson(),
     ]);
     if (kIsWeb) {
       await (await SharedPreferences.getInstance()).setString(_key, raw);

@@ -7,7 +7,13 @@ import 'theme.dart';
 
 /// A surface card with the MONOVA border and radius. Use for every grouped block so spacing stays consistent.
 class MonovaCard extends StatelessWidget {
-  const MonovaCard({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.onTap, this.gradient});
+  const MonovaCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.onTap,
+    this.gradient,
+  });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -27,7 +33,9 @@ class MonovaCard extends StatelessWidget {
           color: gradient == null ? c.glassFill : null,
           borderRadius: BorderRadius.circular(20),
           // A thin light edge makes the glass read as a surface, the way frosted cards do.
-          border: Border.all(color: gradient == null ? c.border : Colors.transparent),
+          border: Border.all(
+            color: gradient == null ? c.border : Colors.transparent,
+          ),
         ),
         child: onTap == null
             ? content
@@ -45,7 +53,10 @@ class MonovaCard extends StatelessWidget {
     // Frosted glass: blur whatever is behind the card, so the ambient light softly shows through.
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: card),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: card,
+      ),
     );
   }
 }
@@ -53,7 +64,13 @@ class MonovaCard extends StatelessWidget {
 /// A grid where every tile has exactly the same width and height. The column count follows the width,
 /// and a short last row keeps empty slots so no tile grows to fill the gap.
 class EqualTileGrid extends StatelessWidget {
-  const EqualTileGrid({super.key, required this.children, this.minTileWidth = 150, this.tileHeight = 120, this.gap = 12});
+  const EqualTileGrid({
+    super.key,
+    required this.children,
+    this.minTileWidth = 150,
+    this.tileHeight = 120,
+    this.gap = 12,
+  });
 
   final List<Widget> children;
   final double minTileWidth;
@@ -69,25 +86,34 @@ class EqualTileGrid extends StatelessWidget {
         if (cols < 1) cols = 1;
         final rows = <Widget>[];
         for (var start = 0; start < children.length; start += cols) {
-          final end = start + cols < children.length ? start + cols : children.length;
-          rows.add(Padding(
-            padding: EdgeInsets.only(bottom: gap),
-            child: Row(
-              children: [
-                for (var i = 0; i < cols; i++) ...[
-                  if (i > 0) SizedBox(width: gap),
-                  Expanded(
-                    child: SizedBox(
-                      height: tileHeight,
-                      child: i < end - start ? children[start + i] : const SizedBox.shrink(),
+          final end = start + cols < children.length
+              ? start + cols
+              : children.length;
+          rows.add(
+            Padding(
+              padding: EdgeInsets.only(bottom: gap),
+              child: Row(
+                children: [
+                  for (var i = 0; i < cols; i++) ...[
+                    if (i > 0) SizedBox(width: gap),
+                    Expanded(
+                      child: SizedBox(
+                        height: tileHeight,
+                        child: i < end - start
+                            ? children[start + i]
+                            : const SizedBox.shrink(),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ));
+          );
         }
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: rows,
+        );
       },
     );
   }
@@ -104,11 +130,19 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ),
         if (action != null)
           TextButton(
             onPressed: onAction,
-            child: Text(action!, style: TextStyle(color: context.monova.accentStart, fontWeight: FontWeight.w700)),
+            child: Text(
+              action!,
+              style: TextStyle(
+                color: context.monova.accentStart,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
       ],
     );
@@ -116,7 +150,14 @@ class SectionTitle extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, required this.message, this.actionLabel, this.onAction});
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final IconData icon;
   final String title;
@@ -136,13 +177,24 @@ class EmptyState extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: BoxDecoration(gradient: c.aurora, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                gradient: c.aurora,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: c.onAccent, size: 34),
             ),
             const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 6),
-            Text(message, style: TextStyle(color: c.muted), textAlign: TextAlign.center),
+            Text(
+              message,
+              style: TextStyle(color: c.muted),
+              textAlign: TextAlign.center,
+            ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 20),
               FilledButton(onPressed: onAction, child: Text(actionLabel!)),
@@ -162,7 +214,9 @@ class ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = error is ApiException ? error.toString() : 'Something went wrong. Please try again.';
+    final message = error is ApiException
+        ? error.toString()
+        : 'Something went wrong. Please try again.';
     return EmptyState(
       icon: Icons.cloud_off_rounded,
       title: 'Could not load this',
@@ -179,14 +233,19 @@ class LoadingBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator()),
-      );
+    padding: EdgeInsets.all(48),
+    child: Center(child: CircularProgressIndicator()),
+  );
 }
 
 /// A bottom sheet frame with a title, a drag handle and safe bottom padding. All forms use it.
 class FormSheet extends StatelessWidget {
-  const FormSheet({super.key, required this.title, required this.child, this.asDialog = false});
+  const FormSheet({
+    super.key,
+    required this.title,
+    required this.child,
+    this.asDialog = false,
+  });
 
   final String title;
   final Widget child;
@@ -196,7 +255,11 @@ class FormSheet extends StatelessWidget {
 
   /// Phones get a bottom sheet. Wide screens (web, desktop) get a card centred near the top of the window,
   /// which is where people expect a form to appear on a computer.
-  static Future<T?> show<T>(BuildContext context, {required String title, required Widget child}) {
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
     final size = MediaQuery.sizeOf(context);
     if (size.width >= 900) {
       return showDialog<T>(
@@ -208,7 +271,10 @@ class FormSheet extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 560, maxHeight: size.height - 80),
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              maxHeight: size.height - 80,
+            ),
             child: FormSheet(title: title, child: child, asDialog: true),
           ),
         ),
@@ -229,7 +295,9 @@ class FormSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: c.raised,
-        borderRadius: asDialog ? BorderRadius.circular(24) : const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: asDialog
+            ? BorderRadius.circular(24)
+            : const BorderRadius.vertical(top: Radius.circular(28)),
         border: asDialog ? Border.all(color: c.border) : null,
       ),
       padding: EdgeInsets.only(
@@ -248,7 +316,10 @@ class FormSheet extends StatelessWidget {
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: c.border, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: c.border,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
               ),
             SizedBox(height: asDialog ? 4 : 16),
@@ -263,7 +334,11 @@ class FormSheet extends StatelessWidget {
 }
 
 /// Runs an async action from a button, showing progress and surfacing the server's message on failure.
-Future<bool> runAction(BuildContext context, Future<void> Function() action, {String success = 'Saved'}) async {
+Future<bool> runAction(
+  BuildContext context,
+  Future<void> Function() action, {
+  String success = 'Saved',
+}) async {
   final messenger = ScaffoldMessenger.of(context);
   try {
     await action();
@@ -273,14 +348,21 @@ Future<bool> runAction(BuildContext context, Future<void> Function() action, {St
     messenger.showSnackBar(SnackBar(content: Text(e.message)));
     return false;
   } catch (_) {
-    messenger.showSnackBar(const SnackBar(content: Text('Something went wrong. Please try again.')));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Something went wrong. Please try again.')),
+    );
     return false;
   }
 }
 
 /// Coloured amount text. Income is green, expenses rose, neutral is ink.
 class AmountText extends StatelessWidget {
-  const AmountText(this.text, {super.key, this.tone = AmountTone.neutral, this.size = 16});
+  const AmountText(
+    this.text, {
+    super.key,
+    this.tone = AmountTone.neutral,
+    this.size = 16,
+  });
 
   final String text;
   final AmountTone tone;
@@ -297,7 +379,12 @@ class AmountText extends StatelessWidget {
     };
     return Text(
       text,
-      style: TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w700, fontFeatures: const [FontFeature.tabularFigures()]),
+      style: TextStyle(
+        color: color,
+        fontSize: size,
+        fontWeight: FontWeight.w700,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
   }
 }
@@ -383,10 +470,18 @@ class _UnsavedGuardState extends State<_UnsavedGuard> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Discard changes?'),
-        content: const Text('You have changes that are not saved yet. Stay to keep editing, or discard them.'),
+        content: const Text(
+          'You have changes that are not saved yet. Stay to keep editing, or discard them.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
         ],
       ),
     );
@@ -412,7 +507,12 @@ Future<void> showContactsProblem(BuildContext context, String message) {
     builder: (ctx) => AlertDialog(
       title: const Text('Contacts'),
       content: Text(message),
-      actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('OK'),
+        ),
+      ],
     ),
   );
 }

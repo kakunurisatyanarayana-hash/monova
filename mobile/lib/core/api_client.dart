@@ -4,7 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Base URL of the local API. 10.0.2.2 reaches the PC from the Android emulator; override with --dart-define=MONOVA_API=...
 class ApiConfig {
   /// Matches the "http" launch profile of Monova.API (http://localhost:5199).
-  static const baseUrl = String.fromEnvironment('MONOVA_API', defaultValue: 'http://10.0.2.2:5199');
+  static const baseUrl = String.fromEnvironment(
+    'MONOVA_API',
+    defaultValue: 'http://10.0.2.2:5199',
+  );
 
   /// Offline build (--dart-define=MONOVA_OFFLINE=true): tools only. No sign-in, no server calls, no database.
   static const offline = bool.fromEnvironment('MONOVA_OFFLINE');
@@ -81,14 +84,17 @@ class SecureTokenStore implements TokenStore {
 /// Thin Dio wrapper. Adds the bearer token, refreshes once on 401 (single-flight) and maps ProblemDetails to ApiException.
 class ApiClient {
   ApiClient({required TokenStore tokens, String? baseUrl, Dio? dio})
-      : _tokens = tokens,
-        _dio = dio ??
-            Dio(BaseOptions(
+    : _tokens = tokens,
+      _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               baseUrl: baseUrl ?? ApiConfig.baseUrl,
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 20),
               contentType: 'application/json',
-            ));
+            ),
+          );
 
   final TokenStore _tokens;
   final Dio _dio;
@@ -99,15 +105,20 @@ class ApiClient {
   Future<Object?> get(String path, {Map<String, dynamic>? query}) =>
       _send(() => _dio.get(path, queryParameters: query));
 
-  Future<Object?> post(String path, {Object? body}) => _send(() => _dio.post(path, data: body));
+  Future<Object?> post(String path, {Object? body}) =>
+      _send(() => _dio.post(path, data: body));
 
-  Future<Object?> put(String path, {Object? body}) => _send(() => _dio.put(path, data: body));
+  Future<Object?> put(String path, {Object? body}) =>
+      _send(() => _dio.put(path, data: body));
 
   Future<void> delete(String path) async {
     await _send(() => _dio.delete(path));
   }
 
-  Future<Object?> _send(Future<Response<dynamic>> Function() call, {bool retried = false}) async {
+  Future<Object?> _send(
+    Future<Response<dynamic>> Function() call, {
+    bool retried = false,
+  }) async {
     final token = await _tokens.readAccess();
     try {
       final response = await _withAuth(call, token);
@@ -126,7 +137,10 @@ class ApiClient {
   }
 
   /// Sets the bearer header for this call. Requests are sequential per screen, so one shared header is sufficient for the MVP.
-  Future<Response<dynamic>> _withAuth(Future<Response<dynamic>> Function() call, String? token) async {
+  Future<Response<dynamic>> _withAuth(
+    Future<Response<dynamic>> Function() call,
+    String? token,
+  ) async {
     if (token == null) {
       _dio.options.headers.remove('Authorization');
     } else {
@@ -141,7 +155,10 @@ class ApiClient {
       try {
         final refresh = await _tokens.readRefresh();
         if (refresh == null) return false;
-        final response = await _dio.post('/api/v1/auth/refresh', data: {'refreshToken': refresh});
+        final response = await _dio.post(
+          '/api/v1/auth/refresh',
+          data: {'refreshToken': refresh},
+        );
         final data = response.data as Map<String, dynamic>;
         await _tokens.save(
           access: data['accessToken'] as String,
@@ -160,12 +177,19 @@ class ApiClient {
     final status = e.response?.statusCode ?? 0;
     final data = e.response?.data;
     if (data is Map<String, dynamic>) {
-      final detail = data['detail'] as String? ?? data['title'] as String? ?? 'Request failed.';
+      final detail =
+          data['detail'] as String? ??
+          data['title'] as String? ??
+          'Request failed.';
       final errors = data['errors'] as Map<String, dynamic>?;
       return ApiException(status, detail, errors: errors);
     }
-    if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) {
-      return const ApiException(0, 'Cannot reach the MONOVA server. Check that the API is running and the address is correct.');
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout) {
+      return const ApiException(
+        0,
+        'Cannot reach the MONOVA server. Check that the API is running and the address is correct.',
+      );
     }
     return ApiException(status, 'Something went wrong. Please try again.');
   }

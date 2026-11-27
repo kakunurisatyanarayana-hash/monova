@@ -4,7 +4,8 @@
 
 const mandiDatasetId = '9ef84268-d588-465a-a308-a864a43d0070';
 const mandiBaseUrl = 'https://api.data.gov.in/resource/$mandiDatasetId';
-const mandiSourceName = 'AGMARKNET, Ministry of Agriculture and Farmers Welfare, via data.gov.in';
+const mandiSourceName =
+    'AGMARKNET, Ministry of Agriculture and Farmers Welfare, via data.gov.in';
 
 class MandiRecord {
   const MandiRecord({
@@ -32,19 +33,20 @@ class MandiRecord {
   final double? modalPrice;
 
   /// One record per market, commodity, variety and day.
-  String get key => '$state|$district|$market|$commodity|$variety|${_dayText(date)}';
+  String get key =>
+      '$state|$district|$market|$commodity|$variety|${_dayText(date)}';
 
   Map<String, dynamic> toJson() => {
-        'state': state,
-        'district': district,
-        'market': market,
-        'commodity': commodity,
-        'variety': variety,
-        'date': _dayText(date),
-        'min': minPrice,
-        'max': maxPrice,
-        'modal': modalPrice,
-      };
+    'state': state,
+    'district': district,
+    'market': market,
+    'commodity': commodity,
+    'variety': variety,
+    'date': _dayText(date),
+    'min': minPrice,
+    'max': maxPrice,
+    'modal': modalPrice,
+  };
 
   /// Reads a stored record. Its date is saved as YYYY-MM-DD, not in the source's day/month/year form.
   static MandiRecord? fromJson(Map<String, dynamic> j) {
@@ -75,17 +77,19 @@ List<MandiRecord> parseMandiPage(Map<String, dynamic> json) {
     final date = parseIndianDate('${r['arrival_date']}');
     final modal = _num(r['modal_price']);
     if (date == null || modal == null || modal <= 0) continue;
-    out.add(MandiRecord(
-      state: '${r['state']}'.trim(),
-      district: '${r['district']}'.trim(),
-      market: '${r['market']}'.trim(),
-      commodity: '${r['commodity']}'.trim(),
-      variety: '${r['variety'] ?? ''}'.trim(),
-      date: date,
-      minPrice: _positive(_num(r['min_price'])),
-      maxPrice: _positive(_num(r['max_price'])),
-      modalPrice: modal,
-    ));
+    out.add(
+      MandiRecord(
+        state: '${r['state']}'.trim(),
+        district: '${r['district']}'.trim(),
+        market: '${r['market']}'.trim(),
+        commodity: '${r['commodity']}'.trim(),
+        variety: '${r['variety'] ?? ''}'.trim(),
+        date: date,
+        minPrice: _positive(_num(r['min_price'])),
+        maxPrice: _positive(_num(r['max_price'])),
+        modalPrice: modal,
+      ),
+    );
   }
   return out;
 }
@@ -106,7 +110,10 @@ DateTime? parseIndianDate(String text) {
 double perKilogram(double perQuintal) => perQuintal / 100;
 
 /// Merges new records into stored ones. The same market, commodity and day is kept once; the newer fetch wins.
-List<MandiRecord> mergeMandi(List<MandiRecord> existing, List<MandiRecord> incoming) {
+List<MandiRecord> mergeMandi(
+  List<MandiRecord> existing,
+  List<MandiRecord> incoming,
+) {
   final byKey = <String, MandiRecord>{for (final r in existing) r.key: r};
   for (final r in incoming) {
     byKey[r.key] = r;
@@ -132,4 +139,5 @@ double? _num(Object? v) {
 
 double? _positive(double? v) => (v == null || v <= 0) ? null : v;
 
-String _dayText(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _dayText(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

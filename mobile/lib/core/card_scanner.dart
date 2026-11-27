@@ -1,4 +1,4 @@
-﻿import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'bill_scanner.dart';
@@ -24,15 +24,21 @@ Future<CardScanResult> scanCardPhoto({required bool camera}) async {
       imageQuality: 90,
     );
   } catch (e) {
-    throw BillScanException('The camera or photo library could not be opened. Details: $e');
+    throw BillScanException(
+      'The camera or photo library could not be opened. Details: $e',
+    );
   }
   if (file == null) throw const BillScanException('No photo was chosen.');
 
   final bytes = await file.readAsBytes();
-  final mime = file.mimeType ?? (file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+  final mime =
+      file.mimeType ??
+      (file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
   final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
   try {
-    final result = await recognizer.processImage(InputImage.fromFilePath(file.path));
+    final result = await recognizer.processImage(
+      InputImage.fromFilePath(file.path),
+    );
     final parsed = parseCardText(result.text);
     return CardScanResult(PickedPhoto(bytes, mime), parsed);
   } catch (e) {

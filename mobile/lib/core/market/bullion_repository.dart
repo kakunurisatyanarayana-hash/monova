@@ -5,7 +5,11 @@ import 'bullion_feed.dart';
 
 /// What one refresh did, for the screen to report.
 class RefreshReport {
-  const RefreshReport({required this.updatedDatasets, required this.failedDatasets, required this.newPrices});
+  const RefreshReport({
+    required this.updatedDatasets,
+    required this.failedDatasets,
+    required this.newPrices,
+  });
 
   final List<String> updatedDatasets;
   final Map<String, String> failedDatasets;
@@ -18,14 +22,20 @@ class RefreshReport {
 /// Only runs when the person opens Live Market and presses refresh. Nothing runs in the background.
 class BullionRepository {
   BullionRepository({Dio? dio, DateTime Function()? now})
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               baseUrl: snapdataBaseUrl,
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 15),
-              headers: {'Accept': 'application/json', 'User-Agent': 'MONOVA-app/1.0'},
-            )),
-        _now = now ?? DateTime.now;
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'MONOVA-app/1.0',
+              },
+            ),
+          ),
+      _now = now ?? DateTime.now;
 
   static const _pricesKey = 'monova.market.bullion';
   static const _syncKey = 'monova.market.sync';
@@ -40,7 +50,9 @@ class BullionRepository {
   /// Every stored price, oldest first.
   Future<List<StoredPrice>> load() async {
     final store = await LocalStore.open();
-    return [for (final m in store.readList(_pricesKey)) ?StoredPrice.fromJson(m)];
+    return [
+      for (final m in store.readList(_pricesKey)) ?StoredPrice.fromJson(m),
+    ];
   }
 
   /// When each dataset last refreshed successfully, and the last error if it failed.
@@ -60,7 +72,9 @@ class BullionRepository {
   /// Fetches the latest day and the last 30 days for gold and silver. A failed dataset keeps its stored prices.
   Future<RefreshReport> refresh() async {
     final store = await LocalStore.open();
-    final stored = [for (final m in store.readList(_pricesKey)) ?StoredPrice.fromJson(m)];
+    final stored = [
+      for (final m in store.readList(_pricesKey)) ?StoredPrice.fromJson(m),
+    ];
     final syncs = await syncStates();
     final updated = <String>[];
     final failed = <String, String>{};
@@ -81,10 +95,17 @@ class BullionRepository {
       } on DioException catch (e) {
         final reason = _describe(e);
         failed[dataset] = reason;
-        syncs[dataset] = SyncState(lastSuccess: syncs[dataset]?.lastSuccess, lastError: reason);
+        syncs[dataset] = SyncState(
+          lastSuccess: syncs[dataset]?.lastSuccess,
+          lastError: reason,
+        );
       } on FormatException catch (e) {
-        failed[dataset] = 'The feed did not match the expected format (${e.message}).';
-        syncs[dataset] = SyncState(lastSuccess: syncs[dataset]?.lastSuccess, lastError: failed[dataset]);
+        failed[dataset] =
+            'The feed did not match the expected format (${e.message}).';
+        syncs[dataset] = SyncState(
+          lastSuccess: syncs[dataset]?.lastSuccess,
+          lastError: failed[dataset],
+        );
       }
     }
 
@@ -96,7 +117,12 @@ class BullionRepository {
     final newlyAttempted = <String>[];
     for (final dataset in const ['gold', 'silver']) {
       if (failed.containsKey(dataset)) continue;
-      final days = datesToBackfill(dataset: dataset, today: today.subtract(const Duration(days: 1)), attempted: attempted, limit: _backfillDaysPerRefresh);
+      final days = datesToBackfill(
+        dataset: dataset,
+        today: today.subtract(const Duration(days: 1)),
+        attempted: attempted,
+        limit: _backfillDaysPerRefresh,
+      );
       for (final day in days) {
         try {
           final feed = await _getFeed('/$dataset/in/${dayKey(day)}.json');
@@ -124,17 +150,33 @@ class BullionRepository {
           'lastError': e.value.lastError,
         },
     ]);
-    return RefreshReport(updatedDatasets: updated, failedDatasets: failed, newPrices: incoming.length);
+    return RefreshReport(
+      updatedDatasets: updated,
+      failedDatasets: failed,
+      newPrices: incoming.length,
+    );
   }
 
   /// True while older days still have to be downloaded for gold or silver.
   Future<bool> historyPending() async {
     final store = await LocalStore.open();
-    final attempted = {for (final m in store.readList(_attemptedKey)) '${m['k']}'};
+    final attempted = {
+      for (final m in store.readList(_attemptedKey)) '${m['k']}',
+    };
     final now = _now();
-    final yesterday = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    final yesterday = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 1));
     for (final dataset in const ['gold', 'silver']) {
-      if (datesToBackfill(dataset: dataset, today: yesterday, attempted: attempted, limit: 1).isNotEmpty) return true;
+      if (datesToBackfill(
+        dataset: dataset,
+        today: yesterday,
+        attempted: attempted,
+        limit: 1,
+      ).isNotEmpty)
+        return true;
     }
     return false;
   }
@@ -146,12 +188,14 @@ class BullionRepository {
       try {
         final r = await _dio.get<dynamic>(path);
         final data = r.data;
-        if (data is! Map<String, dynamic>) throw const FormatException('not a JSON object');
+        if (data is! Map<String, dynamic>)
+          throw const FormatException('not a JSON object');
         return parseBullionFeed(data);
       } on DioException catch (e) {
         last = e;
         // Retry only when the connection itself failed, not for an error the server returned on purpose.
-        final retryable = e.type == DioExceptionType.connectionTimeout ||
+        final retryable =
+            e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout ||
             e.type == DioExceptionType.connectionError;
         if (!retryable || attempt == 1) rethrow;
@@ -163,10 +207,12 @@ class BullionRepository {
 
   String _describe(DioException e) {
     final code = e.response?.statusCode;
-    if (code != null) return 'The source answered with status $code. Try again later.';
+    if (code != null)
+      return 'The source answered with status $code. Try again later.';
     return switch (e.type) {
       DioExceptionType.connectionTimeout || DioExceptionType.receiveTimeout => 'The source took too long to answer. Check the connection and try again.',
-      DioExceptionType.connectionError => 'No internet connection, or the source could not be reached.',
+      DioExceptionType.connectionError =>
+        'No internet connection, or the source could not be reached.',
       _ => 'The source could not be read. Try again later.',
     };
   }

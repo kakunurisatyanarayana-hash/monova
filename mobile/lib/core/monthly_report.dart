@@ -11,7 +11,11 @@ import 'property_money.dart';
 import 'property_store.dart';
 
 /// Rupee amounts in the report. The PDF's built-in font has no rupee sign, so amounts read "Rs".
-final _rupees = NumberFormat.currency(locale: 'en_IN', symbol: 'Rs ', decimalDigits: 2);
+final _rupees = NumberFormat.currency(
+  locale: 'en_IN',
+  symbol: 'Rs ',
+  decimalDigits: 2,
+);
 
 String rupees(int cents) => _rupees.format(cents / 100);
 
@@ -82,9 +86,14 @@ MonthlyReport buildMonthlyReport({
     if (e.income || e.date.year != year || e.date.month != month) continue;
     byCategory[e.category] = (byCategory[e.category] ?? 0) + e.cents;
   }
-  final categories = [for (final entry in byCategory.entries) CategoryTotal(entry.key, entry.value)]
-    ..sort((a, b) => b.cents.compareTo(a.cents));
-  final open = [for (final l in loans) if (!l.finished) l];
+  final categories = [
+    for (final entry in byCategory.entries)
+      CategoryTotal(entry.key, entry.value),
+  ]..sort((a, b) => b.cents.compareTo(a.cents));
+  final open = [
+    for (final l in loans)
+      if (!l.finished) l,
+  ];
   final property = monthMoney(book, year: year, month: month);
   return MonthlyReport(
     year: year,
@@ -93,7 +102,12 @@ MonthlyReport buildMonthlyReport({
     moneyOut: summary.spent,
     categories: categories,
     budgets: [
-      for (final b in budgets) BudgetLine(b.category, spentInCategory(entries, b.category, year, month), b.limitCents),
+      for (final b in budgets)
+        BudgetLine(
+          b.category,
+          spentInCategory(entries, b.category, year, month),
+          b.limitCents,
+        ),
     ],
     loansOutstanding: open.fold(0, (s, l) => s + l.outstandingCents()),
     loansEachMonth: open.fold(0, (s, l) => s + l.emiCents),
@@ -103,82 +117,139 @@ MonthlyReport buildMonthlyReport({
   );
 }
 
-const _monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const _monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 /// The report as a PDF, ready to save, share or print.
-Future<Uint8List> monthlyReportPdf(MonthlyReport r, {DateTime? generatedOn}) async {
+Future<Uint8List> monthlyReportPdf(
+  MonthlyReport r, {
+  DateTime? generatedOn,
+}) async {
   final doc = pw.Document();
   final heading = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
   final muted = const pw.TextStyle(fontSize: 10, color: PdfColors.grey700);
   final when = generatedOn ?? DateTime.now();
 
-  pw.Widget table(List<String> headers, List<List<String>> rows) => pw.TableHelper.fromTextArray(
+  pw.Widget table(List<String> headers, List<List<String>> rows) =>
+      pw.TableHelper.fromTextArray(
         headers: headers,
         data: rows,
         headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
         cellStyle: const pw.TextStyle(fontSize: 10),
         headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-        cellAlignments: {for (var i = 0; i < headers.length; i++) i: i == headers.length - 1 ? pw.Alignment.centerRight : pw.Alignment.centerLeft},
+        cellAlignments: {
+          for (var i = 0; i < headers.length; i++)
+            i: i == headers.length - 1
+                ? pw.Alignment.centerRight
+                : pw.Alignment.centerLeft,
+        },
       );
 
-  doc.addPage(pw.MultiPage(
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(36),
-    build: (context) => [
-      pw.Text('MONOVA monthly report', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
-      pw.Text('${_monthNames[r.month - 1]} ${r.year}', style: const pw.TextStyle(fontSize: 13)),
-      pw.Text('Made on ${dayLabelFor(when)} from the records on this phone', style: muted),
-      pw.SizedBox(height: 16),
-      pw.Text('Summary', style: heading),
-      pw.SizedBox(height: 6),
-      table(['Item', 'Amount'], [
-        ['Money in', rupees(r.moneyIn)],
-        ['Money out', rupees(r.moneyOut)],
-        ['Left over', rupees(r.leftOver)],
-      ]),
-      pw.SizedBox(height: 16),
-      pw.Text('Spending by category', style: heading),
-      pw.SizedBox(height: 6),
-      if (r.categories.isEmpty) pw.Text('No spending recorded this month.', style: muted)
-      else table(['Category', 'Amount'], [for (final c in r.categories) [c.category, rupees(c.cents)]]),
-      if (r.budgets.isNotEmpty) ...[
+  doc.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(36),
+      build: (context) => [
+        pw.Text(
+          'MONOVA monthly report',
+          style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.Text(
+          '${_monthNames[r.month - 1]} ${r.year}',
+          style: const pw.TextStyle(fontSize: 13),
+        ),
+        pw.Text(
+          'Made on ${dayLabelFor(when)} from the records on this phone',
+          style: muted,
+        ),
         pw.SizedBox(height: 16),
-        pw.Text('Budgets', style: heading),
+        pw.Text('Summary', style: heading),
         pw.SizedBox(height: 6),
-        table(['Category', 'Spent', 'Limit', 'Status'], [
-          for (final b in r.budgets)
+        table(
+          ['Item', 'Amount'],
+          [
+            ['Money in', rupees(r.moneyIn)],
+            ['Money out', rupees(r.moneyOut)],
+            ['Left over', rupees(r.leftOver)],
+          ],
+        ),
+        pw.SizedBox(height: 16),
+        pw.Text('Spending by category', style: heading),
+        pw.SizedBox(height: 6),
+        if (r.categories.isEmpty)
+          pw.Text('No spending recorded this month.', style: muted)
+        else
+          table(
+            ['Category', 'Amount'],
             [
-              b.category,
-              rupees(b.spentCents),
-              rupees(b.limitCents),
-              b.spentCents > b.limitCents ? 'Over budget' : (b.spentCents >= b.limitCents * 0.8 ? 'Close to limit' : 'Within budget'),
+              for (final c in r.categories) [c.category, rupees(c.cents)],
             ],
-        ]),
+          ),
+        if (r.budgets.isNotEmpty) ...[
+          pw.SizedBox(height: 16),
+          pw.Text('Budgets', style: heading),
+          pw.SizedBox(height: 6),
+          table(
+            ['Category', 'Spent', 'Limit', 'Status'],
+            [
+              for (final b in r.budgets)
+                [
+                  b.category,
+                  rupees(b.spentCents),
+                  rupees(b.limitCents),
+                  b.spentCents > b.limitCents
+                      ? 'Over budget'
+                      : (b.spentCents >= b.limitCents * 0.8
+                            ? 'Close to limit'
+                            : 'Within budget'),
+                ],
+            ],
+          ),
+        ],
+        pw.SizedBox(height: 16),
+        pw.Text('Loans and borrowing', style: heading),
+        pw.SizedBox(height: 6),
+        table(
+          ['Item', 'Amount'],
+          [
+            ['Still to repay (all open loans)', rupees(r.loansOutstanding)],
+            ['Instalments due each month', rupees(r.loansEachMonth)],
+          ],
+        ),
+        pw.SizedBox(height: 16),
+        pw.Text('Property', style: heading),
+        pw.SizedBox(height: 6),
+        table(
+          ['Item', 'Amount'],
+          [
+            ['Rent collected this month', rupees(r.rentCollected)],
+            ['Property expenses this month', rupees(r.propertyExpenses)],
+            ['Deposits held (not income)', rupees(r.depositsHeld)],
+          ],
+        ),
+        pw.SizedBox(height: 18),
+        pw.Text(
+          'Amounts are in Indian rupees (Rs). Deposits are kept separately and are not counted as income. '
+          'This report is a personal record, not a tax or bank statement.',
+          style: muted,
+        ),
       ],
-      pw.SizedBox(height: 16),
-      pw.Text('Loans and borrowing', style: heading),
-      pw.SizedBox(height: 6),
-      table(['Item', 'Amount'], [
-        ['Still to repay (all open loans)', rupees(r.loansOutstanding)],
-        ['Instalments due each month', rupees(r.loansEachMonth)],
-      ]),
-      pw.SizedBox(height: 16),
-      pw.Text('Property', style: heading),
-      pw.SizedBox(height: 6),
-      table(['Item', 'Amount'], [
-        ['Rent collected this month', rupees(r.rentCollected)],
-        ['Property expenses this month', rupees(r.propertyExpenses)],
-        ['Deposits held (not income)', rupees(r.depositsHeld)],
-      ]),
-      pw.SizedBox(height: 18),
-      pw.Text(
-        'Amounts are in Indian rupees (Rs). Deposits are kept separately and are not counted as income. '
-        'This report is a personal record, not a tax or bank statement.',
-        style: muted,
-      ),
-    ],
-  ));
+    ),
+  );
   return doc.save();
 }
 
-String dayLabelFor(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+String dayLabelFor(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';

@@ -43,22 +43,39 @@ class PinStore {
   static Future<void> setPin(String pin) async {
     final salt = List<int>.generate(16, (_) => _random.nextInt(256));
     final hash = await _hash(pin, salt, _iterations);
-    await _write(jsonEncode({'salt': base64Encode(salt), 'hash': base64Encode(hash), 'iterations': _iterations}));
+    await _write(
+      jsonEncode({
+        'salt': base64Encode(salt),
+        'hash': base64Encode(hash),
+        'iterations': _iterations,
+      }),
+    );
   }
 
   static Future<bool> matches(String pin) async {
     final raw = await _read();
     if (raw == null) return false;
     final stored = jsonDecode(raw) as Map<String, dynamic>;
-    final hash = await _hash(pin, base64Decode(stored['salt'] as String), stored['iterations'] as int);
+    final hash = await _hash(
+      pin,
+      base64Decode(stored['salt'] as String),
+      stored['iterations'] as int,
+    );
     return _sameBytes(hash, base64Decode(stored['hash'] as String));
   }
 
   static Future<void> clear() => _write(null);
 
-  static Future<List<int>> _hash(String pin, List<int> salt, int iterations) async {
-    final key = await Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: iterations, bits: 256)
-        .deriveKeyFromPassword(password: pin, nonce: salt);
+  static Future<List<int>> _hash(
+    String pin,
+    List<int> salt,
+    int iterations,
+  ) async {
+    final key = await Pbkdf2(
+      macAlgorithm: Hmac.sha256(),
+      iterations: iterations,
+      bits: 256,
+    ).deriveKeyFromPassword(password: pin, nonce: salt);
     return key.extractBytes();
   }
 
@@ -82,11 +99,16 @@ class AppLockState {
   final int failures;
   final DateTime? waitUntil;
 
-  AppLockState copyWith({LockStatus? status, int? failures, DateTime? waitUntil, bool clearWait = false}) => AppLockState(
-        status: status ?? this.status,
-        failures: failures ?? this.failures,
-        waitUntil: clearWait ? null : (waitUntil ?? this.waitUntil),
-      );
+  AppLockState copyWith({
+    LockStatus? status,
+    int? failures,
+    DateTime? waitUntil,
+    bool clearWait = false,
+  }) => AppLockState(
+    status: status ?? this.status,
+    failures: failures ?? this.failures,
+    waitUntil: clearWait ? null : (waitUntil ?? this.waitUntil),
+  );
 }
 
 /// Locks the app when a PIN is set. After five wrong PINs the app waits longer before the next try.
@@ -114,7 +136,9 @@ class AppLockController extends Notifier<AppLockState> {
       return null;
     }
     final failures = state.failures + 1;
-    final delay = failures >= 5 ? Duration(seconds: 30 * (failures - 4)) : Duration.zero;
+    final delay = failures >= 5
+        ? Duration(seconds: 30 * (failures - 4))
+        : Duration.zero;
     state = state.copyWith(
       failures: failures,
       waitUntil: delay == Duration.zero ? null : DateTime.now().add(delay),
@@ -125,7 +149,8 @@ class AppLockController extends Notifier<AppLockState> {
 
   /// Called when the app goes to the background, so the next open asks for the PIN.
   void lockIfSet() {
-    if (state.status == LockStatus.unlocked) state = state.copyWith(status: LockStatus.locked);
+    if (state.status == LockStatus.unlocked)
+      state = state.copyWith(status: LockStatus.locked);
   }
 
   Future<void> setPin(String pin) async {
@@ -145,4 +170,6 @@ class AppLockController extends Notifier<AppLockState> {
   }
 }
 
-final appLockProvider = NotifierProvider<AppLockController, AppLockState>(AppLockController.new);
+final appLockProvider = NotifierProvider<AppLockController, AppLockState>(
+  AppLockController.new,
+);

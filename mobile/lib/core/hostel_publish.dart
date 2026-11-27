@@ -27,15 +27,22 @@ class HostelPublish {
   /// Every code on this phone, mapped to its property ID. Used to match shared complaints back to a property.
   static Future<Map<String, String>> propertyByCode() async {
     final store = await LocalStore.open();
-    return {for (final m in store.readList(_codesKey)) '${m['code']}': '${m['property']}'};
+    return {
+      for (final m in store.readList(_codesKey))
+        '${m['code']}': '${m['property']}',
+    };
   }
 
   /// Publishes the hostel and returns its code. Throws a plain message when it cannot be done.
-  static Future<String> publish({required String propertyId, required String name}) async {
+  static Future<String> publish({
+    required String propertyId,
+    required String name,
+  }) async {
     if (!cloudReady) throw 'Cloud sync is not set up in this build.';
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw 'Sign in with your owner account first.';
-    if (!user.emailVerified) throw 'Verify your email first, then turn on QR complaints.';
+    if (!user.emailVerified)
+      throw 'Verify your email first, then turn on QR complaints.';
     final existing = await codeFor(propertyId);
     if (existing != null) return existing;
     await user.getIdToken(true);

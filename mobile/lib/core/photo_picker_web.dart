@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
 
@@ -25,11 +25,13 @@ Future<PickedPhoto?> pickPhoto({required bool camera}) {
       return;
     }
     final file = files.item(0)!;
-    _shrink(file).then((photo) {
-      if (!completer.isCompleted) completer.complete(photo);
-    }).catchError((Object e) {
-      if (!completer.isCompleted) completer.completeError(e);
-    });
+    _shrink(file)
+        .then((photo) {
+          if (!completer.isCompleted) completer.complete(photo);
+        })
+        .catchError((Object e) {
+          if (!completer.isCompleted) completer.completeError(e);
+        });
   }.toJS;
 
   input.click();
@@ -46,7 +48,10 @@ Future<PickedPhoto> _shrink(web.File file) async {
       if (!loaded.isCompleted) loaded.complete();
     }.toJS;
     img.onerror = (web.Event _) {
-      if (!loaded.isCompleted) loaded.completeError(StateError('The picture could not be read. Try a different file.'));
+      if (!loaded.isCompleted)
+        loaded.completeError(
+          StateError('The picture could not be read. Try a different file.'),
+        );
     }.toJS;
     img.src = url;
     await loaded.future;
@@ -58,7 +63,8 @@ Future<PickedPhoto> _shrink(web.File file) async {
     final cw = (w * scale).round();
     final ch = (h * scale).round();
 
-    final canvas = web.document.createElement('canvas') as web.HTMLCanvasElement;
+    final canvas =
+        web.document.createElement('canvas') as web.HTMLCanvasElement;
     canvas.width = cw;
     canvas.height = ch;
     final ctx = canvas.getContext('2d')! as web.CanvasRenderingContext2D;

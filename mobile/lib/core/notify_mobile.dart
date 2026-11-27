@@ -6,7 +6,8 @@ import 'reminders.dart';
 
 const _channelId = 'monova_reminders';
 const _channelName = 'Reminders';
-const _channelDescription = 'Bills, warranties, rent and other reminders you set in MONOVA';
+const _channelDescription =
+    'Bills, warranties, rent and other reminders you set in MONOVA';
 
 /// This app is used in India, so reminder times are read in Indian time.
 const _zone = 'Asia/Kolkata';
@@ -19,7 +20,9 @@ Future<void> initReminderAlerts() async {
   tzdata.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation(_zone));
   const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-  await _plugin.initialize(settings: const InitializationSettings(android: android));
+  await _plugin.initialize(
+    settings: const InitializationSettings(android: android),
+  );
   _ready = true;
 }
 
@@ -28,7 +31,10 @@ bool get reminderAlertsSupported => true;
 /// Asks Android for permission to post notifications (Android 13 and newer). Returns whether it was granted.
 Future<bool> requestReminderAlertPermission() async {
   await initReminderAlerts();
-  final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  final android = _plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
   return (await android?.requestNotificationsPermission()) ?? false;
 }
 

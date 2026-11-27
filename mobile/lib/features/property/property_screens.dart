@@ -12,6 +12,8 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
 import 'map_picker.dart';
+import 'onboarding_card.dart';
+import 'owner_actions.dart';
 import 'property_payments.dart';
 import 'property_person.dart';
 
@@ -124,6 +126,8 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
+                OnboardingCard(book: _book, onAddProperty: _addProperty),
+                const SizedBox(height: 12),
                 if (_book.properties.isEmpty)
                   EmptyState(
                     icon: Icons.apartment_rounded,
@@ -581,6 +585,12 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
               ],
             ),
           ),
+          OutlinedButton.icon(
+            onPressed: () => showBillSplit(context, _book, property),
+            icon: const Icon(Icons.call_split_rounded),
+            label: const Text('Split a bill among tenants'),
+          ),
+          const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: () => _editProperty(property),
             icon: const Icon(Icons.edit_outlined),

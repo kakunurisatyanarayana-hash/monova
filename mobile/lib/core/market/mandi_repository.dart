@@ -9,14 +9,20 @@ import 'mandi_feed.dart';
 /// secure storage. It is never written into the app, so it does not ship in the APK.
 class MandiRepository {
   MandiRepository({Dio? dio, FlutterSecureStorage? secure})
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               baseUrl: mandiBaseUrl,
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 20),
-              headers: {'Accept': 'application/json', 'User-Agent': 'MONOVA-app/1.0'},
-            )),
-        _secure = secure ?? const FlutterSecureStorage();
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'MONOVA-app/1.0',
+              },
+            ),
+          ),
+      _secure = secure ?? const FlutterSecureStorage();
 
   static const _keyName = 'monova.market.datagovKey';
   static const _recordsKey = 'monova.market.mandi';
@@ -27,7 +33,8 @@ class MandiRepository {
   final Dio _dio;
   final FlutterSecureStorage _secure;
 
-  Future<bool> hasKey() async => (await _secure.read(key: _keyName))?.isNotEmpty == true;
+  Future<bool> hasKey() async =>
+      (await _secure.read(key: _keyName))?.isNotEmpty == true;
 
   Future<void> saveKey(String key) async {
     final trimmed = key.trim();
@@ -51,10 +58,18 @@ class MandiRepository {
   /// Records already stored, newest first, optionally limited to one state or commodity.
   Future<List<MandiRecord>> load({String? state, String? commodity}) async {
     final store = await LocalStore.open();
-    final all = [for (final m in store.readList(_recordsKey)) ?MandiRecord.fromJson(m)];
+    final all = [
+      for (final m in store.readList(_recordsKey)) ?MandiRecord.fromJson(m),
+    ];
     return all.where((r) {
-      if (state != null && state.isNotEmpty && r.state.toLowerCase() != state.toLowerCase()) return false;
-      if (commodity != null && commodity.isNotEmpty && !r.commodity.toLowerCase().contains(commodity.toLowerCase())) return false;
+      if (state != null &&
+          state.isNotEmpty &&
+          r.state.toLowerCase() != state.toLowerCase())
+        return false;
+      if (commodity != null &&
+          commodity.isNotEmpty &&
+          !r.commodity.toLowerCase().contains(commodity.toLowerCase()))
+        return false;
       return true;
     }).toList();
   }
@@ -64,20 +79,31 @@ class MandiRepository {
   Future<int> fetch({required String state, required String commodity}) async {
     // data.gov.in does not allow browser pages to read its answers, so the web build cannot fetch mandi prices.
     if (kIsWeb) {
-      throw const MandiException('Mandi prices work in the Android app. Browsers are not allowed to read data.gov.in, so the web version cannot fetch them.');
+      throw const MandiException(
+        'Mandi prices work in the Android app. Browsers are not allowed to read data.gov.in, so the web version cannot fetch them.',
+      );
     }
     final key = await _secure.read(key: _keyName);
     if (key == null || key.isEmpty) {
-      throw const MandiException('Add your free data.gov.in API key first. It stays on this phone.');
+      throw const MandiException(
+        'Add your free data.gov.in API key first. It stays on this phone.',
+      );
     }
     final fetched = <MandiRecord>[];
     for (var page = 0; page < _maxPages; page++) {
-      final rows = await _page(key, state: state, commodity: commodity, offset: page * _pageSize);
+      final rows = await _page(
+        key,
+        state: state,
+        commodity: commodity,
+        offset: page * _pageSize,
+      );
       fetched.addAll(rows);
       if (rows.length < _pageSize) break;
     }
     final store = await LocalStore.open();
-    final stored = [for (final m in store.readList(_recordsKey)) ?MandiRecord.fromJson(m)];
+    final stored = [
+      for (final m in store.readList(_recordsKey)) ?MandiRecord.fromJson(m),
+    ];
     final merged = mergeMandi(stored, fetched);
     await store.writeList(_recordsKey, [for (final r in merged) r.toJson()]);
     await store.writeList(_fetchedKey, [
@@ -86,28 +112,43 @@ class MandiRepository {
     return fetched.length;
   }
 
-  Future<List<MandiRecord>> _page(String key, {required String state, required String commodity, required int offset}) async {
+  Future<List<MandiRecord>> _page(
+    String key, {
+    required String state,
+    required String commodity,
+    required int offset,
+  }) async {
     try {
-      final r = await _dio.get<dynamic>('', queryParameters: {
-        'api-key': key,
-        'format': 'json',
-        'limit': _pageSize,
-        'offset': offset,
-        if (state.isNotEmpty) 'filters[state]': state,
-        if (commodity.isNotEmpty) 'filters[commodity]': commodity,
-      });
+      final r = await _dio.get<dynamic>(
+        '',
+        queryParameters: {
+          'api-key': key,
+          'format': 'json',
+          'limit': _pageSize,
+          'offset': offset,
+          if (state.isNotEmpty) 'filters[state]': state,
+          if (commodity.isNotEmpty) 'filters[commodity]': commodity,
+        },
+      );
       final data = r.data;
-      if (data is! Map<String, dynamic>) throw const MandiException('The source sent an unexpected answer.');
+      if (data is! Map<String, dynamic>)
+        throw const MandiException('The source sent an unexpected answer.');
       return parseMandiPage(data);
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       if (code == 403 || code == 401) {
-        throw const MandiException('The data.gov.in key was not accepted. Check it in your data.gov.in account.');
+        throw const MandiException(
+          'The data.gov.in key was not accepted. Check it in your data.gov.in account.',
+        );
       }
       if (code == 429) {
-        throw const MandiException('The data.gov.in limit was reached for today. Try again later.');
+        throw const MandiException(
+          'The data.gov.in limit was reached for today. Try again later.',
+        );
       }
-      throw const MandiException('The mandi prices could not be fetched. Check the connection and try again.');
+      throw const MandiException(
+        'The mandi prices could not be fetched. Check the connection and try again.',
+      );
     }
   }
 }

@@ -26,7 +26,8 @@ const recordKeys = <String>[
 ];
 
 /// A record's identity: its id when it has one, otherwise its full content.
-String recordIdentity(Map<String, dynamic> r) => r['id'] != null ? '${r['id']}' : r.toString();
+String recordIdentity(Map<String, dynamic> r) =>
+    r['id'] != null ? '${r['id']}' : r.toString();
 
 /// Reads every record list from this device, keyed by storage key.
 Future<Map<String, List<Map<String, dynamic>>>> readRecords() async {
@@ -35,7 +36,9 @@ Future<Map<String, List<Map<String, dynamic>>>> readRecords() async {
 }
 
 /// Writes record lists back to this device, keyed by storage key. Keys not in [recordKeys] are ignored.
-Future<void> writeRecords(Map<String, List<Map<String, dynamic>>> records) async {
+Future<void> writeRecords(
+  Map<String, List<Map<String, dynamic>>> records,
+) async {
   final store = await LocalStore.open();
   for (final key in recordKeys) {
     final list = records[key];
@@ -66,4 +69,3 @@ Future<void> writeRecords(Map<String, List<Map<String, dynamic>>> records) async
   }
   return (out, added);
 }
-

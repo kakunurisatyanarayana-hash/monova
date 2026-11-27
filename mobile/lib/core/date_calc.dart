@@ -19,22 +19,25 @@ class DateCalc {
   static int daysBetween(DateTime from, DateTime to) =>
       dayOnly(to).difference(dayOnly(from)).inDays;
 
-  static bool isLeapYear(int year) => (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+  static bool isLeapYear(int year) =>
+      (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
 
-  static int daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
+  static int daysInMonth(int year, int month) =>
+      DateTime(year, month + 1, 0).day;
 
   /// Number of days in a "month" for conversions: the average Gregorian month.
   static const double averageDaysPerMonth = 30.436875;
 
   /// Converts a term into whole months (rounded up), used for EMI schedules. Days are an average-month approximation.
   static int termToMonths(double value, TermUnit unit) => switch (unit) {
-        TermUnit.days => (value / averageDaysPerMonth).ceil(),
-        TermUnit.months => value.ceil(),
-        TermUnit.years => (value * 12).ceil(),
-      };
+    TermUnit.days => (value / averageDaysPerMonth).ceil(),
+    TermUnit.months => value.ceil(),
+    TermUnit.years => (value * 12).ceil(),
+  };
 
   /// End date of a term that starts on [start]. Days are exact; months and years use calendar months.
-  static DateTime termEnd(DateTime start, double value, TermUnit unit) => switch (unit) {
+  static DateTime termEnd(DateTime start, double value, TermUnit unit) =>
+      switch (unit) {
         TermUnit.days => dayOnly(start).add(Duration(days: value.round())),
         TermUnit.months => addMonths(start, value.round()),
         TermUnit.years => addMonths(start, (value * 12).round()),
@@ -45,10 +48,10 @@ enum TermUnit { days, months, years }
 
 extension TermUnitLabel on TermUnit {
   String get label => switch (this) {
-        TermUnit.days => 'Days',
-        TermUnit.months => 'Months',
-        TermUnit.years => 'Years',
-      };
+    TermUnit.days => 'Days',
+    TermUnit.months => 'Months',
+    TermUnit.years => 'Years',
+  };
 }
 
 /// Exact age in years, months and days, as people state it ("27 years, 4 months, 3 days").
@@ -79,20 +82,36 @@ class AgeResult {
 class AgeCalc {
   AgeCalc._();
 
-  static const _weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  static const _weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
 
   /// Throws [ArgumentError] when the birth date is after the calculation date.
   static AgeResult between({required DateTime birth, required DateTime on}) {
     final b = DateCalc.dayOnly(birth);
     final o = DateCalc.dayOnly(on);
-    if (b.isAfter(o)) throw ArgumentError('Date of birth cannot be after the date you calculate on.');
+    if (b.isAfter(o))
+      throw ArgumentError(
+        'Date of birth cannot be after the date you calculate on.',
+      );
 
     var years = o.year - b.year;
-    final anniversaryThisYear = DateTime(o.year, b.month, math.min(b.day, DateCalc.daysInMonth(o.year, b.month)));
+    final anniversaryThisYear = DateTime(
+      o.year,
+      b.month,
+      math.min(b.day, DateCalc.daysInMonth(o.year, b.month)),
+    );
     if (o.isBefore(anniversaryThisYear)) years--;
 
     final lastBirthday = DateCalc.addMonths(b, years * 12);
-    var months = (o.year - lastBirthday.year) * 12 + (o.month - lastBirthday.month);
+    var months =
+        (o.year - lastBirthday.year) * 12 + (o.month - lastBirthday.month);
     if (DateCalc.addMonths(lastBirthday, months).isAfter(o)) months--;
     final anchor = DateCalc.addMonths(lastBirthday, months);
     final days = o.difference(anchor).inDays;
@@ -100,9 +119,17 @@ class AgeCalc {
     final totalDays = o.difference(b).inDays;
     final totalMonths = years * 12 + months;
 
-    var next = DateTime(o.year, b.month, math.min(b.day, DateCalc.daysInMonth(o.year, b.month)));
+    var next = DateTime(
+      o.year,
+      b.month,
+      math.min(b.day, DateCalc.daysInMonth(o.year, b.month)),
+    );
     if (!next.isAfter(o) && !DateCalc.dayOnly(next).isAtSameMomentAs(o)) {
-      next = DateTime(o.year + 1, b.month, math.min(b.day, DateCalc.daysInMonth(o.year + 1, b.month)));
+      next = DateTime(
+        o.year + 1,
+        b.month,
+        math.min(b.day, DateCalc.daysInMonth(o.year + 1, b.month)),
+      );
     }
 
     return AgeResult(
@@ -121,7 +148,11 @@ class AgeCalc {
 
 /// Rent over a period: monthly rent that rises by a yearly percentage. Returns the total and the rent for each year.
 class RentYear {
-  const RentYear({required this.year, required this.monthlyRent, required this.yearTotal});
+  const RentYear({
+    required this.year,
+    required this.monthlyRent,
+    required this.yearTotal,
+  });
 
   final int year;
   final double monthlyRent;
@@ -129,7 +160,12 @@ class RentYear {
 }
 
 class RentResult {
-  const RentResult({required this.totalRent, required this.finalMonthlyRent, required this.years, required this.months});
+  const RentResult({
+    required this.totalRent,
+    required this.finalMonthlyRent,
+    required this.years,
+    required this.months,
+  });
 
   final double totalRent;
   final double finalMonthlyRent;
@@ -148,9 +184,12 @@ class RentCalc {
     required double yearlyIncreasePercent,
     required int months,
   }) {
-    if (monthlyRent <= 0) throw ArgumentError('Monthly rent must be greater than zero.');
-    if (months <= 0) throw ArgumentError('The rental period must be at least one month.');
-    if (yearlyIncreasePercent < 0) throw ArgumentError('The yearly increase cannot be negative.');
+    if (monthlyRent <= 0)
+      throw ArgumentError('Monthly rent must be greater than zero.');
+    if (months <= 0)
+      throw ArgumentError('The rental period must be at least one month.');
+    if (yearlyIncreasePercent < 0)
+      throw ArgumentError('The yearly increase cannot be negative.');
 
     var total = 0.0;
     var rent = monthlyRent;
@@ -160,7 +199,9 @@ class RentCalc {
     while (remaining > 0) {
       final inThisYear = math.min(12, remaining);
       final yearTotal = _round2(rent * inThisYear);
-      years.add(RentYear(year: year, monthlyRent: _round2(rent), yearTotal: yearTotal));
+      years.add(
+        RentYear(year: year, monthlyRent: _round2(rent), yearTotal: yearTotal),
+      );
       total += yearTotal;
       remaining -= inThisYear;
       rent = rent * (1 + yearlyIncreasePercent / 100);

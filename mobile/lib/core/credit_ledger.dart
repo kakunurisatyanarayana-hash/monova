@@ -27,55 +27,66 @@ class CreditBill {
   final String notes;
 
   CreditBill copyWith({String? notes}) => CreditBill(
-        id: id,
-        date: date,
-        billerName: billerName,
-        description: description,
-        amountCents: amountCents,
-        finalCents: finalCents,
-        notes: notes ?? this.notes,
-      );
+    id: id,
+    date: date,
+    billerName: billerName,
+    description: description,
+    amountCents: amountCents,
+    finalCents: finalCents,
+    notes: notes ?? this.notes,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': _isoDate(date),
-        'billerName': billerName,
-        'description': description,
-        'amountCents': amountCents,
-        'finalCents': finalCents,
-        'notes': notes,
-      };
+    'id': id,
+    'date': _isoDate(date),
+    'billerName': billerName,
+    'description': description,
+    'amountCents': amountCents,
+    'finalCents': finalCents,
+    'notes': notes,
+  };
 
   factory CreditBill.fromJson(Map<String, dynamic> j) => CreditBill(
-        id: '${j['id']}',
-        date: dateOnly(DateTime.parse('${j['date']}')),
-        billerName: '${j['billerName'] ?? ''}',
-        description: '${j['description'] ?? ''}',
-        amountCents: (j['amountCents'] as num).toInt(),
-        finalCents: (j['finalCents'] as num).toInt(),
-        notes: '${j['notes'] ?? ''}',
-      );
+    id: '${j['id']}',
+    date: dateOnly(DateTime.parse('${j['date']}')),
+    billerName: '${j['billerName'] ?? ''}',
+    description: '${j['description'] ?? ''}',
+    amountCents: (j['amountCents'] as num).toInt(),
+    finalCents: (j['finalCents'] as num).toInt(),
+    notes: '${j['notes'] ?? ''}',
+  );
 }
 
 /// Money the customer paid back. Payments reduce the accrued interest first, then the amount owed.
 class CreditPayment {
-  const CreditPayment({required this.id, required this.date, required this.cents, required this.note});
+  const CreditPayment({
+    required this.id,
+    required this.date,
+    required this.cents,
+    required this.note,
+  });
 
   final String id;
   final DateTime date;
   final int cents;
   final String note;
 
-  CreditPayment copyWith({String? note}) => CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
+  CreditPayment copyWith({String? note}) =>
+      CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
 
-  Map<String, dynamic> toJson() => {'id': id, 'date': _isoDate(date), 'cents': cents, 'note': note};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'date': _isoDate(date),
+    'cents': cents,
+    'note': note,
+  };
 
   factory CreditPayment.fromJson(Map<String, dynamic> j) => CreditPayment(
-        id: '${j['id']}',
-        date: dateOnly(DateTime.parse('${j['date']}')),
-        cents: (j['cents'] as num).toInt(),
-        note: '${j['note'] ?? ''}',
-      );
+    id: '${j['id']}',
+    date: dateOnly(DateTime.parse('${j['date']}')),
+    cents: (j['cents'] as num).toInt(),
+    note: '${j['note'] ?? ''}',
+  );
 }
 
 /// One customer account with its interest terms.
@@ -109,36 +120,41 @@ class CreditAccount {
     bool? compound,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
-  }) =>
-      CreditAccount(
-        id: id,
-        name: name ?? this.name,
-        phone: phone ?? this.phone,
-        annualRatePercent: annualRatePercent ?? this.annualRatePercent,
-        compound: compound ?? this.compound,
-        bills: bills ?? this.bills,
-        payments: payments ?? this.payments,
-      );
+  }) => CreditAccount(
+    id: id,
+    name: name ?? this.name,
+    phone: phone ?? this.phone,
+    annualRatePercent: annualRatePercent ?? this.annualRatePercent,
+    compound: compound ?? this.compound,
+    bills: bills ?? this.bills,
+    payments: payments ?? this.payments,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'phone': phone,
-        'annualRatePercent': annualRatePercent,
-        'compound': compound,
-        'bills': bills.map((b) => b.toJson()).toList(),
-        'payments': payments.map((p) => p.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'phone': phone,
+    'annualRatePercent': annualRatePercent,
+    'compound': compound,
+    'bills': bills.map((b) => b.toJson()).toList(),
+    'payments': payments.map((p) => p.toJson()).toList(),
+  };
 
   factory CreditAccount.fromJson(Map<String, dynamic> j) => CreditAccount(
-        id: '${j['id']}',
-        name: '${j['name'] ?? ''}',
-        phone: '${j['phone'] ?? ''}',
-        annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
-        compound: j['compound'] == true,
-        bills: [for (final b in (j['bills'] as List<dynamic>? ?? const [])) CreditBill.fromJson(Map<String, dynamic>.from(b as Map))],
-        payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) CreditPayment.fromJson(Map<String, dynamic>.from(p as Map))],
-      );
+    id: '${j['id']}',
+    name: '${j['name'] ?? ''}',
+    phone: '${j['phone'] ?? ''}',
+    annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
+    compound: j['compound'] == true,
+    bills: [
+      for (final b in (j['bills'] as List<dynamic>? ?? const []))
+        CreditBill.fromJson(Map<String, dynamic>.from(b as Map)),
+    ],
+    payments: [
+      for (final p in (j['payments'] as List<dynamic>? ?? const []))
+        CreditPayment.fromJson(Map<String, dynamic>.from(p as Map)),
+    ],
+  );
 }
 
 /// One line of the statement: a bill or a payment, with its id so it can be opened and edited.
@@ -252,8 +268,14 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   }
   if (events.isEmpty) {
     return LedgerStatement(
-      asOf: end, principalCents: 0, interestCents: 0, lines: const [], days: const [], interestByMonth: const {},
-      totalBilledCents: 0, totalPaidCents: 0,
+      asOf: end,
+      principalCents: 0,
+      interestCents: 0,
+      lines: const [],
+      days: const [],
+      interestByMonth: const {},
+      totalBilledCents: 0,
+      totalPaidCents: 0,
     );
   }
 
@@ -284,18 +306,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
       for (final e in todaysBills) {
         principal += e.finalCents;
         billed += e.finalCents;
-        lines.add(StatementLine(
-          date: day,
-          description: e.billerName.isEmpty
-              ? (e.description.isEmpty ? 'Bill' : e.description)
-              : '${e.billerName}${e.description.isEmpty ? '' : ' - ${e.description}'}',
-          debitCents: e.finalCents,
-          creditCents: 0,
-          balanceCents: 0,
-          refId: e.id,
-          isPayment: false,
-          notes: e.notes,
-        ));
+        lines.add(
+          StatementLine(
+            date: day,
+            description: e.billerName.isEmpty
+                ? (e.description.isEmpty ? 'Bill' : e.description)
+                : '${e.billerName}${e.description.isEmpty ? '' : ' - ${e.description}'}',
+            debitCents: e.finalCents,
+            creditCents: 0,
+            balanceCents: 0,
+            refId: e.id,
+            isPayment: false,
+            notes: e.notes,
+          ),
+        );
       }
       for (final e in todaysPayments) {
         var left = e.cents.toDouble();
@@ -305,24 +329,30 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
         left -= toInterest;
         principal -= left;
         paid += e.cents;
-        lines.add(StatementLine(
-          date: day,
-          description: e.note.isEmpty ? 'Payment received' : 'Payment: ${e.note}',
-          debitCents: 0,
-          creditCents: e.cents,
-          balanceCents: 0,
-          refId: e.id,
-          isPayment: true,
-          notes: e.note,
-        ));
+        lines.add(
+          StatementLine(
+            date: day,
+            description: e.note.isEmpty
+                ? 'Payment received'
+                : 'Payment: ${e.note}',
+            debitCents: 0,
+            creditCents: e.cents,
+            balanceCents: 0,
+            refId: e.id,
+            isPayment: true,
+            notes: e.note,
+          ),
+        );
       }
-      days.add(DayRow(
-        date: day,
-        bills: todaysBills,
-        payments: todaysPayments,
-        interestCents: interestSincePrevious.round(),
-        balanceCents: (principal + interest).round(),
-      ));
+      days.add(
+        DayRow(
+          date: day,
+          bills: todaysBills,
+          payments: todaysPayments,
+          interestCents: interestSincePrevious.round(),
+          balanceCents: (principal + interest).round(),
+        ),
+      );
       lastRowDay = day;
     }
 
@@ -341,16 +371,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
 
   // Interest has run since the last entry: show it on the as-of date.
   if (lastRowDay == null || lastRowDay.isBefore(end)) {
-    days.add(DayRow(
-      date: end,
-      bills: const [],
-      payments: const [],
-      interestCents: accruedSinceRow.round(),
-      balanceCents: (principal + interest).round(),
-    ));
+    days.add(
+      DayRow(
+        date: end,
+        bills: const [],
+        payments: const [],
+        interestCents: accruedSinceRow.round(),
+        balanceCents: (principal + interest).round(),
+      ),
+    );
   }
 
-  final monthTotals = <String, int>{for (final e in byMonth.entries) e.key: e.value.round()};
+  final monthTotals = <String, int>{
+    for (final e in byMonth.entries) e.key: e.value.round(),
+  };
 
   // Running balance, in date order.
   var running = 0;
@@ -358,16 +392,18 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   final withBalance = <StatementLine>[];
   for (final line in ordered) {
     running += line.debitCents - line.creditCents;
-    withBalance.add(StatementLine(
-      date: line.date,
-      description: line.description,
-      debitCents: line.debitCents,
-      creditCents: line.creditCents,
-      balanceCents: running,
-      refId: line.refId,
-      isPayment: line.isPayment,
-      notes: line.notes,
-    ));
+    withBalance.add(
+      StatementLine(
+        date: line.date,
+        description: line.description,
+        debitCents: line.debitCents,
+        creditCents: line.creditCents,
+        balanceCents: running,
+        refId: line.refId,
+        isPayment: line.isPayment,
+        notes: line.notes,
+      ),
+    );
   }
 
   return LedgerStatement(
@@ -383,15 +419,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   );
 }
 
-String _isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _isoDate(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 class CreditLedgerStore {
   CreditLedgerStore._();
 
   static Future<List<CreditAccount>> load() async {
     final store = await LocalStore.open();
-    final accounts = [for (final m in store.readList(ledgerKey)) CreditAccount.fromJson(m)];
-    accounts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final accounts = [
+      for (final m in store.readList(ledgerKey)) CreditAccount.fromJson(m),
+    ];
+    accounts.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
     return accounts;
   }
 
@@ -411,15 +452,17 @@ List<MoneyEntry> creditInterestEntries(List<CreditAccount> accounts) {
     for (final p in a.payments) {
       final cents = statement.interestPaidByPayment[p.id] ?? 0;
       if (cents <= 0) continue;
-      out.add(MoneyEntry(
-        id: 'cint-${a.id}-${p.id}',
-        income: true,
-        title: 'Interest from ${a.name}',
-        category: 'Interest received',
-        cents: cents,
-        date: p.date,
-        notes: 'Part of a payment that cleared interest',
-      ));
+      out.add(
+        MoneyEntry(
+          id: 'cint-${a.id}-${p.id}',
+          income: true,
+          title: 'Interest from ${a.name}',
+          category: 'Interest received',
+          cents: cents,
+          date: p.date,
+          notes: 'Part of a payment that cleared interest',
+        ),
+      );
     }
   }
   return out;
@@ -428,6 +471,9 @@ List<MoneyEntry> creditInterestEntries(List<CreditAccount> accounts) {
 /// Keeps the credit interest entries in Monova Finance in step with the accounts.
 Future<void> syncCreditInterest(List<CreditAccount> accounts) async {
   final entries = await EntryStore.loadEntries();
-  final kept = [for (final e in entries) if (!e.id.startsWith('cint-')) e];
+  final kept = [
+    for (final e in entries)
+      if (!e.id.startsWith('cint-')) e,
+  ];
   await EntryStore.saveEntries([...kept, ...creditInterestEntries(accounts)]);
 }

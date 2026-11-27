@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/attention.dart';
 import '../../core/complaint_store.dart';
 import '../../core/entry_store.dart';
+import '../../core/rent_status.dart';
 import '../../core/i18n.dart';
 import '../../core/money_plans.dart';
 import '../../core/sip.dart';
 import '../../core/format.dart';
-import '../../core/attention.dart';
 import '../../core/notify.dart';
 import '../../core/reminders.dart';
 import '../../core/property_store.dart';
@@ -49,6 +49,7 @@ class _AttentionCardState extends State<AttentionCard> {
       final complaints = await ComplaintStore.loadComplaints();
       final items = [
         ...complaintAttentionItems(complaints, book),
+        ...rentAttentionItems(book, now),
         ...attentionItems(purchases: purchases, book: book, today: now),
         ...reminderAttentionItems(reminders, now),
         ...sipAttention(await SipStore.load(), now),

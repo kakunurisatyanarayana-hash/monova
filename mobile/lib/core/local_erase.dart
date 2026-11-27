@@ -1,4 +1,4 @@
-﻿import '../features/tools/calculator_screen.dart' show calcHistoryKey;
+import '../features/tools/calculator_screen.dart' show calcHistoryKey;
 import '../features/tools/saved_loan_scenarios.dart' show loanScenariosKey;
 import 'bill_store.dart';
 import 'card_store.dart';
@@ -34,5 +34,8 @@ Future<void> eraseLocalData() async {
   }
   await ReminderStore.save([]);
   final entries = await EntryStore.loadEntries();
-  await EntryStore.saveEntries([for (final e in entries) if (!e.id.startsWith('prop-')) e]);
+  await EntryStore.saveEntries([
+    for (final e in entries)
+      if (!e.id.startsWith('prop-')) e,
+  ]);
 }

@@ -2,7 +2,13 @@ import 'card_rules.dart';
 
 /// What could be read from the text of a card photo. Every field is optional; the user checks them before saving.
 class ParsedCard {
-  const ParsedCard({this.digits, this.expiryMonth, this.expiryYear, this.holder, this.bank});
+  const ParsedCard({
+    this.digits,
+    this.expiryMonth,
+    this.expiryYear,
+    this.holder,
+    this.bank,
+  });
 
   /// The full card number as printed (digits only). Only its last four digits are ever kept.
   final String? digits;
@@ -11,18 +17,51 @@ class ParsedCard {
   final String? holder;
   final String? bank;
 
-  bool get isEmpty => digits == null && expiryMonth == null && holder == null && bank == null;
+  bool get isEmpty =>
+      digits == null && expiryMonth == null && holder == null && bank == null;
 }
 
 /// Words that are printed on cards but are not the cardholder's name.
 const _notNames = [
-  'BANK', 'VISA', 'MASTER', 'MASTERCARD', 'RUPAY', 'AMEX', 'DEBIT', 'CREDIT', 'PLATINUM', 'GOLD', 'SIGNATURE',
-  'VALID', 'THRU', 'FROM', 'MONTH', 'YEAR', 'CARD', 'MEMBER', 'AUTHORISED', 'AUTHORIZED', 'CONTACTLESS', 'INTERNATIONAL',
-  'WORLD', 'CLASSIC', 'ELECTRONIC', 'USE', 'ONLY', 'NETWORK', 'CUSTOMER', 'CARDHOLDER', 'SAVINGS',
+  'BANK',
+  'VISA',
+  'MASTER',
+  'MASTERCARD',
+  'RUPAY',
+  'AMEX',
+  'DEBIT',
+  'CREDIT',
+  'PLATINUM',
+  'GOLD',
+  'SIGNATURE',
+  'VALID',
+  'THRU',
+  'FROM',
+  'MONTH',
+  'YEAR',
+  'CARD',
+  'MEMBER',
+  'AUTHORISED',
+  'AUTHORIZED',
+  'CONTACTLESS',
+  'INTERNATIONAL',
+  'WORLD',
+  'CLASSIC',
+  'ELECTRONIC',
+  'USE',
+  'ONLY',
+  'NETWORK',
+  'CUSTOMER',
+  'CARDHOLDER',
+  'SAVINGS',
 ];
 
 ParsedCard parseCardText(String text) {
-  final lines = text.split(RegExp(r'[\r\n]+')).map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+  final lines = text
+      .split(RegExp(r'[\r\n]+'))
+      .map((l) => l.trim())
+      .where((l) => l.isNotEmpty)
+      .toList();
   return ParsedCard(
     digits: _findNumber(text),
     expiryMonth: _findExpiry(text)?.$1,
@@ -90,7 +129,8 @@ String? _findNumber(String text) {
 
 /// An expiry written as MM/YY or MM/YYYY (also with a dash). Returns (month, year).
 (int, int)? _findExpiry(String text) {
-  final m = RegExp(r'(?<!\d)(0[1-9]|1[0-2])\s*[/\-]\s*(\d{2}|20\d{2})(?!\d)').firstMatch(text);
+  final m = RegExp(r'(?<!\d)(0[1-9]|1[0-2])\s*[/\-]\s*(\d{2}|20\d{2})(?!\d)')
+      .firstMatch(text);
   if (m == null) return null;
   final month = int.parse(m.group(1)!);
   var year = int.parse(m.group(2)!);
@@ -103,7 +143,10 @@ String? _findHolder(List<String> lines) {
   for (final line in lines) {
     if (RegExp(r'\d').hasMatch(line)) continue;
     if (!RegExp(r"^[A-Z][A-Z.' ]{4,40}$").hasMatch(line)) continue;
-    final words = line.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final words = line
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
     if (words.length < 2 || words.length > 4) continue;
     if (words.any(_notNames.contains)) continue;
     return line;
@@ -114,7 +157,8 @@ String? _findHolder(List<String> lines) {
 /// The bank name: a line with the word "bank", for example "HDFC BANK".
 String? _findBank(List<String> lines) {
   for (final line in lines) {
-    if (RegExp(r'\bbank\b', caseSensitive: false).hasMatch(line) && !RegExp(r'\d').hasMatch(line)) {
+    if (RegExp(r'\bbank\b', caseSensitive: false).hasMatch(line) &&
+        !RegExp(r'\d').hasMatch(line)) {
       return line.length > 40 ? line.substring(0, 40) : line;
     }
   }

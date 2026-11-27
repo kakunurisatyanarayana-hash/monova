@@ -10,6 +10,7 @@ import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../tools/contact_picker_sheet.dart';
+import 'owner_actions.dart';
 import 'property_payments.dart';
 
 bool _validPhone(String s) => s.replaceAll(RegExp(r'\D'), '').length >= 10;
@@ -711,6 +712,7 @@ class _PersonScreenState extends State<PersonScreen> {
               ],
             ),
           ),
+          OwnerActions(person: p, book: _book),
           const SizedBox(height: 16),
           const SectionTitle('Review'),
           const SizedBox(height: 8),

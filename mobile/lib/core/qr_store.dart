@@ -10,7 +10,9 @@ class QrStore {
 
   static Future<List<Invitation>> loadInvitations() async {
     final store = await LocalStore.open();
-    return [for (final m in store.readList(invitationsKey)) Invitation.fromJson(m)];
+    return [
+      for (final m in store.readList(invitationsKey)) Invitation.fromJson(m),
+    ];
   }
 
   static Future<void> saveInvitations(List<Invitation> list) async {

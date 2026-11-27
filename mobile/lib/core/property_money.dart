@@ -27,12 +27,17 @@ MoneyEntry? financeEntryFor(Payment p, PropertyBook book) {
   final roomNumber = book.roomById(p.roomId)?.number;
   final what = p.kind == 'advance' ? 'Advance' : 'Rent';
   final who = personName.isEmpty ? propertyName : personName;
-  final notes = [if (p.periodLabel.isNotEmpty) p.periodLabel, if (p.note.isNotEmpty) p.note].join(' · ');
+  final notes = [
+    if (p.periodLabel.isNotEmpty) p.periodLabel,
+    if (p.note.isNotEmpty) p.note,
+  ].join(' · ');
   return MoneyEntry(
     id: financeEntryId(p),
     income: true,
     title: '$what · $who${roomNumber == null ? '' : ' · Room $roomNumber'}',
-    category: (property?.retainsGuestData ?? false) ? 'Hotel income' : 'Rental income',
+    category: (property?.retainsGuestData ?? false)
+        ? 'Hotel income'
+        : 'Rental income',
     cents: p.amountCents,
     date: p.date,
     notes: notes,
@@ -42,17 +47,26 @@ MoneyEntry? financeEntryFor(Payment p, PropertyBook book) {
 /// Brings the property entries in [entries] in line with the book's payments.
 /// Adds entries that are missing, updates changed ones, and removes entries whose payment was deleted.
 /// Entries that were not made by the property module are left alone, so nothing is counted twice.
-List<MoneyEntry> mergeFinanceEntries(List<MoneyEntry> entries, PropertyBook book) {
+List<MoneyEntry> mergeFinanceEntries(
+  List<MoneyEntry> entries,
+  PropertyBook book,
+) {
   final wanted = <String, MoneyEntry>{
     for (final p in book.payments)
       if (financeEntryFor(p, book) case final e?) e.id: e,
   };
   final kept = <MoneyEntry>[
     for (final e in entries)
-      if (!e.id.startsWith(_financePrefix)) e else if (wanted.containsKey(e.id)) wanted[e.id]!,
+      if (!e.id.startsWith(_financePrefix))
+        e
+      else if (wanted.containsKey(e.id))
+        wanted[e.id]!,
   ];
   final existing = {for (final e in entries) e.id};
-  final added = [for (final e in wanted.values) if (!existing.contains(e.id)) e];
+  final added = [
+    for (final e in wanted.values)
+      if (!existing.contains(e.id)) e,
+  ];
   return [...kept, ...added];
 }
 
@@ -65,7 +79,11 @@ Future<void> syncFinance(PropertyBook book) async {
 
 /// Money for one property in one month, and the deposits it holds.
 class MonthMoney {
-  const MonthMoney({required this.rentCents, required this.expenseCents, required this.depositsHeldCents});
+  const MonthMoney({
+    required this.rentCents,
+    required this.expenseCents,
+    required this.depositsHeldCents,
+  });
 
   final int rentCents;
   final int expenseCents;
@@ -75,8 +93,14 @@ class MonthMoney {
 }
 
 /// Totals for [year]-[month]. Pass a null [propertyId] to total every property.
-MonthMoney monthMoney(PropertyBook book, {String? propertyId, required int year, required int month}) {
-  bool inProperty(Payment p) => propertyId == null || p.propertyId == propertyId;
+MonthMoney monthMoney(
+  PropertyBook book, {
+  String? propertyId,
+  required int year,
+  required int month,
+}) {
+  bool inProperty(Payment p) =>
+      propertyId == null || p.propertyId == propertyId;
   var rent = 0;
   var expense = 0;
   var deposits = 0;
@@ -88,19 +112,29 @@ MonthMoney monthMoney(PropertyBook book, {String? propertyId, required int year,
     if (p.isIncome) rent += p.amountCents;
     if (p.isExpense) expense += p.amountCents;
   }
-  return MonthMoney(rentCents: rent, expenseCents: expense, depositsHeldCents: deposits);
+  return MonthMoney(
+    rentCents: rent,
+    expenseCents: expense,
+    depositsHeldCents: deposits,
+  );
 }
 
 /// Payments of one property, newest first.
 List<Payment> paymentsOf(PropertyBook book, String propertyId) {
-  final list = [for (final p in book.payments) if (p.propertyId == propertyId) p];
+  final list = [
+    for (final p in book.payments)
+      if (p.propertyId == propertyId) p,
+  ];
   list.sort((a, b) => b.date.compareTo(a.date));
   return list;
 }
 
 /// Payments of one person, newest first.
 List<Payment> paymentsOfPerson(PropertyBook book, String personId) {
-  final list = [for (final p in book.payments) if (p.personId == personId) p];
+  final list = [
+    for (final p in book.payments)
+      if (p.personId == personId) p,
+  ];
   list.sort((a, b) => b.date.compareTo(a.date));
   return list;
 }

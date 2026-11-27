@@ -46,7 +46,9 @@ class RateInput extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: amountFormatters,
                 decoration: InputDecoration(labelText: unit.fieldLabel),
                 onChanged: (_) => onChanged?.call(),
@@ -68,15 +70,23 @@ class RateInput extends StatelessWidget {
           key: ValueKey('unit-$unit'),
           initialValue: unit,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'How is the interest quoted?'),
-          items: [for (final u in RateUnit.values) DropdownMenuItem(value: u, child: Text(u.label))],
+          decoration: const InputDecoration(
+            labelText: 'How is the interest quoted?',
+          ),
+          items: [
+            for (final u in RateUnit.values)
+              DropdownMenuItem(value: u, child: Text(u.label)),
+          ],
           onChanged: (v) {
             if (v != null) onUnitChanged(v);
           },
         ),
         if (annual != null && annual >= 0) ...[
           const SizedBox(height: 10),
-          Text(plainRateExplanation(annual), style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+          Text(
+            plainRateExplanation(annual),
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+          ),
         ],
       ],
     );
@@ -97,7 +107,8 @@ class _RateWheel extends StatefulWidget {
 class _RateWheelState extends State<_RateWheel> {
   late final RateRange _range = rateRange(widget.unit);
   late int _index = _range.indexOf(widget.initial);
-  late final FixedExtentScrollController _controller = FixedExtentScrollController(initialItem: _index);
+  late final FixedExtentScrollController _controller =
+      FixedExtentScrollController(initialItem: _index);
 
   @override
   void dispose() {
@@ -106,11 +117,13 @@ class _RateWheelState extends State<_RateWheel> {
   }
 
   String _text(double v) => switch (widget.unit) {
-        RateUnit.percentYear => '${v.toStringAsFixed(2)} % a year',
-        RateUnit.percentMonth => '${v.toStringAsFixed(2)} % a month',
-        RateUnit.rupeesPer100Month => '₹ ${v.toStringAsFixed(2)} for every ₹100, a month',
-        RateUnit.rupeesPer1000Month => '₹ ${v.toStringAsFixed(1)} for every ₹1,000, a month',
-      };
+    RateUnit.percentYear => '${v.toStringAsFixed(2)} % a year',
+    RateUnit.percentMonth => '${v.toStringAsFixed(2)} % a month',
+    RateUnit.rupeesPer100Month =>
+      '₹ ${v.toStringAsFixed(2)} for every ₹100, a month',
+    RateUnit.rupeesPer1000Month =>
+      '₹ ${v.toStringAsFixed(1)} for every ₹1,000, a month',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -123,9 +136,15 @@ class _RateWheelState extends State<_RateWheel> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.unit.label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(
+              widget.unit.label,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
             const SizedBox(height: 4),
-            Text('Scroll to a rate. Each step is ${plainRate(_range.step)}.', style: TextStyle(color: c.muted, fontSize: 12)),
+            Text(
+              'Scroll to a rate. Each step is ${plainRate(_range.step)}.',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 220,
@@ -145,7 +164,9 @@ class _RateWheelState extends State<_RateWheel> {
                         plainRate(_range.valueAt(i)),
                         style: TextStyle(
                           fontSize: selected ? 26 : 18,
-                          fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                          fontWeight: selected
+                              ? FontWeight.w800
+                              : FontWeight.w500,
                           color: selected ? c.accentStart : c.muted,
                         ),
                       ),
@@ -155,13 +176,27 @@ class _RateWheelState extends State<_RateWheel> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(_text(chosen), textAlign: TextAlign.center, style: TextStyle(color: c.ink, fontWeight: FontWeight.w700)),
+            Text(
+              _text(chosen),
+              textAlign: TextAlign.center,
+              style: TextStyle(color: c.ink, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: FilledButton(onPressed: () => Navigator.pop(context, chosen), child: const Text('Use this rate'))),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context, chosen),
+                    child: const Text('Use this rate'),
+                  ),
+                ),
               ],
             ),
           ],

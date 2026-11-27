@@ -51,8 +51,10 @@ const _hostelTe = <String, String>{
   'Suggestion': 'సూచన',
   'Maintenance request': 'మరమ్మతు అభ్యర్థన',
   'Feedback on a resolved complaint': 'పరిష్కరించిన ఫిర్యాదుపై అభిప్రాయం',
-  'Hostel summary, complaints and reviews': 'హాస్టల్ సారాంశం, ఫిర్యాదులు, సమీక్షలు',
+  'Hostel summary, complaints and reviews':
+      'హాస్టల్ సారాంశం, ఫిర్యాదులు, సమీక్షలు',
 };
 
 /// The Telugu for [english] when the app is in Telugu and a translation exists; otherwise [english].
-String ht(String english) => currentLang == AppLang.te ? (_hostelTe[english] ?? english) : english;
+String ht(String english) =>
+    currentLang == AppLang.te ? (_hostelTe[english] ?? english) : english;

@@ -3,7 +3,13 @@
 // not in the rate unless the quote includes them.
 
 class JewelleryEstimate {
-  const JewelleryEstimate({required this.baseValue, required this.makingCharges, required this.gst, required this.otherCharges, required this.total});
+  const JewelleryEstimate({
+    required this.baseValue,
+    required this.makingCharges,
+    required this.gst,
+    required this.otherCharges,
+    required this.total,
+  });
 
   /// Grams times the rate per gram.
   final double baseValue;

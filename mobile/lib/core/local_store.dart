@@ -1,4 +1,5 @@
 import 'data_revision.dart';
+
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +11,8 @@ class LocalStore {
 
   final SharedPreferences _prefs;
 
-  static Future<LocalStore> open() async => LocalStore(await SharedPreferences.getInstance());
+  static Future<LocalStore> open() async =>
+      LocalStore(await SharedPreferences.getInstance());
 
   List<Map<String, dynamic>> readList(String key) {
     final raw = _prefs.getString(key);
