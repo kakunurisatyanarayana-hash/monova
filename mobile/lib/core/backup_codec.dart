@@ -1,3 +1,4 @@
+import 'record_backup.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -24,6 +25,7 @@ class BackupContents {
     this.loanScenarios = const [],
     this.calcHistory = const [],
     this.cards = const [],
+    this.records = const {},
   });
 
   final List<VaultEntry> vault;
@@ -33,14 +35,18 @@ class BackupContents {
   /// Card details only. Card photos are left out so the backup text stays small enough to copy.
   final List<CardRecord> cards;
 
+  /// Records kept as plain lists on this device (finance, purchases, groups, bills, credit book, property, reminders), keyed by storage key.
+  final Map<String, List<Map<String, dynamic>>> records;
+
   Map<String, dynamic> toJson() => {
         'format': 'monova-backup',
-        'version': 2,
+        'version': 3,
         'createdAt': DateTime.now().toUtc().toIso8601String(),
         'vault': vault.map((e) => e.toJson()).toList(),
         'loanScenarios': loanScenarios,
         'calcHistory': calcHistory,
         'cards': cards.map((c) => c.toJsonWithoutPhoto()).toList(),
+        'records': records,
       };
 
   factory BackupContents.fromJson(Map<String, dynamic> j) {
@@ -53,6 +59,10 @@ class BackupContents {
       loanScenarios: maps('loanScenarios'),
       calcHistory: maps('calcHistory'),
       cards: maps('cards').map(CardRecord.fromJson).toList(),
+      records: {
+        for (final e in ((j['records'] as Map?) ?? const {}).entries)
+          '${e.key}': [for (final m in (e.value as List<dynamic>)) Map<String, dynamic>.from(m as Map)],
+      },
     );
   }
 }
@@ -64,6 +74,7 @@ class MergeResult {
     required this.scenariosAdded,
     required this.historyAdded,
     required this.cardsAdded,
+    this.recordsAdded = 0,
   });
 
   final BackupContents merged;
@@ -71,6 +82,7 @@ class MergeResult {
   final int scenariosAdded;
   final int historyAdded;
   final int cardsAdded;
+  final int recordsAdded;
 }
 
 /// Adds what the backup has and this device lacks. Nothing on this device is removed.
@@ -119,13 +131,15 @@ MergeResult mergeBackups(BackupContents current, BackupContents incoming) {
   }
   final cards = cardById.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
+  final (records, recordsAdded) = mergeRecordLists(current.records, incoming.records);
   final vault = byId.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   return MergeResult(
-    merged: BackupContents(vault: vault, loanScenarios: scenarios, calcHistory: history, cards: cards),
+    merged: BackupContents(vault: vault, loanScenarios: scenarios, calcHistory: history, cards: cards, records: records),
     vaultAdded: vaultAdded,
     scenariosAdded: counts[0],
     historyAdded: counts[1],
     cardsAdded: cardsAdded,
+    recordsAdded: recordsAdded,
   );
 }
 

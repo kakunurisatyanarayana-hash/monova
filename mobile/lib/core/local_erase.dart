@@ -8,6 +8,8 @@ import 'local_store.dart';
 import 'entry_store.dart';
 import 'property_money.dart';
 import 'property_store.dart';
+import 'notify.dart';
+import 'reminders.dart';
 import 'vault_store.dart';
 
 /// Deletes everything this app keeps on the device: passwords and notes, cards, saved bills,
@@ -26,6 +28,11 @@ Future<void> eraseLocalData() async {
   await store.writeList(tenanciesKey, []);
   await store.writeList(personsKey, []);
   await store.writeList(paymentsKey, []);
+  final reminders = await ReminderStore.load();
+  for (final r in reminders) {
+    await cancelReminderAlert(r);
+  }
+  await ReminderStore.save([]);
   final entries = await EntryStore.loadEntries();
   await EntryStore.saveEntries([for (final e in entries) if (!e.id.startsWith('prop-')) e]);
 }

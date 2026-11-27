@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/backup_codec.dart';
+import '../../core/record_backup.dart';
 import '../../core/card_store.dart';
 import '../../core/local_store.dart';
 import '../../core/theme.dart';
@@ -47,6 +48,7 @@ class _BackupScreenState extends State<BackupScreen> {
       loanScenarios: store.readList(loanScenariosKey),
       calcHistory: store.readList(calcHistoryKey),
       cards: await CardStore.load(),
+      records: await readRecords(),
     );
   }
 
@@ -104,8 +106,9 @@ class _BackupScreenState extends State<BackupScreen> {
       await store.writeList(loanScenariosKey, result.merged.loanScenarios);
       await store.writeList(calcHistoryKey, result.merged.calcHistory);
       await CardStore.save(result.merged.cards);
+      await writeRecords(result.merged.records);
       if (!mounted) return;
-      final nothingNew = result.vaultAdded == 0 && result.scenariosAdded == 0 && result.historyAdded == 0 && result.cardsAdded == 0;
+      final nothingNew = result.vaultAdded == 0 && result.scenariosAdded == 0 && result.historyAdded == 0 && result.cardsAdded == 0 && result.recordsAdded == 0;
       setState(() {
         _restoreOk = true;
         _restoreMessage = nothingNew
