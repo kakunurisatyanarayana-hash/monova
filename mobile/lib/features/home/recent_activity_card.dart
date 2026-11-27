@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/bill_store.dart';
+import '../../core/entry_store.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
@@ -69,6 +70,16 @@ class _RecentActivityCardState extends State<RecentActivityCard> {
           subtitle: 'Paid by ${b.payer} · ${_short(b.createdAt)}',
           cents: b.totalCents,
           incoming: false,
+        ));
+      }
+      final entries = await EntryStore.loadEntries();
+      for (final e in entries) {
+        items.add(_Activity(
+          date: e.date,
+          title: e.title,
+          subtitle: '${e.category}${e.notes.isEmpty ? '' : ' · ${e.notes}'} · ${_short(e.date)}',
+          cents: e.cents,
+          incoming: e.income,
         ));
       }
     } catch (_) {

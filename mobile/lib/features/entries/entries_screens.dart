@@ -63,6 +63,10 @@ class _EntriesScreenState extends State<EntriesScreen> {
   }
 
   Future<void> _add({MoneyEntry? existing}) async {
+    if (existing != null && existing.id.startsWith('prop-')) {
+      _fromPropertyNotice();
+      return;
+    }
     final result = await FormSheet.show<MoneyEntry>(
       context,
       title: existing == null ? 'Add income or spending' : 'Edit entry',
@@ -73,7 +77,17 @@ class _EntriesScreenState extends State<EntriesScreen> {
     await _save(updated);
   }
 
+  void _fromPropertyNotice() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('This was recorded from a property. Change it under Property and rooms.'),
+    ));
+  }
+
   Future<void> _delete(MoneyEntry e) async {
+    if (e.id.startsWith('prop-')) {
+      _fromPropertyNotice();
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

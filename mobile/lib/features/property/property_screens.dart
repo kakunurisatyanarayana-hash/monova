@@ -268,6 +268,20 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
     await _apply(withPerson(_book, person));
   }
 
+  Future<void> _editRoomHere(Room room) async {
+    final next = await editRoomFlow(context, _book, room);
+    if (next != null) await _apply(next);
+  }
+
+  Future<void> _deleteRoomHere(Room room) async {
+    final next = await deleteRoomFlow(context, _book, room);
+    if (next != null) await _apply(next);
+  }
+
+  Future<void> _toggleMaintenanceHere(Room room) async {
+    await _apply(_book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? r.copyWith(maintenance: !room.maintenance) : r]));
+  }
+
   Future<void> _openRoom(Room room) async {
     await FormSheet.show<void>(
       context,
@@ -354,6 +368,12 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
               ],
             ),
           ),
+          OutlinedButton.icon(
+            onPressed: () => _editProperty(property),
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Edit property details'),
+          ),
+          const SizedBox(height: 12),
           if (property.retainsGuestData) ...[
             const SizedBox(height: 12),
             MonovaCard(
@@ -390,10 +410,10 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
           const SizedBox(height: 14),
           PaymentsSection(
             book: _book,
-            payments: [for (final p in paymentsOf(_book, property.id)) if (p.isExpense) p],
+            payments: paymentsOf(_book, property.id),
             onChanged: _apply,
             propertyId: property.id,
-            expenseOnly: true,
+            title: 'Transactions and expenses',
           ),
           const SizedBox(height: 18),
           const SectionTitle('Room Availability'),
@@ -425,7 +445,13 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
             const EmptyState(icon: Icons.search_off_rounded, title: 'No room matches', message: 'Clear a filter or change the search.')
           else
             for (final s in shown) ...[
-              _RoomTile(snapshot: s, onTap: () => _openRoom(s.room)),
+              _RoomTile(
+                snapshot: s,
+                onTap: () => _openRoom(s.room),
+                onEdit: () => _editRoomHere(s.room),
+                onMaintenance: () => _toggleMaintenanceHere(s.room),
+                onDelete: () => _deleteRoomHere(s.room),
+              ),
               const SizedBox(height: 8),
             ],
           const SizedBox(height: 18),
@@ -554,11 +580,68 @@ class _FilterBox<T> extends StatelessWidget {
   }
 }
 
+/// Edits a room: its number, floor, sharing, rent and type. Returns the updated book, or null when cancelled or refused.
+/// Changing a whole-room rental to per-bed moves the people in it to beds, when they fit.
+Future<PropertyBook?> editRoomFlow(BuildContext context, PropertyBook book, Room room) async {
+  final others = {
+    for (final r in book.roomsOf(room.propertyId))
+      if (r.id != room.id) r.number.toLowerCase(),
+  };
+  final updated = await FormSheet.show<Room>(
+    context,
+    title: 'Edit room ${room.number}',
+    child: _RoomForm(propertyId: room.propertyId, existingNumbers: others, initial: room),
+  );
+  if (updated == null) return null;
+  final withRoom = book.copyWith(rooms: [for (final r in book.rooms) r.id == room.id ? updated : r]);
+  final (moved, problem) = moveWholeRoomStays(withRoom, updated);
+  if (problem != null) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+    return null;
+  }
+  return moved;
+}
+
+/// Deletes a room (it is hidden and its history kept), after checking nobody is in it or booked.
+Future<PropertyBook?> deleteRoomFlow(BuildContext context, PropertyBook book, Room room) async {
+  final problem = roomDeletionProblem(book, room.id, DateTime.now());
+  if (problem != null) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+    return null;
+  }
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text('Delete room ${room.number}?'),
+      content: const Text('The room will be hidden from the dashboard. Its past stays stay in the history.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return null;
+  return book.copyWith(rooms: [for (final r in book.rooms) r.id == room.id ? room.copyWith(archived: true) : r]);
+}
+
 class _RoomTile extends StatelessWidget {
-  const _RoomTile({required this.snapshot, required this.onTap});
+  const _RoomTile({
+    required this.snapshot,
+    required this.onTap,
+    this.onEdit,
+    this.onMaintenance,
+    this.onDelete,
+  });
 
   final RoomSnapshot snapshot;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onMaintenance;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -571,7 +654,7 @@ class _RoomTile extends StatelessWidget {
     final names = [for (final t in snapshot.occupants) t.name].join(', ');
     return MonovaCard(
       onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
       child: Row(
         children: [
           Container(
@@ -597,6 +680,26 @@ class _RoomTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
             child: Text(roomStatusLabel(snapshot.status), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Room options',
+            icon: Icon(Icons.more_vert_rounded, color: c.muted),
+            onSelected: (v) {
+              switch (v) {
+                case 'edit':
+                  onEdit?.call();
+                case 'maintenance':
+                  onMaintenance?.call();
+                case 'delete':
+                  onDelete?.call();
+              }
+            },
+            itemBuilder: (_) => [
+              if (onEdit != null) const PopupMenuItem(value: 'edit', child: Text('Edit room')),
+              if (onMaintenance != null)
+                PopupMenuItem(value: 'maintenance', child: Text(room.maintenance ? 'Finish maintenance' : 'Mark under maintenance')),
+              if (onDelete != null) const PopupMenuItem(value: 'delete', child: Text('Delete room')),
+            ],
           ),
         ],
       ),
@@ -690,48 +793,14 @@ class _RoomDetailState extends State<_RoomDetail> {
   }
 
   Future<void> _editRoom(Room room) async {
-    final others = {
-      for (final r in _book.roomsOf(room.propertyId))
-        if (r.id != room.id) r.number.toLowerCase(),
-    };
-    final updated = await FormSheet.show<Room>(
-      context,
-      title: 'Edit room ${room.number}',
-      child: _RoomForm(propertyId: room.propertyId, existingNumbers: others, initial: room),
-    );
-    if (updated == null) return;
-    final withRoom = _book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? updated : r]);
-    final (moved, problem) = moveWholeRoomStays(withRoom, updated);
-    if (problem != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
-      return;
-    }
-    _set(moved);
+    final next = await editRoomFlow(context, _book, room);
+    if (next != null) _set(next);
   }
 
   Future<void> _deleteRoom(Room room) async {
-    final problem = roomDeletionProblem(_book, room.id, DateTime.now());
-    if (problem != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
-      return;
-    }
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Delete room ${room.number}?'),
-        content: const Text('The room will be hidden from the dashboard. Its past stays stay in the history.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    _set(_book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? room.copyWith(archived: true) : r]));
+    final next = await deleteRoomFlow(context, _book, room);
+    if (next == null) return;
+    _set(next);
     if (mounted) Navigator.of(context).pop();
   }
 

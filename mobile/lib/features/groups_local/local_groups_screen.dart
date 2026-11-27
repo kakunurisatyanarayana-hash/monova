@@ -343,6 +343,50 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
     await _saveGroup(group.copyWith(expenses: group.expenses.where((x) => x.id != e.id).toList()));
   }
 
+  Future<void> _editExpense(GroupExpense e) async {
+    final group = _group;
+    if (group == null) return;
+    final updated = await FormSheet.show<GroupExpense>(
+      context,
+      title: 'Edit expense',
+      child: _ExpenseForm(members: group.members, initial: e),
+    );
+    if (updated == null) return;
+    await _saveGroup(group.copyWith(expenses: [for (final x in group.expenses) x.id == e.id ? updated : x]));
+  }
+
+  /// Records that [from] has paid [to] the amount shown, which moves the balances towards zero.
+  Future<void> _recordSettlement(({String from, String to, int cents}) s) async {
+    final group = _group;
+    if (group == null) return;
+    final payment = GroupPayment(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      from: s.from,
+      to: s.to,
+      cents: s.cents,
+      createdAt: DateTime.now(),
+    );
+    await _saveGroup(group.copyWith(payments: [...group.payments, payment]));
+  }
+
+  /// Records every payment still needed, so the group is fully settled.
+  Future<void> _settleAll() async {
+    final group = _group;
+    if (group == null || group.settlements.isEmpty) return;
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final added = [
+      for (var i = 0; i < group.settlements.length; i++)
+        GroupPayment(
+          id: '${now}_$i',
+          from: group.settlements[i].from,
+          to: group.settlements[i].to,
+          cents: group.settlements[i].cents,
+          createdAt: DateTime.now(),
+        ),
+    ];
+    await _saveGroup(group.copyWith(payments: [...group.payments, ...added]));
+  }
+
   Future<void> _shareGroup() async {
     final group = _group;
     if (group == null) return;
@@ -369,22 +413,33 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
   Future<void> _deleteGroup() async {
     final group = _group;
     if (group == null) return;
-    final ok = await showDialog<bool>(
+    final unsettled = group.settlements.isNotEmpty;
+    // 'settle' records every payment first, then deletes; 'delete' deletes as it is.
+    final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete this group?'),
-        content: Text('"${group.name}" and all its expenses will be removed from this device.'),
+        content: Text(
+          unsettled
+              ? '"${group.name}" still has ${group.settlements.length} payment${group.settlements.length == 1 ? '' : 's'} to settle. '
+                  'Settle everything now and delete the group? Its expenses and payment history will be removed from this device.'
+              : '"${group.name}", its expenses and its payment history will be removed from this device. Everyone is settled.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.pop(ctx, unsettled ? 'settle' : 'delete'),
+            child: Text(unsettled ? 'Settle and delete' : 'Delete'),
           ),
         ],
       ),
     );
-    if (ok != true) return;
+    if (choice == null) return;
+    if (choice == 'settle') {
+      await _settleAll();
+    }
+    final ok = true;
     final all = await GroupStore.load();
     await GroupStore.save(all.where((g) => g.id != group.id).toList());
     if (mounted) context.pop();
@@ -469,12 +524,36 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                           const SizedBox(height: 10),
                           if (group.settlements.isEmpty)
                             Text(group.expenses.isEmpty ? 'Nothing to settle yet.' : 'Everyone is settled.', style: TextStyle(color: c.muted))
-                          else
+                          else ...[
                             for (final s in group.settlements)
                               Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Text('${group.nameOf(s.from)} pays ${group.nameOf(s.to)} ${money(s.cents / 100)}'),
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(
+                                  children: [
+                                    Expanded(child: Text('${group.nameOf(s.from)} pays ${group.nameOf(s.to)} ${money(s.cents / 100)}')),
+                                    TextButton(onPressed: () => _recordSettlement(s), child: const Text('Mark paid')),
+                                  ],
+                                ),
                               ),
+                            const SizedBox(height: 6),
+                            FilledButton.icon(
+                              onPressed: _settleAll,
+                              icon: const Icon(Icons.done_all_rounded, size: 18),
+                              label: const Text('Settle everything'),
+                            ),
+                          ],
+                          if (group.payments.isNotEmpty) ...[
+                            const SizedBox(height: 14),
+                            Text('Payments recorded', style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                            for (final p in group.payments)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                child: Text(
+                                  '${dayShort(p.createdAt)} · ${group.nameOf(p.from)} paid ${group.nameOf(p.to)} ${money(p.cents / 100)}',
+                                  style: TextStyle(color: c.muted, fontSize: 12),
+                                ),
+                              ),
+                          ],
                         ],
                       ),
                     ),
@@ -530,6 +609,11 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                                 ),
                               ),
                               IconButton(
+                                tooltip: 'Edit expense',
+                                icon: Icon(Icons.edit_outlined, color: c.accentStart),
+                                onPressed: () => _editExpense(e),
+                              ),
+                              IconButton(
                                 tooltip: 'Delete expense',
                                 icon: Icon(Icons.delete_outline_rounded, color: c.expense),
                                 onPressed: () => _deleteExpense(e),
@@ -539,6 +623,12 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                         ),
                         const SizedBox(height: 10),
                       ],
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: _deleteGroup,
+                      icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+                      label: Text('Delete this group', style: TextStyle(color: c.expense)),
+                    ),
                   ],
                 ),
     );
@@ -590,19 +680,26 @@ class _PersonNameFormState extends State<_PersonNameForm> {
 }
 
 class _ExpenseForm extends StatefulWidget {
-  const _ExpenseForm({required this.members});
+  const _ExpenseForm({required this.members, this.initial});
 
   final List<GroupMember> members;
+
+  /// The expense being edited, if any. Its id and date are kept.
+  final GroupExpense? initial;
 
   @override
   State<_ExpenseForm> createState() => _ExpenseFormState();
 }
 
 class _ExpenseFormState extends State<_ExpenseForm> {
-  final _title = TextEditingController();
-  final _amount = TextEditingController();
-  late String _paidBy = widget.members.first.id;
-  late final Set<String> _among = {for (final m in widget.members) m.id};
+  late final _title = TextEditingController(text: widget.initial?.title ?? '');
+  late final _amount = TextEditingController(
+    text: widget.initial == null ? '' : (widget.initial!.cents / 100).toStringAsFixed(2),
+  );
+  late String _paidBy = widget.initial?.paidBy ?? widget.members.first.id;
+  late final Set<String> _among = widget.initial == null
+      ? {for (final m in widget.members) m.id}
+      : {for (final m in widget.members) if (widget.initial!.shares.containsKey(m.id)) m.id};
   String? _error;
 
   @override
@@ -630,12 +727,12 @@ class _ExpenseFormState extends State<_ExpenseForm> {
     final cents = (amount * 100).round();
     final ids = [for (final m in widget.members) if (_among.contains(m.id)) m.id];
     Navigator.of(context).pop(GroupExpense(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: widget.initial?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
       cents: cents,
       paidBy: _paidBy,
       shares: equalShares(cents, ids),
-      createdAt: DateTime.now(),
+      createdAt: widget.initial?.createdAt ?? DateTime.now(),
     ));
   }
 

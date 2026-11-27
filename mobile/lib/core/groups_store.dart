@@ -51,19 +51,42 @@ class GroupExpense {
       );
 }
 
+/// A payment recorded to settle part of a group balance: [from] paid [to].
+class GroupPayment {
+  const GroupPayment({required this.id, required this.from, required this.to, required this.cents, required this.createdAt});
+
+  final String id;
+  final String from;
+  final String to;
+  final int cents;
+  final DateTime createdAt;
+
+  Map<String, dynamic> toJson() => {'id': id, 'from': from, 'to': to, 'cents': cents, 'createdAt': createdAt.toIso8601String()};
+
+  factory GroupPayment.fromJson(Map<String, dynamic> j) => GroupPayment(
+        id: '${j['id']}',
+        from: '${j['from']}',
+        to: '${j['to']}',
+        cents: (j['cents'] as num).toInt(),
+        createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
+      );
+}
+
 class LocalGroup {
-  const LocalGroup({required this.id, required this.name, required this.members, required this.expenses});
+  const LocalGroup({required this.id, required this.name, required this.members, required this.expenses, this.payments = const []});
 
   final String id;
   final String name;
   final List<GroupMember> members;
   final List<GroupExpense> expenses;
+  final List<GroupPayment> payments;
 
-  LocalGroup copyWith({String? name, List<GroupMember>? members, List<GroupExpense>? expenses}) => LocalGroup(
+  LocalGroup copyWith({String? name, List<GroupMember>? members, List<GroupExpense>? expenses, List<GroupPayment>? payments}) => LocalGroup(
         id: id,
         name: name ?? this.name,
         members: members ?? this.members,
         expenses: expenses ?? this.expenses,
+        payments: payments ?? this.payments,
       );
 
   String nameOf(String memberId) {
@@ -82,6 +105,10 @@ class LocalGroup {
         net[s.key] = (net[s.key] ?? 0) - s.value;
       }
     }
+    for (final p in payments) {
+      net[p.from] = (net[p.from] ?? 0) + p.cents;
+      net[p.to] = (net[p.to] ?? 0) - p.cents;
+    }
     return net;
   }
 
@@ -93,6 +120,7 @@ class LocalGroup {
         'name': name,
         'members': members.map((m) => m.toJson()).toList(),
         'expenses': expenses.map((e) => e.toJson()).toList(),
+        'payments': payments.map((p) => p.toJson()).toList(),
       };
 
   factory LocalGroup.fromJson(Map<String, dynamic> j) => LocalGroup(
@@ -100,6 +128,7 @@ class LocalGroup {
         name: '${j['name'] ?? ''}',
         members: [for (final m in (j['members'] as List<dynamic>? ?? const [])) GroupMember.fromJson(Map<String, dynamic>.from(m as Map))],
         expenses: [for (final e in (j['expenses'] as List<dynamic>? ?? const [])) GroupExpense.fromJson(Map<String, dynamic>.from(e as Map))],
+        payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) GroupPayment.fromJson(Map<String, dynamic>.from(p as Map))],
       );
 }
 

@@ -13,7 +13,7 @@ int _cents(String text) {
   return (v * 100).round();
 }
 
-String _kindLabel(String kind) => switch (kind) {
+String kindLabel(String kind) => switch (kind) {
       'rent' => 'Rent received',
       'advance' => 'Advance received',
       'deposit' => 'Deposit received',
@@ -21,7 +21,7 @@ String _kindLabel(String kind) => switch (kind) {
       _ => 'Expense',
     };
 
-/// The payment form. [expenseOnly] is used on the property dashboard; otherwise the guest's payment kinds are offered.
+/// The payment form, for a new payment or to edit one. A property-level form (no guest) also records expenses.
 class PaymentForm extends StatefulWidget {
   const PaymentForm({
     super.key,
@@ -30,6 +30,7 @@ class PaymentForm extends StatefulWidget {
     this.roomId = '',
     this.tenancyId = '',
     this.expenseOnly = false,
+    this.initial,
   });
 
   final String propertyId;
@@ -38,20 +39,28 @@ class PaymentForm extends StatefulWidget {
   final String tenancyId;
   final bool expenseOnly;
 
+  /// The payment being edited. Its id, guest and stay are kept.
+  final Payment? initial;
+
   @override
   State<PaymentForm> createState() => _PaymentFormState();
 }
 
 class _PaymentFormState extends State<PaymentForm> {
-  final _amount = TextEditingController();
-  final _period = TextEditingController();
-  final _reference = TextEditingController();
-  final _note = TextEditingController();
-  late String _kind = widget.expenseOnly ? 'expense' : 'rent';
-  String _method = paymentMethods.first;
-  String _category = expenseCategories.first;
-  DateTime _date = dayOnly(DateTime.now());
+  late final _amount = TextEditingController(
+    text: widget.initial == null ? '' : (widget.initial!.amountCents / 100).toStringAsFixed(2),
+  );
+  late final _period = TextEditingController(text: widget.initial?.periodLabel ?? '');
+  late final _reference = TextEditingController(text: widget.initial?.reference ?? '');
+  late final _note = TextEditingController(text: widget.initial?.note ?? '');
+  late String _kind = widget.initial?.kind ?? (widget.expenseOnly ? 'expense' : 'rent');
+  late String _method = widget.initial?.method ?? paymentMethods.first;
+  late String _category = widget.initial?.category.isNotEmpty == true ? widget.initial!.category : expenseCategories.first;
+  late DateTime _date = widget.initial?.date ?? dayOnly(DateTime.now());
   String? _error;
+
+  /// Expenses are offered only at property level, not on a guest's page.
+  bool get _canRecordExpense => widget.personId.isEmpty;
 
   @override
   void dispose() {
@@ -68,15 +77,16 @@ class _PaymentFormState extends State<PaymentForm> {
       setState(() => _error = 'Enter the amount.');
       return;
     }
+    final base = widget.initial;
     Navigator.of(context).pop(Payment(
-      id: PropertyStore.newId(),
-      propertyId: widget.propertyId,
+      id: base?.id ?? PropertyStore.newId(),
+      propertyId: base?.propertyId ?? widget.propertyId,
       kind: _kind,
       amountCents: cents,
       date: _date,
-      roomId: widget.roomId,
-      tenancyId: widget.tenancyId,
-      personId: widget.personId,
+      roomId: base?.roomId ?? widget.roomId,
+      tenancyId: base?.tenancyId ?? widget.tenancyId,
+      personId: base?.personId ?? widget.personId,
       method: _method,
       periodLabel: _kind == 'rent' || _kind == 'advance' ? _period.text.trim() : '',
       reference: _reference.text.trim(),
@@ -92,19 +102,19 @@ class _PaymentFormState extends State<PaymentForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!widget.expenseOnly)
-          DropdownButtonFormField<String>(
-            initialValue: _kind,
-            decoration: const InputDecoration(labelText: 'What is this payment for?'),
-            items: const [
-              DropdownMenuItem(value: 'rent', child: Text('Rent received')),
-              DropdownMenuItem(value: 'advance', child: Text('Advance received')),
-              DropdownMenuItem(value: 'deposit', child: Text('Deposit received (kept separately)')),
-              DropdownMenuItem(value: 'refund', child: Text('Deposit refunded')),
-            ],
-            onChanged: (v) => setState(() => _kind = v ?? _kind),
-          ),
-        if (!widget.expenseOnly) const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: _kind,
+          decoration: const InputDecoration(labelText: 'What is this for?'),
+          items: [
+            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'rent', child: Text('Rent received')),
+            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'advance', child: Text('Advance received')),
+            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'deposit', child: Text('Deposit received (kept separately)')),
+            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'refund', child: Text('Deposit refunded')),
+            if (_canRecordExpense || isExpense) const DropdownMenuItem(value: 'expense', child: Text('Expense (electricity, repairs...)')),
+          ],
+          onChanged: (v) => setState(() => _kind = v ?? _kind),
+        ),
+        const SizedBox(height: 12),
         if (isExpense) ...[
           DropdownButtonFormField<String>(
             initialValue: _category,
@@ -116,7 +126,7 @@ class _PaymentFormState extends State<PaymentForm> {
         ],
         TextField(
           controller: _amount,
-          autofocus: true,
+          autofocus: widget.initial == null,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
         ),
@@ -142,13 +152,14 @@ class _PaymentFormState extends State<PaymentForm> {
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(isExpense ? 'Save expense' : 'Save payment')),
+        FilledButton(onPressed: _save, child: Text(widget.initial == null ? (isExpense ? 'Save expense' : 'Save payment') : 'Save changes')),
       ],
     );
   }
 }
 
-/// A list of payments with add and delete. Used on a person's page (guest payments) and on the property dashboard (expenses).
+/// Every payment of one scope (a guest, or a property), with totals, and add, edit and delete.
+/// Changes go back through [onChanged], which saves them and updates Monova Finance.
 class PaymentsSection extends StatelessWidget {
   const PaymentsSection({
     super.key,
@@ -156,6 +167,7 @@ class PaymentsSection extends StatelessWidget {
     required this.payments,
     required this.onChanged,
     required this.propertyId,
+    this.title = 'Payments',
     this.personId = '',
     this.roomId = '',
     this.tenancyId = '',
@@ -166,6 +178,7 @@ class PaymentsSection extends StatelessWidget {
   final List<Payment> payments;
   final ValueChanged<PropertyBook> onChanged;
   final String propertyId;
+  final String title;
   final String personId;
   final String roomId;
   final String tenancyId;
@@ -174,7 +187,7 @@ class PaymentsSection extends StatelessWidget {
   Future<void> _add(BuildContext context) async {
     final p = await FormSheet.show<Payment>(
       context,
-      title: expenseOnly ? 'Add an expense' : 'Record a payment',
+      title: expenseOnly ? 'Add an expense' : 'Record a transaction',
       child: PaymentForm(
         propertyId: propertyId,
         personId: personId,
@@ -187,12 +200,22 @@ class PaymentsSection extends StatelessWidget {
     onChanged(book.copyWith(payments: [...book.payments, p]));
   }
 
+  Future<void> _edit(BuildContext context, Payment p) async {
+    final updated = await FormSheet.show<Payment>(
+      context,
+      title: 'Edit ${kindLabel(p.kind).toLowerCase()}',
+      child: PaymentForm(propertyId: p.propertyId, personId: p.personId, roomId: p.roomId, tenancyId: p.tenancyId, expenseOnly: expenseOnly, initial: p),
+    );
+    if (updated == null) return;
+    onChanged(book.copyWith(payments: [for (final x in book.payments) x.id == p.id ? updated : x]));
+  }
+
   Future<void> _delete(BuildContext context, Payment p) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete this payment?'),
-        content: Text('${_kindLabel(p.kind)} of ${money(p.amountCents / 100)} will be removed from the records and from Monova Finance.'),
+        title: const Text('Delete this transaction?'),
+        content: Text('${kindLabel(p.kind)} of ${money(p.amountCents / 100)} will be removed from the records and from Monova Finance.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           FilledButton(
@@ -210,31 +233,50 @@ class PaymentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
+    var income = 0;
+    var spent = 0;
+    for (final p in payments) {
+      if (p.isIncome) income += p.amountCents;
+      if (p.isExpense) spent += p.amountCents;
+    }
+    final shown = [...payments]..sort((a, b) => b.date.compareTo(a.date));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            Expanded(child: SectionTitle(expenseOnly ? 'Expenses' : 'Payments')),
+            Expanded(child: SectionTitle(title)),
             TextButton.icon(
               onPressed: () => _add(context),
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(expenseOnly ? 'Add expense' : 'Record payment'),
+              label: Text(expenseOnly ? 'Add expense' : 'Add'),
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        if (payments.isEmpty)
+        MonovaCard(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(child: _Total(label: 'Income', value: money(income / 100), color: c.income)),
+              Expanded(child: _Total(label: 'Expenses', value: money(spent / 100), color: c.expense)),
+              Expanded(child: _Total(label: 'Net', value: money((income - spent) / 100), color: income >= spent ? c.income : c.expense)),
+              Expanded(child: _Total(label: 'Entries', value: '${payments.length}', color: c.ink)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (shown.isEmpty)
           MonovaCard(
             child: Text(
-              expenseOnly ? 'No expenses recorded yet. Electricity, water and repairs go here.' : 'No payments recorded yet.',
+              expenseOnly ? 'No expenses recorded yet. Electricity, water and repairs go here.' : 'No transactions recorded yet.',
               style: TextStyle(color: c.muted),
             ),
           )
         else
-          for (final p in payments.take(20)) ...[
+          for (final p in shown.take(40)) ...[
             MonovaCard(
-              padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+              padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+              onTap: () => _edit(context, p),
               child: Row(
                 children: [
                   Expanded(
@@ -242,11 +284,12 @@ class PaymentsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_kindLabel(p.kind)}${p.category.isEmpty ? '' : ' · ${p.category}'}${p.periodLabel.isEmpty ? '' : ' · ${p.periodLabel}'}',
+                          '${kindLabel(p.kind)}${p.category.isEmpty ? '' : ' · ${p.category}'}${p.periodLabel.isEmpty ? '' : ' · ${p.periodLabel}'}',
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          '${dayLabel(p.date)} · ${p.method}${p.reference.isEmpty ? '' : ' · ref ${p.reference}'}',
+                          '${dayLabel(p.date)} · ${p.method}${p.reference.isEmpty ? '' : ' · ref ${p.reference}'}${p.note.isEmpty ? '' : ' · ${p.note}'}',
                           style: TextStyle(color: c.muted, fontSize: 12),
                         ),
                       ],
@@ -259,16 +302,34 @@ class PaymentsSection extends StatelessWidget {
                       color: p.isExpense || p.kind == 'refund' ? c.expense : c.income,
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Delete payment',
-                    icon: Icon(Icons.delete_outline_rounded, color: c.muted),
-                    onPressed: () => _delete(context, p),
-                  ),
+                  IconButton(tooltip: 'Edit', icon: Icon(Icons.edit_outlined, color: c.accentStart), onPressed: () => _edit(context, p)),
+                  IconButton(tooltip: 'Delete', icon: Icon(Icons.delete_outline_rounded, color: c.muted), onPressed: () => _delete(context, p)),
                 ],
               ),
             ),
             const SizedBox(height: 8),
           ],
+      ],
+    );
+  }
+}
+
+class _Total extends StatelessWidget {
+  const _Total({required this.label, required this.value, required this.color});
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 14)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(color: c.muted, fontSize: 11)),
       ],
     );
   }
