@@ -72,6 +72,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
           _MoneyTile(icon: Icons.swap_vert_rounded, title: 'Income and spending', subtitle: 'Add what came in or went out, and see the month', route: '/entries'),
           _MoneyTile(icon: Icons.receipt_long_rounded, title: 'Purchases and warranties', subtitle: 'What you bought, its warranty and return date', route: '/purchases'),
           _MoneyTile(icon: Icons.account_balance_outlined, title: 'Loans and borrowing', subtitle: 'Loan instalments, overdue ones, and money you borrowed', route: '/loans'),
+          _MoneyTile(icon: Icons.folder_open_rounded, title: 'Documents and receipts', subtitle: 'Photos of papers, bills and warranty cards', route: '/documents'),
           _MoneyTile(icon: Icons.picture_as_pdf_rounded, title: 'Monthly report', subtitle: 'Money in and out, spending, budgets and loans as a PDF', route: '/report'),
           _MoneyTile(icon: Icons.event_repeat_rounded, title: 'Budgets, goals and recurring', subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
           _MoneyTile(icon: Icons.menu_book_rounded, title: 'Credit book', subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),

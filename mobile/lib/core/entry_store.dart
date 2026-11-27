@@ -54,6 +54,8 @@ class Purchase {
     required this.date,
     this.warrantyMonths = 0,
     this.returnDays = 0,
+    this.recordSpend = true,
+    this.remindWarranty = true,
   });
 
   final String id;
@@ -63,6 +65,12 @@ class Purchase {
   final DateTime date;
   final int warrantyMonths;
   final int returnDays;
+
+  /// Whether the purchase is also recorded as spending in Monova Finance.
+  final bool recordSpend;
+
+  /// Whether a reminder is set 30 days before the warranty ends.
+  final bool remindWarranty;
 
   /// Warranty end date, or null if there is no warranty.
   DateTime? get warrantyUntil => warrantyMonths <= 0 ? null : DateTime(date.year, date.month + warrantyMonths, date.day);
@@ -78,6 +86,8 @@ class Purchase {
         'date': _iso(date),
         'warrantyMonths': warrantyMonths,
         'returnDays': returnDays,
+        'recordSpend': recordSpend,
+        'remindWarranty': remindWarranty,
       };
 
   factory Purchase.fromJson(Map<String, dynamic> j) => Purchase(
@@ -88,6 +98,8 @@ class Purchase {
         date: DateTime.parse('${j['date']}'),
         warrantyMonths: (j['warrantyMonths'] as num?)?.toInt() ?? 0,
         returnDays: (j['returnDays'] as num?)?.toInt() ?? 0,
+        recordSpend: j['recordSpend'] != false,
+        remindWarranty: j['remindWarranty'] != false,
       );
 }
 

@@ -18,6 +18,7 @@ import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/money/money_hub.dart';
+import '../features/documents/documents_screen.dart';
 import '../features/loans/loans_screen.dart';
 import '../features/plans/plans_screen.dart';
 import '../features/report/report_screen.dart';
@@ -89,6 +90,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/reminders', builder: (_, __) => const RemindersScreen()),
           GoRoute(path: '/plans', builder: (_, __) => const PlansScreen()),
           GoRoute(path: '/report', builder: (_, __) => const ReportScreen()),
+          GoRoute(path: '/documents', builder: (_, __) => const DocumentsScreen()),
           GoRoute(path: '/loans', builder: (_, __) => const LoanTrackerScreen()),
           GoRoute(path: '/loans/:id', builder: (_, s) => LoanDetailScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),
