@@ -1,3 +1,4 @@
+import 'data_revision.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -124,6 +125,11 @@ class VaultStore {
   }
 
   static Future<void> save(List<VaultEntry> entries) async {
+    await _saveRaw(entries);
+    markDataChanged();
+  }
+
+  static Future<void> _saveRaw(List<VaultEntry> entries) async {
     final raw = jsonEncode(entries.map((e) => e.toJson()).toList());
     if (kIsWeb) {
       await (await SharedPreferences.getInstance()).setString(_key, raw);

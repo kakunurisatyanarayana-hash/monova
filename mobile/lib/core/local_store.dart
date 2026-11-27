@@ -1,3 +1,4 @@
+import 'data_revision.dart';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,8 @@ class LocalStore {
     }
   }
 
-  Future<void> writeList(String key, List<Map<String, dynamic>> items) =>
-      _prefs.setString(key, jsonEncode(items));
+  Future<void> writeList(String key, List<Map<String, dynamic>> items) async {
+    await _prefs.setString(key, jsonEncode(items));
+    markDataChanged();
+  }
 }

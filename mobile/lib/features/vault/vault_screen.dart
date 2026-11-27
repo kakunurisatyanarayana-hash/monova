@@ -190,7 +190,9 @@ class _VaultScreenState extends State<VaultScreen> {
                       onTap: () => _openDetail(entry),
                       onCopy: entry.kind == VaultKind.password && entry.password.isNotEmpty
                           ? () => _copy(entry.password, 'Password')
-                          : null,
+                          : entry.notes.isNotEmpty
+                              ? () => _copy(entry.notes, 'Notes')
+                              : null,
                     ),
                     const SizedBox(height: 10),
                   ],
@@ -362,7 +364,17 @@ class _EntryDetailState extends State<_EntryDetail> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: c.border),
             ),
-            child: SelectableText(e.notes, style: TextStyle(color: c.ink, height: 1.45)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: SelectableText(e.notes, style: TextStyle(color: c.ink, height: 1.45))),
+                IconButton(
+                  tooltip: 'Copy notes',
+                  icon: Icon(Icons.copy_rounded, color: c.accentStart),
+                  onPressed: () => widget.onCopy(e.notes, 'Notes'),
+                ),
+              ],
+            ),
           ),
         const SizedBox(height: 16),
         Row(

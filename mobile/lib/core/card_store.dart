@@ -1,3 +1,4 @@
+import 'data_revision.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -128,6 +129,11 @@ class CardStore {
   }
 
   static Future<void> save(List<CardRecord> cards) async {
+    await _saveRaw(cards);
+    markDataChanged();
+  }
+
+  static Future<void> _saveRaw(List<CardRecord> cards) async {
     final raw = jsonEncode(cards.map((c) => c.toJson()).toList());
     if (kIsWeb) {
       await (await SharedPreferences.getInstance()).setString(_key, raw);

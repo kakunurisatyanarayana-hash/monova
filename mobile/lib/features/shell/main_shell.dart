@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
+import '../../core/data_revision.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/i18n.dart';
+import '../../core/profile_store.dart';
 import 'quick_prefs.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -18,6 +21,12 @@ class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.child});
 
   final Widget child;
+
+  /// The open page, rebuilt whenever data is saved so every number on it is current.
+  Widget get _page => ValueListenableBuilder<int>(
+        valueListenable: dataRevision,
+        builder: (_, revision, __) => KeyedSubtree(key: ValueKey('page-$revision'), child: child),
+      );
 
   static const _tabs = ['/home', '/activity', '/groups', '/insights'];
   static const _wideBreakpoint = 900.0;
@@ -105,7 +114,7 @@ class MainShell extends ConsumerWidget {
               child: Column(
                 children: [
                   _TopBar(page: _currentPage(location), onAdd: () => _onAdd(context, signedIn)),
-                  Expanded(child: child),
+                  Expanded(child: _page),
                 ],
               ),
             ),
@@ -117,7 +126,7 @@ class MainShell extends ConsumerWidget {
     final c = context.monova;
     final index = tab;
     return Scaffold(
-      body: child,
+      body: Column(children: [const _PhoneTopBar(), Expanded(child: _page)]),
       bottomNavigationBar: SafeArea(
         top: false,
         // A fixed height is essential: without it the Row's Expanded children fill the whole screen and push the page body to zero height.
@@ -362,6 +371,49 @@ class _SidebarTile extends StatelessWidget {
 }
 
 /// Slim bar above the page content: the main action is always one click away.
+/// The header on phones: profile, settings, language and theme are one tap away on every page.
+class _PhoneTopBar extends ConsumerWidget {
+  const _PhoneTopBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.monova;
+    final name = (ref.watch(profileProvider).profile?.name ?? '').trim();
+    final initial = name.isEmpty ? '?' : name[0].toUpperCase();
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(color: c.glassFill, border: Border(bottom: BorderSide(color: c.border))),
+        child: Row(
+          children: [
+            const SizedBox(width: 8),
+            Text('MONOVA', style: TextStyle(color: c.ink, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+            const Spacer(),
+            const LanguageMenuButton(),
+            const ThemeMenuButton(),
+            IconButton(tooltip: 'Settings', icon: const Icon(Icons.settings_rounded), onPressed: () => context.push('/settings')),
+            InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => context.push('/profile'),
+              child: Tooltip(
+                message: 'Your profile',
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: c.accentStart,
+                  child: Text(initial, style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.page, required this.onAdd});
 

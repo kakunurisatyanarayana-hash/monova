@@ -78,13 +78,32 @@ const _sections = [
 ];
 
 /// The Services menu, grouped by what each service is for. Features that need an account are marked in the offline build.
-class ServicesScreen extends StatelessWidget {
+class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
+
+  @override
+  State<ServicesScreen> createState() => _ServicesScreenState();
+}
+
+class _ServicesScreenState extends State<ServicesScreen> {
+  String _query = '';
+
+  /// The sections with only the tiles whose names match the search.
+  List<ServiceSection> get _matching {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _sections;
+    return [
+      for (final s in _sections)
+        if (s.items.any((i) => i.title.toLowerCase().contains(q)))
+          ServiceSection(s.title, [for (final i in s.items) if (i.title.toLowerCase().contains(q)) i], subtitle: s.subtitle),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
     final offline = ApiConfig.offline;
+    final sections = _matching;
     return Scaffold(
       appBar: AppBar(title: const Text('All services')),
       body: LayoutBuilder(
@@ -102,7 +121,16 @@ class ServicesScreen extends StatelessWidget {
                     : 'Tap a service to open it. Tiles marked "Soon" are planned.',
                 style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
               ),
-              for (final section in _sections) ...[
+              const SizedBox(height: 12),
+              TextField(
+                onChanged: (v) => setState(() => _query = v),
+                decoration: const InputDecoration(labelText: 'Search services', prefixIcon: Icon(Icons.search_rounded)),
+              ),
+              if (sections.isEmpty) ...[
+                const SizedBox(height: 40),
+                Center(child: Text('No service matches "${_query.trim()}".', style: TextStyle(color: c.muted))),
+              ],
+              for (final section in sections) ...[
                 const SizedBox(height: 18),
                 SectionTitle(section.title),
                 if (section.subtitle != null) ...[

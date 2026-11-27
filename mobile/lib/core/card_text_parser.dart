@@ -34,15 +34,58 @@ ParsedCard parseCardText(String text) {
 
 /// A run of 12 to 19 digits, allowing spaces or dashes between groups. A number that passes the check digit test is preferred.
 String? _findNumber(String text) {
-  final candidates = <String>[];
-  for (final m in RegExp(r'\d(?:[ \-]?\d){11,18}').allMatches(text)) {
-    final digits = digitsOnly(m.group(0)!);
-    if (digits.length >= 12 && digits.length <= 19) candidates.add(digits);
+  // The number is often printed in four groups over several lines, so a run of digit groups may cross line breaks.
+  // Whole runs are tried first. Then every 12 to 19 digit window inside a run is tried, so a phone number or CVV
+  // printed next to the card number does not hide it.
+  // Buckets in the order they are tried: whole runs; windows that start and end on a printed group
+  // (16 digits first, then other lengths); windows that start on a group; any other window.
+  final buckets = List.generate(7, (_) => <String>[]);
+  for (final m in RegExp(r'\d+(?:[ \-\t\r\n]+\d+)*').allMatches(text)) {
+    final run = m.group(0)!;
+    final digits = StringBuffer();
+    final startsGroup = <bool>[];
+    final endsGroup = <bool>[];
+    var prevDigit = false;
+    for (var i = 0; i < run.length; i++) {
+      final code = run.codeUnitAt(i);
+      if (code >= 48 && code <= 57) {
+        digits.writeCharCode(code);
+        startsGroup.add(!prevDigit);
+        endsGroup.add(false);
+        prevDigit = true;
+      } else {
+        if (prevDigit) endsGroup[endsGroup.length - 1] = true;
+        prevDigit = false;
+      }
+    }
+    if (endsGroup.isNotEmpty) endsGroup[endsGroup.length - 1] = true;
+    final d = digits.toString();
+    if (d.length < 12) continue;
+    if (d.length <= 19) buckets[0].add(d);
+    for (var s = 0; s + 12 <= d.length; s++) {
+      for (final len in const [16, 15, 19, 18, 17, 14, 13, 12]) {
+        final e = s + len;
+        if (e > d.length) continue;
+        final w = d.substring(s, e);
+        final is16 = len == 16;
+        if (startsGroup[s] && endsGroup[e - 1]) {
+          buckets[is16 ? 1 : 2].add(w);
+        } else if (startsGroup[s]) {
+          buckets[is16 ? 3 : 4].add(w);
+        } else {
+          buckets[is16 ? 5 : 6].add(w);
+        }
+      }
+    }
   }
-  for (final d in candidates) {
+  final all = [for (final b in buckets) ...b];
+  for (final d in all) {
     if (isValidCardNumber(d)) return d;
   }
-  return candidates.isEmpty ? null : candidates.first;
+  for (final d in all) {
+    if (d.length == 16) return d;
+  }
+  return all.isEmpty ? null : all.first;
 }
 
 /// An expiry written as MM/YY or MM/YYYY (also with a dash). Returns (month, year).

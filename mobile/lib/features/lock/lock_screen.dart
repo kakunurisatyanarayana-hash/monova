@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,10 @@ import '../../core/local_erase.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 
-/// Shows the lock screen when a PIN is set and the app is closed or in the background. Otherwise shows the app.
+/// The app locks itself after this long without any touch, click or scroll (when a PIN is set).
+const autoLockAfter = Duration(minutes: 2);
+
+/// Shows the lock screen when a PIN is set and the app is closed, in the background, or idle for [autoLockAfter].
 class LockGate extends ConsumerStatefulWidget {
   const LockGate({super.key, required this.child});
 
@@ -18,22 +23,37 @@ class LockGate extends ConsumerStatefulWidget {
 }
 
 class _LockGateState extends ConsumerState<LockGate> with WidgetsBindingObserver {
+  Timer? _idle;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _restartIdle();
   }
 
   @override
   void dispose() {
+    _idle?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Every touch, click, drag or scroll restarts the countdown. When it runs out, the app locks if a PIN is set.
+  void _restartIdle() {
+    _idle?.cancel();
+    _idle = Timer(autoLockAfter, () {
+      if (mounted) ref.read(appLockProvider.notifier).lockIfSet();
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _idle?.cancel();
       ref.read(appLockProvider.notifier).lockIfSet();
+    } else if (state == AppLifecycleState.resumed) {
+      _restartIdle();
     }
   }
 
@@ -43,8 +63,14 @@ class _LockGateState extends ConsumerState<LockGate> with WidgetsBindingObserver
     if (status == LockStatus.checking) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (status == LockStatus.locked) return const LockScreen();
-    return widget.child;
+    final content = status == LockStatus.locked ? const LockScreen() : widget.child;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _restartIdle(),
+      onPointerMove: (_) => _restartIdle(),
+      onPointerSignal: (_) => _restartIdle(),
+      child: content,
+    );
   }
 }
 
@@ -74,6 +100,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   void _backspace() {
     if (_busy || _pin.isEmpty) return;
     setState(() => _pin = _pin.substring(0, _pin.length - 1));
+  }
+
+  void _submit() {
+    if (_busy || _pin.length < _minLength) return;
+    _unlock();
   }
 
   Future<void> _unlock() async {
@@ -127,7 +158,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      for (var i = 0; i < _maxLength; i++)
+                      for (var i = 0; i < (_pin.length < _minLength ? _minLength : _pin.length); i++)
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 6),
                           width: 14,
@@ -146,7 +177,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                     child: Text(_message ?? '', style: TextStyle(color: c.expense, fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(height: 8),
-                  _Keypad(onDigit: _press, onBackspace: _backspace),
+                  _Keypad(onDigit: _press, onBackspace: _backspace, onSubmit: _submit),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -175,14 +206,15 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 }
 
 class _Keypad extends StatelessWidget {
-  const _Keypad({required this.onDigit, required this.onBackspace});
+  const _Keypad({required this.onDigit, required this.onBackspace, required this.onSubmit});
 
   final ValueChanged<String> onDigit;
   final VoidCallback onBackspace;
+  final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
-    final keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
+    final keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'ok', '0', 'back'];
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -192,8 +224,11 @@ class _Keypad extends StatelessWidget {
       childAspectRatio: 1.6,
       children: [
         for (final k in keys)
-          if (k.isEmpty)
-            const SizedBox()
+          if (k == 'ok')
+            _KeyButton(
+              onTap: onSubmit,
+              child: Icon(Icons.check_rounded, color: context.monova.accentStart),
+            )
           else if (k == 'back')
             _KeyButton(
               onTap: onBackspace,
