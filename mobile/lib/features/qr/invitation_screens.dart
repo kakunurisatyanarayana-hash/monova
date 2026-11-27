@@ -470,7 +470,7 @@ class _InvitationFormState extends State<InvitationForm> {
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: _pickPoint,
-          icon: const Icon(Icons.map_outlined, size: 18),
+          icon: const Icon(Icons.map_rounded, size: 18),
           label: Text(_point == null ? 'Pin the venue on the map (optional)' : 'Venue pinned on the map'),
         ),
         const SizedBox(height: 12),

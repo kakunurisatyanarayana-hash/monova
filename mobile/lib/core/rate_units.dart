@@ -27,6 +27,40 @@ double toAnnualPercent(double value, RateUnit unit) => switch (unit) {
       RateUnit.rupeesPer1000Month => value / 10 * 12,
     };
 
+/// The values the scroll picker offers for each unit: from [min] to [max] in steps of [step], in the unit's own terms.
+/// The step is fine enough for precise rates; the typed field still accepts any value.
+class RateRange {
+  const RateRange(this.min, this.max, this.step);
+
+  final double min;
+  final double max;
+  final double step;
+
+  int get count => ((max - min) / step).round() + 1;
+
+  /// The value at position [index], rounded to two decimals so the wheel never shows float noise.
+  double valueAt(int index) => double.parse((min + index * step).toStringAsFixed(2));
+
+  /// The position closest to [value], clamped to the range.
+  int indexOf(double value) {
+    final i = ((value - min) / step).round();
+    return i < 0 ? 0 : (i >= count ? count - 1 : i);
+  }
+}
+
+RateRange rateRange(RateUnit unit) => switch (unit) {
+      RateUnit.percentYear => const RateRange(0, 60, 0.05),
+      RateUnit.percentMonth => const RateRange(0, 5, 0.01),
+      RateUnit.rupeesPer100Month => const RateRange(0, 10, 0.05),
+      RateUnit.rupeesPer1000Month => const RateRange(0, 100, 0.5),
+    };
+
+/// A rate written without trailing zeros: 2.50 becomes "2.5", 12.00 becomes "12".
+String plainRate(double value) {
+  final fixed = value.toStringAsFixed(2);
+  return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
 /// The same rate in the ways villagers quote it, with what it costs on ₹10,000.
 String plainRateExplanation(double annualPercent) {
   final monthly = annualPercent / 12;

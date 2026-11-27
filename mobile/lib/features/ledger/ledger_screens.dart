@@ -8,6 +8,8 @@ import '../../core/contacts_picker.dart';
 import '../tools/contact_picker_sheet.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
+import '../../core/rate_input.dart';
+import '../../core/rate_units.dart';
 import '../../core/share_text.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -224,11 +226,19 @@ class _AccountFormState extends State<_AccountForm> {
       _phone.text = picked.first.phone;
     });
   }
-  late final _rate = TextEditingController(text: (widget.initial?.annualRatePercent ?? 24).toString());
+  late final _rate = TextEditingController(text: plainRate(widget.initial?.annualRatePercent ?? 24));
+  RateUnit _unit = RateUnit.percentYear;
+
+  /// The rate as a yearly percentage, whatever unit the person chose.
+  double? get _annualRate {
+    final typed = double.tryParse(_rate.text.trim());
+    return typed == null ? null : toAnnualPercent(typed, _unit);
+  }
+
   String _rateHelp() {
-    final r = double.tryParse(_rate.text.trim());
+    final r = _annualRate;
     if (r == null) return 'Charged every day on the amount owed, divided by 365.';
-    return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed. About Rs ${(r / 12).toStringAsFixed(2)} for every Rs 100 each month.';
+    return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
   late bool _compound = widget.initial?.compound ?? false;
   String? _error;
@@ -242,7 +252,7 @@ class _AccountFormState extends State<_AccountForm> {
   }
 
   void _save() {
-    final rate = double.tryParse(_rate.text.trim());
+    final rate = _annualRate;
     if (_name.text.trim().isEmpty) {
       setState(() => _error = 'Enter the customer name.');
       return;
@@ -271,12 +281,14 @@ class _AccountFormState extends State<_AccountForm> {
 
         TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Phone (optional)')),
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, 
+        RateInput(
           controller: _rate,
-          onChanged: (_) => setState(() {}),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: InputDecoration(labelText: 'Interest per year (%)', helperText: _rateHelp()),
+          unit: _unit,
+          onUnitChanged: (u) => setState(() => _unit = u),
+          onChanged: () => setState(() {}),
         ),
+        const SizedBox(height: 6),
+        Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
         SwitchListTile(
           value: _compound,

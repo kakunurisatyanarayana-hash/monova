@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A saved card. Only the last four digits of the number are ever kept, never the full number or the CVV.
+/// A saved card, with the details needed to pay online: the full number, expiry and name.
+/// The CVV is never stored. The number is shown masked (•••• 1234) except when the owner asks to see it.
 class CardRecord {
   const CardRecord({
     required this.id,
@@ -16,6 +17,7 @@ class CardRecord {
     required this.expiryMonth,
     required this.expiryYear,
     required this.updatedAt,
+    this.number = '',
     this.nickname = '',
     this.photoBase64 = '',
     this.photoType = '',
@@ -25,6 +27,9 @@ class CardRecord {
   final String nickname;
   final String bank;
   final String network;
+
+  /// The full card number, digits only. Empty for cards saved before full numbers were kept, and on the web build.
+  final String number;
   final String last4;
   final String holder;
   final int expiryMonth;
@@ -39,6 +44,18 @@ class CardRecord {
 
   String get masked => '•••• $last4';
 
+  bool get hasFullNumber => number.isNotEmpty;
+
+  /// The full number in groups of four, for reading it off the card: 4111 1111 1111 1111.
+  String get groupedNumber {
+    final buffer = StringBuffer();
+    for (var i = 0; i < number.length; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(number[i]);
+    }
+    return buffer.toString();
+  }
+
   String get expiryLabel => '${expiryMonth.toString().padLeft(2, '0')}/${(expiryYear % 100).toString().padLeft(2, '0')}';
 
   String get title => nickname.isNotEmpty ? nickname : (bank.isNotEmpty ? bank : network);
@@ -48,6 +65,7 @@ class CardRecord {
     String? bank,
     String? network,
     String? last4,
+    String? number,
     String? holder,
     int? expiryMonth,
     int? expiryYear,
@@ -61,6 +79,7 @@ class CardRecord {
       bank: bank ?? this.bank,
       network: network ?? this.network,
       last4: last4 ?? this.last4,
+      number: number ?? this.number,
       holder: holder ?? this.holder,
       expiryMonth: expiryMonth ?? this.expiryMonth,
       expiryYear: expiryYear ?? this.expiryYear,
@@ -77,11 +96,13 @@ class CardRecord {
       };
 
   /// Same details without the photo. Used for backups, where a photo would make the text too large to copy.
+  /// Backups are encrypted with a passphrase, so the full number can go in them.
   Map<String, dynamic> toJsonWithoutPhoto() => {
         'id': id,
         'nickname': nickname,
         'bank': bank,
         'network': network,
+        'number': number,
         'last4': last4,
         'holder': holder,
         'expiryMonth': expiryMonth,
@@ -95,6 +116,7 @@ class CardRecord {
       nickname: '${j['nickname'] ?? ''}',
       bank: '${j['bank'] ?? ''}',
       network: '${j['network'] ?? 'Card'}',
+      number: '${j['number'] ?? ''}',
       last4: '${j['last4'] ?? ''}',
       holder: '${j['holder'] ?? ''}',
       expiryMonth: (j['expiryMonth'] as num?)?.toInt() ?? 1,
@@ -116,6 +138,9 @@ class CardStore {
 
   static bool get encrypted => !kIsWeb;
 
+  /// Phones keep the full number in secure storage. The web build has no secure storage, so it keeps only the last four digits.
+  static bool get keepsFullNumber => !kIsWeb;
+
   static Future<List<CardRecord>> load() async {
     final raw = kIsWeb
         ? (await SharedPreferences.getInstance()).getString(_key)
@@ -134,7 +159,10 @@ class CardStore {
   }
 
   static Future<void> _saveRaw(List<CardRecord> cards) async {
-    final raw = jsonEncode(cards.map((c) => c.toJson()).toList());
+    // The web build never writes the full number to browser storage.
+    final raw = jsonEncode([
+      for (final c in cards) (keepsFullNumber ? c : c.copyWith(number: '')).toJson(),
+    ]);
     if (kIsWeb) {
       await (await SharedPreferences.getInstance()).setString(_key, raw);
     } else {

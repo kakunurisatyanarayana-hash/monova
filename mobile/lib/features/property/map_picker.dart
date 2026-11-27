@@ -179,7 +179,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           for (final p in _results)
                             ListTile(
                               dense: true,
-                              leading: const Icon(Icons.place_outlined),
+                              leading: const Icon(Icons.place_rounded),
                               title: Text(p.displayName, maxLines: 2, overflow: TextOverflow.ellipsis),
                               onTap: () => _showPlace(p),
                             ),

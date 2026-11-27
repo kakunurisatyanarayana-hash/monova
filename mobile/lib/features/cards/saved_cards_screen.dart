@@ -144,7 +144,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
                       EmptyState(
                         icon: Icons.credit_card_rounded,
                         title: 'No cards saved yet',
-                        message: 'Save the card name, bank, last four digits, expiry and a photo of the card. The full number is never stored.',
+                        message: 'Save the card name, bank, full number, expiry and name on the card, so you can copy them for online payments. The CVV is never stored.',
                         actionLabel: 'Add the first card',
                         onAction: _add,
                       )
@@ -183,8 +183,8 @@ class _StorageNotice extends StatelessWidget {
           Expanded(
             child: Text(
               encrypted
-                  ? 'Stored in this phone\'s secure storage. Only the last four digits are kept.'
-                  : 'This browser keeps cards in plain browser storage, which is not encrypted. Use the phone app for cards you care about.',
+                  ? 'Stored in this phone\'s secure storage (Keystore or Keychain). Numbers show masked unless you open them. Nothing is uploaded.'
+                  : 'This browser is not encrypted and keeps only the last four digits. Use the phone app to keep the full card number for online payments.',
               style: TextStyle(color: c.ink, fontSize: 13, height: 1.4),
             ),
           ),
@@ -258,12 +258,37 @@ class _CardTile extends StatelessWidget {
   }
 }
 
-class _CardDetail extends StatelessWidget {
+class _CardDetail extends StatefulWidget {
   const _CardDetail({required this.card, required this.onEdit, required this.onDelete});
 
   final CardRecord card;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+
+  @override
+  State<_CardDetail> createState() => _CardDetailState();
+}
+
+class _CardDetailState extends State<_CardDetail> {
+  bool _revealed = false;
+
+  CardRecord get card => widget.card;
+
+  /// The full number shows for 30 seconds, then goes back to masked.
+  void _toggleReveal() {
+    setState(() => _revealed = !_revealed);
+    if (_revealed) {
+      Future<void>.delayed(const Duration(seconds: 30), () {
+        if (mounted) setState(() => _revealed = false);
+      });
+    }
+  }
+
+  void _copy(String label, String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
+  }
 
   void _closeThen(BuildContext context, VoidCallback action) {
     Navigator.of(context).pop();
@@ -289,17 +314,30 @@ class _CardDetail extends StatelessWidget {
         if (card.hasPhoto) const SizedBox(height: 12),
         _Line(label: 'Bank', value: card.bank.isEmpty ? '-' : card.bank),
         _Line(label: 'Network', value: card.network),
-        _Line(label: 'Card number', value: card.masked),
+        _NumberLine(
+          numberText: card.hasFullNumber && _revealed ? card.groupedNumber : card.masked,
+          hasNumber: card.hasFullNumber,
+          revealed: _revealed,
+          onToggle: _toggleReveal,
+          onCopy: () => _copy('Card number', card.number),
+        ),
         _Line(label: 'Valid thru', value: card.expiryLabel),
         _Line(label: 'Cardholder', value: card.holder.isEmpty ? '-' : card.holder),
         const SizedBox(height: 4),
-        Text('The full card number and CVV are not stored.', style: TextStyle(color: c.muted, fontSize: 12)),
+        Text(
+          !CardStore.keepsFullNumber
+              ? 'The web build keeps only the last four digits. Use the phone app for the full number.'
+              : card.hasFullNumber
+                  ? 'The CVV is never stored, so enter it at checkout.'
+                  : 'The full number was not saved for this card. Edit the card and type the number to keep it.',
+          style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _closeThen(context, onDelete),
+                onPressed: () => _closeThen(context, widget.onDelete),
                 icon: Icon(Icons.delete_outline_rounded, color: c.expense),
                 label: Text('Delete', style: TextStyle(color: c.expense)),
               ),
@@ -307,7 +345,7 @@ class _CardDetail extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton.icon(
-                onPressed: () => _closeThen(context, onEdit),
+                onPressed: () => _closeThen(context, widget.onEdit),
                 icon: const Icon(Icons.edit_rounded, size: 18),
                 label: const Text('Edit'),
               ),
@@ -315,6 +353,49 @@ class _CardDetail extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The card number row: masked, or the full number while it is shown, with show and copy buttons.
+class _NumberLine extends StatelessWidget {
+  const _NumberLine({
+    required this.numberText,
+    required this.hasNumber,
+    required this.revealed,
+    required this.onToggle,
+    required this.onCopy,
+  });
+
+  final String numberText;
+  final bool hasNumber;
+  final bool revealed;
+  final VoidCallback onToggle;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          SizedBox(width: 120, child: Text('Card number', style: TextStyle(color: c.muted, fontSize: 13))),
+          Expanded(child: Text(numberText, style: TextStyle(color: c.ink, fontWeight: FontWeight.w600))),
+          if (hasNumber) ...[
+            IconButton(
+              tooltip: revealed ? 'Hide number' : 'Show number',
+              icon: Icon(revealed ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18, color: c.accentStart),
+              onPressed: onToggle,
+            ),
+            IconButton(
+              tooltip: 'Copy card number',
+              icon: Icon(Icons.copy_rounded, size: 18, color: c.accentStart),
+              onPressed: onCopy,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -349,7 +430,7 @@ class _Line extends StatelessWidget {
   }
 }
 
-/// Add or edit a card. When editing, leaving the number empty keeps the saved last four digits.
+/// Add or edit a card. When editing, the saved details are filled in; leaving the number empty keeps the saved number.
 class _CardEditor extends StatefulWidget {
   const _CardEditor({this.initial});
 
@@ -363,7 +444,7 @@ class _CardEditorState extends State<_CardEditor> {
   late final _nickname = TextEditingController(text: widget.initial?.nickname ?? '');
   late final _bank = TextEditingController(text: widget.initial?.bank ?? '');
   late final _holder = TextEditingController(text: widget.initial?.holder ?? '');
-  final _number = TextEditingController();
+  late final _number = TextEditingController(text: widget.initial?.number ?? '');
   late int _month = widget.initial?.expiryMonth ?? DateTime.now().month;
   late int _year = widget.initial?.expiryYear ?? DateTime.now().year;
 
@@ -451,7 +532,7 @@ class _CardEditorState extends State<_CardEditor> {
       return;
     }
     if (digits.isEmpty && initial == null) {
-      setState(() => _error = 'Enter the card number. Only the last four digits are kept.');
+      setState(() => _error = 'Enter the card number.');
       return;
     }
     final expiry = expiryError(_month, _year, DateTime.now());
@@ -460,6 +541,8 @@ class _CardEditorState extends State<_CardEditor> {
       return;
     }
 
+    // A typed number replaces the saved one; an empty field keeps it.
+    final fullNumber = digits.isNotEmpty ? digits : (initial?.number ?? '');
     final last4 = digits.isNotEmpty ? lastFour(digits) : initial!.last4;
     final network = digits.isNotEmpty ? detectNetwork(digits) : initial!.network;
     final hasPhoto = !_removePhoto && (_newPhoto != null || (initial?.hasPhoto ?? false));
@@ -470,6 +553,7 @@ class _CardEditorState extends State<_CardEditor> {
       nickname: _nickname.text.trim(),
       bank: bank,
       network: network,
+      number: CardStore.keepsFullNumber ? fullNumber : '',
       last4: last4,
       holder: holder,
       expiryMonth: _month,
@@ -511,9 +595,9 @@ class _CardEditorState extends State<_CardEditor> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)],
           decoration: InputDecoration(
             labelText: 'Card number',
-            hintText: initial != null ? 'Leave empty to keep •••• ${initial.last4}' : '16 digits',
+            hintText: initial == null ? '16 digits' : (initial.hasFullNumber ? 'Leave empty to keep ${initial.masked}' : 'Type the full number'),
             prefixIcon: const Icon(Icons.credit_card_rounded),
-            helperText: 'Only the last four digits are kept.',
+            helperText: CardStore.keepsFullNumber ? 'Kept on this phone only, and shown masked.' : 'The web build keeps only the last four digits.',
           ),
         ),
         const SizedBox(height: 12),

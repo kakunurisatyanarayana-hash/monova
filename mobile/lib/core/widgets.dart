@@ -31,7 +31,14 @@ class MonovaCard extends StatelessWidget {
         ),
         child: onTap == null
             ? content
-            : InkWell(borderRadius: BorderRadius.circular(20), onTap: onTap, child: content),
+            // A clear highlight on mouse hover and keyboard focus, so the card reads as clickable on the web.
+            : InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: onTap,
+                hoverColor: c.accentStart.withValues(alpha: 0.08),
+                focusColor: c.accentStart.withValues(alpha: 0.12),
+                child: content,
+              ),
       ),
     );
     if (gradient != null) return card;

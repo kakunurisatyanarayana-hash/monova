@@ -31,13 +31,16 @@ class AllFeaturesCard extends StatelessWidget {
                 children: [
                   for (final item in section.items)
                     if (item.available(offline))
-                      InkWell(
+                      Material(
+                        color: c.raised,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: c.border)),
+                        child: InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: () => context.push(item.route!),
-                        child: Container(
+                        child: SizedBox(
                           width: 104,
+                          child: Padding(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: c.raised, borderRadius: BorderRadius.circular(14), border: Border.all(color: c.border)),
                           child: Column(
                             children: [
                               Icon(item.icon, color: c.accentStart, size: 24),
@@ -45,6 +48,8 @@ class AllFeaturesCard extends StatelessWidget {
                               Text(item.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ],
                           ),
+                          ),
+                        ),
                         ),
                       ),
                 ],

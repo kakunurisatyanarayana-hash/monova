@@ -1,9 +1,12 @@
 import 'entry_store.dart';
 import 'finance_calc.dart';
 import 'local_store.dart';
-import 'reminders.dart' show addMonths;
+import 'reminders.dart' show Reminder, ReminderStore, addMonths;
 
 const loansKey = 'monova.loans';
+
+/// Reminder ids for the next EMI of each loan start with this, so they can be replaced when a loan changes.
+const loanReminderPrefix = 'loan-rem-';
 
 /// Finance entries made by this module start with these prefixes, so they can be kept in step with the loan records.
 const loanInPrefix = 'loanin-';
@@ -221,11 +224,33 @@ class LoanStore {
     return [for (final m in store.readList(loansKey)) Loan.fromJson(m)];
   }
 
-  /// Saves the loans and keeps Monova Finance in step with them.
+  /// Saves the loans, keeps Monova Finance in step with them, and keeps one reminder for each loan's next EMI.
   static Future<void> save(List<Loan> loans) async {
     final store = await LocalStore.open();
     await store.writeList(loansKey, [for (final l in loans) l.toJson()]);
     final entries = await EntryStore.loadEntries();
     await EntryStore.saveEntries(mergeLoanEntries(entries, loans));
+    final reminders = await ReminderStore.load();
+    final kept = [for (final r in reminders) if (!r.id.startsWith(loanReminderPrefix)) r];
+    await ReminderStore.save([
+      ...kept,
+      for (final l in loans) if (loanReminderFor(l) case final r?) r,
+    ]);
+  }
+
+  /// The reminder for the next unpaid EMI. Null for open loans and for loans that are finished.
+  static Reminder? loanReminderFor(Loan l, {DateTime? now}) {
+    final due = l.nextDueDate();
+    if (due == null) return null;
+    final rupees = (l.emiCents / 100).toStringAsFixed(0);
+    return Reminder(
+      id: '$loanReminderPrefix${l.id}',
+      title: 'Pay EMI to ${l.name}: Rs $rupees',
+      notes: 'Instalment ${l.payments.length + 1} of ${l.months}.',
+      dueAt: DateTime(due.year, due.month, due.day, 9),
+      createdAt: now ?? DateTime.now(),
+      repeat: 'monthly',
+      route: '/loans/${l.id}',
+    );
   }
 }

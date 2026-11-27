@@ -547,15 +547,7 @@ class _GuestHome extends StatelessWidget {
           const SizedBox(height: 22),
           SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: _ToolCard(icon: Icons.calculate_rounded, label: 'EMI', onTap: () => context.push('/tools/emi'))),
-              const SizedBox(width: 12),
-              Expanded(child: _ToolCard(icon: Icons.percent_rounded, label: 'Interest', onTap: () => context.push('/tools/interest'))),
-              const SizedBox(width: 12),
-              Expanded(child: _ToolCard(icon: Icons.receipt_long_rounded, label: 'GST', onTap: () => context.push('/tools/gst'))),
-            ],
-          ),
+          const _FreeToolsGrid(),
           const SizedBox(height: 22),
           // The offline build has no accounts, so the sign-in prompt is hidden there.
           if (!ApiConfig.offline) const SignInGate(
@@ -629,28 +621,67 @@ class _ActionCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Column(
-        children: [
-          Container(
-            width: 62,
-            height: 62,
-            decoration: BoxDecoration(
-              color: c.accentStart.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-              border: Border.all(color: c.accentStart.withValues(alpha: 0.35)),
+    // The ripple belongs to the circle only, so it centres on the icon and does not spread over the label.
+    return Column(
+      children: [
+        // Material owns the circle and its ripple, so the background is always painted where the layout puts it.
+        Material(
+          color: c.accentStart.withValues(alpha: 0.14),
+          shape: CircleBorder(side: BorderSide(color: c.accentStart.withValues(alpha: 0.35))),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 62,
+              height: 62,
+              child: Center(child: Icon(icon, color: c.accentStart, size: 26)),
             ),
-            child: Icon(icon, color: c.accentStart, size: 26),
           ),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: c.ink, fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: TextStyle(color: c.ink, fontSize: 12, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
+/// Every free tool on one page, so people do not have to search for them in All services.
+class _FreeToolsGrid extends StatelessWidget {
+  const _FreeToolsGrid();
+
+  static const _tools = [
+    (icon: Icons.calculate_rounded, label: 'EMI', route: '/tools/emi'),
+    (icon: Icons.percent_rounded, label: 'Interest', route: '/tools/interest'),
+    (icon: Icons.receipt_long_rounded, label: 'GST', route: '/tools/gst'),
+    (icon: Icons.request_quote_rounded, label: 'Income tax', route: '/tools/tax'),
+    (icon: Icons.call_split_rounded, label: 'Split a bill', route: '/tools/split'),
+    (icon: Icons.calculate_outlined, label: 'Scientific', route: '/tools/calculator'),
+    (icon: Icons.cake_rounded, label: 'Age', route: '/tools/age'),
+    (icon: Icons.house_rounded, label: 'Rent', route: '/tools/rent'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 12.0;
+        final cols = constraints.maxWidth >= 600 ? 4 : 3;
+        final tileWidth = (constraints.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final t in _tools)
+              SizedBox(
+                width: tileWidth,
+                child: _ToolCard(icon: t.icon, label: t.label, onTap: () => context.push(t.route)),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _ToolCard extends StatelessWidget {
   const _ToolCard({required this.icon, required this.label, required this.onTap});
 

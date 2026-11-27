@@ -58,7 +58,7 @@ class QrHubScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           tile(Icons.celebration_outlined, 'Wedding invitations', 'Invitation card with a QR code, shared as a picture or PDF', '/qr/invites'),
-          tile(Icons.place_outlined, 'Location code', 'A map code for a venue, hotel or meeting place', '/qr/location'),
+          tile(Icons.place_rounded, 'Location code', 'A map code for a venue, hotel or meeting place', '/qr/location'),
           tile(Icons.qr_code_2_rounded, 'Make any code', 'Text, web link, contact card, Wi-Fi, business or payment link', '/qr/make'),
           tile(Icons.qr_code_scanner_rounded, 'Scan a code', 'Read a code with the camera. Links open only when you confirm', '/qr/scan'),
         ],
@@ -125,7 +125,7 @@ class _LocationQrScreenState extends State<LocationQrScreen> {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _pick,
-            icon: const Icon(Icons.map_outlined, size: 18),
+            icon: const Icon(Icons.map_rounded, size: 18),
             label: Text(_point == null ? 'Pick the place on the map' : 'Place chosen · change'),
           ),
           if (_point != null)
@@ -270,7 +270,8 @@ class _MakeQrScreenState extends State<MakeQrScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Make a code')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        // Extra top space so the floating label of the first field is not touching the app bar.
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
         children: [
           DropdownButtonFormField<String>(
             initialValue: _kind,

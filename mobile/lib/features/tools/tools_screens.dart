@@ -67,6 +67,12 @@ class ToolsScreen extends ConsumerWidget {
             onTap: () => context.push('/tools/gst'),
           ),
           _ToolTile(
+            icon: Icons.request_quote_rounded,
+            title: 'Income tax (India)',
+            subtitle: 'Tax under the new and old regimes side by side, with deductions, rebate, surcharge and cess.',
+            onTap: () => context.push('/tools/tax'),
+          ),
+          _ToolTile(
             icon: Icons.percent_rounded,
             title: 'Interest calculator',
             subtitle: 'Simple and compound interest, growth of savings or the cost of a debt.',
@@ -130,17 +136,43 @@ class TwoColumnList extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final inner = constraints.maxWidth - (padding.horizontal);
         final wide = constraints.maxWidth >= _wideBreakpoint;
-        final half = (inner - _gap) / 2;
+        // Tiles are paired into rows whose cards stretch to the same height, so neighbours line up.
+        final rows = <Widget>[];
+        final pending = <Widget>[];
+
+        void flush() {
+          if (pending.isEmpty) return;
+          // Each tile already has its own bottom spacing, so the row adds none.
+          rows.add(IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < pending.length; i++) ...[
+                  if (i > 0) const SizedBox(width: _gap),
+                  Expanded(child: pending[i]),
+                ],
+                if (pending.length == 1) ...[const SizedBox(width: _gap), const Expanded(child: SizedBox.shrink())],
+              ],
+            ),
+          ));
+          pending.clear();
+        }
+
+        for (final child in children) {
+          if (wide && child is _ToolTile) {
+            pending.add(child);
+            if (pending.length == 2) flush();
+          } else {
+            flush();
+            rows.add(child);
+          }
+        }
+        flush();
+
         return SingleChildScrollView(
           padding: padding,
-          child: Wrap(
-            children: [
-              for (final child in children)
-                SizedBox(width: wide && child is _ToolTile ? half : inner, child: child),
-            ],
-          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
         );
       },
     );

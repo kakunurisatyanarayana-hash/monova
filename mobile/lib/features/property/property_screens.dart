@@ -1274,6 +1274,7 @@ class _RoomFormState extends State<_RoomForm> {
             onChanged: (v) => setState(() => _beds = int.tryParse(v.trim()) ?? _beds),
           ),
         ],
+        const SizedBox(height: 8),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Rent the whole room'),
@@ -1480,7 +1481,7 @@ class _PropertyFormState extends State<_PropertyForm> {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _pickOnMap,
-          icon: const Icon(Icons.map_outlined, size: 18),
+          icon: const Icon(Icons.map_rounded, size: 18),
           label: Text(hasPoint ? 'Change location on map' : 'Pick location on map'),
         ),
         const SizedBox(height: 4),
@@ -1518,6 +1519,7 @@ class _PropertyFormState extends State<_PropertyForm> {
             Expanded(child: TextField(controller: _lng, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters, decoration: const InputDecoration(labelText: 'Longitude (optional)'))),
           ],
         ),
+        const SizedBox(height: 8),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Show the exact location publicly'),
