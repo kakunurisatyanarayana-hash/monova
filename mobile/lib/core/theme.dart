@@ -129,7 +129,7 @@ class MonovaTheme {
         filled: true,
         fillColor: c.base,
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         labelStyle: TextStyle(color: c.muted, fontWeight: FontWeight.w500),
         floatingLabelStyle: TextStyle(color: c.accentStart, fontWeight: FontWeight.w700),
         hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.7)),

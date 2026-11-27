@@ -39,6 +39,7 @@ import '../features/tools/calculator_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
 import '../features/vault/vault_screen.dart';
+import '../features/vault/vault_hub.dart';
 import '../core/profile_store.dart';
 import '../features/setup/setup_screens.dart';
 import '../state/providers.dart';
@@ -112,6 +113,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/saved-cards', builder: (_, __) => const SavedCardsScreen()),
           GoRoute(path: '/backup', builder: (_, __) => _form(const BackupScreen())),
           GoRoute(path: '/vault', builder: (_, __) => const VaultScreen()),
+          GoRoute(path: '/vault-hub', builder: (_, __) => const VaultHubScreen()),
           GoRoute(path: '/services', builder: (_, __) => const ServicesScreen()),
           GoRoute(path: '/tools', builder: (_, __) => const ToolsScreen()),
           GoRoute(path: '/tools/emi', builder: (_, __) => _form(const LoanCalculatorScreen())),

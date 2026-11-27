@@ -612,9 +612,8 @@ class _QuickActions extends StatelessWidget {
       children: [
         _ActionCircle(icon: Icons.call_split_rounded, label: 'Split', onTap: () => context.push('/tools/split')),
         _ActionCircle(icon: Icons.menu_book_rounded, label: 'Credit book', onTap: () => context.push('/ledger')),
-        _ActionCircle(icon: Icons.credit_card_rounded, label: 'Cards', onTap: () => context.push('/saved-cards')),
-        _ActionCircle(icon: Icons.lock_rounded, label: 'Notes', onTap: () => context.push('/vault')),
         _ActionCircle(icon: Icons.apartment_rounded, label: 'Rooms', onTap: () => context.push('/property')),
+        _ActionCircle(icon: Icons.lock_rounded, label: 'Vault', onTap: () => context.push('/vault-hub')),
       ],
     );
   }
