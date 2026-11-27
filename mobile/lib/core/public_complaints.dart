@@ -32,22 +32,42 @@ String? publicComplaintProblem({required String room, required String category, 
   return null;
 }
 
-/// The link printed on the room's QR code. [base] is the address the web app is published at.
-String complaintFormLink(String base, {required String code, required String room, required int floor}) =>
-    '${_trim(base)}/#$complaintFormRoute?h=$code&r=${Uri.encodeComponent(room)}&f=$floor';
+/// The one link printed on each room's QR code. It opens the form, which offers two ways to send the complaint:
+/// by WhatsApp to the hostel, or directly to Monova. [code] is empty until QR complaints are turned on for the hostel.
+/// [phone] and [hostelName] let the WhatsApp option work even before that.
+String complaintFormLink(
+  String base, {
+  required String room,
+  required int floor,
+  String code = '',
+  String phone = '',
+  String hostelName = '',
+}) {
+  final digits = phone.replaceAll(RegExp(r'\D'), '');
+  final parts = <String>[
+    if (code.isNotEmpty) 'h=$code',
+    'r=${Uri.encodeComponent(room)}',
+    'f=$floor',
+    if (digits.isNotEmpty) 'w=$digits',
+    if (hostelName.trim().isNotEmpty) 'n=${Uri.encodeComponent(hostelName.trim())}',
+  ];
+  return '${_trim(base)}/#$complaintFormRoute?${parts.join('&')}';
+}
 
 /// The status link given to the resident after they send a complaint.
 String trackLink(String base, String token) => '${_trim(base)}/#$trackRoute?t=$token';
 
 String _trim(String base) => base.endsWith('/') ? base.substring(0, base.length - 1) : base;
 
-/// Reads the room, floor and hostel code from the form link's query. Null for a link that is incomplete.
-({String code, String room, int floor})? readFormQuery(Map<String, String> query) {
+/// Reads the form link's query. Null for a link without a room or floor.
+/// [code] is empty when QR complaints are not on yet, and then only the WhatsApp option is offered.
+({String code, String room, int floor, String phone, String hostelName})? readFormQuery(Map<String, String> query) {
   final code = query['h'] ?? '';
   final room = query['r'] ?? '';
   final floor = int.tryParse(query['f'] ?? '');
-  if (code.length != 8 || room.isEmpty || floor == null) return null;
-  return (code: code, room: room, floor: floor);
+  if (room.isEmpty || floor == null) return null;
+  if (code.isNotEmpty && code.length != 8) return null;
+  return (code: code, room: room, floor: floor, phone: query['w'] ?? '', hostelName: query['n'] ?? '');
 }
 
 /// A short reference for the resident to quote, such as MN-7K3Q.

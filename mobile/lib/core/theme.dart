@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// Fonts tried, in order, for letters the main font does not have: Telugu, then Hindi (Devanagari).
+const indicFontFallback = <String>['NotoSansTelugu', 'NotoSansDevanagari'];
+
 /// MONOVA design tokens. "Aurora" accent on graphite (dark) and bone (light).
 /// Every colour used by a widget comes from here so both themes stay consistent.
 class MonovaColors {
@@ -227,6 +230,7 @@ class MonovaTheme {
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 1),
+      // Hindi and Telugu text falls back to the Noto fonts bundled in assets/fonts, so those letters show instead of boxes.
       textTheme: TextTheme(
         headlineMedium: TextStyle(color: c.ink, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
         titleLarge: TextStyle(color: c.ink, fontSize: 20, fontWeight: FontWeight.w700),
@@ -234,7 +238,7 @@ class MonovaTheme {
         bodyMedium: TextStyle(color: c.ink, fontSize: 14),
         bodySmall: TextStyle(color: c.muted, fontSize: 12),
         labelLarge: TextStyle(color: c.ink, fontSize: 14, fontWeight: FontWeight.w600),
-      ),
+      ).apply(fontFamilyFallback: indicFontFallback),
       extensions: [MonovaThemeExtension(c)],
     );
   }

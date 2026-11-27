@@ -39,10 +39,10 @@ Future<PickedContact?> pickOneContact(BuildContext context) async {
 
 /// Adds a person to the book, or replaces the one with the same id.
 PropertyBook withPerson(PropertyBook book, Person p) => book.copyWith(
-      persons: book.personById(p.id) == null
-          ? [...book.persons, p]
-          : [for (final x in book.persons) x.id == p.id ? p : x],
-    );
+  persons: book.personById(p.id) == null
+      ? [...book.persons, p]
+      : [for (final x in book.persons) x.id == p.id ? p : x],
+);
 
 /// The person form: name, mobile, address, emergency contact, and optional email and ID.
 /// Everything except email and ID is required. An email, when given, must be valid and unique.
@@ -71,12 +71,22 @@ class PersonForm extends StatefulWidget {
 }
 
 class _PersonFormState extends State<PersonForm> {
-  late final _name = TextEditingController(text: widget.initial?.name ?? widget.prefillName);
-  late final _phone = TextEditingController(text: widget.initial?.phone ?? widget.prefillPhone);
+  late final _name = TextEditingController(
+    text: widget.initial?.name ?? widget.prefillName,
+  );
+  late final _phone = TextEditingController(
+    text: widget.initial?.phone ?? widget.prefillPhone,
+  );
   late final _email = TextEditingController(text: widget.initial?.email ?? '');
-  late final _address = TextEditingController(text: widget.initial?.address ?? '');
-  late final _emName = TextEditingController(text: widget.initial?.emergencyName ?? '');
-  late final _emPhone = TextEditingController(text: widget.initial?.emergencyPhone ?? '');
+  late final _address = TextEditingController(
+    text: widget.initial?.address ?? '',
+  );
+  late final _emName = TextEditingController(
+    text: widget.initial?.emergencyName ?? '',
+  );
+  late final _emPhone = TextEditingController(
+    text: widget.initial?.emergencyPhone ?? '',
+  );
   late final _idNumber = TextEditingController();
   late String _idType = widget.initial?.idType ?? '';
   late String _role = widget.initial?.role ?? widget.role;
@@ -84,7 +94,15 @@ class _PersonFormState extends State<PersonForm> {
 
   @override
   void dispose() {
-    for (final c in [_name, _phone, _email, _address, _emName, _emPhone, _idNumber]) {
+    for (final c in [
+      _name,
+      _phone,
+      _email,
+      _address,
+      _emName,
+      _emPhone,
+      _idNumber,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -108,7 +126,9 @@ class _PersonFormState extends State<PersonForm> {
     final e = text.trim().toLowerCase();
     if (e.isEmpty) return false;
     final self = widget.initial?.id;
-    return widget.others.any((p) => p.id != self && p.email.trim().toLowerCase() == e);
+    return widget.others.any(
+      (p) => p.id != self && p.email.trim().toLowerCase() == e,
+    );
   }
 
   void _save() {
@@ -134,24 +154,28 @@ class _PersonFormState extends State<PersonForm> {
     final base = widget.initial;
     // Only the last four characters of an ID number are kept.
     final digits = _idNumber.text.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-    final last4 = digits.length <= 4 ? digits : digits.substring(digits.length - 4);
-    Navigator.of(context).pop(Person(
-      id: base?.id ?? PropertyStore.newId(),
-      name: name,
-      createdAt: base?.createdAt ?? DateTime.now(),
-      phone: _phone.text.trim(),
-      email: _email.text.trim(),
-      address: _address.text.trim(),
-      emergencyName: _emName.text.trim(),
-      emergencyPhone: _emPhone.text.trim(),
-      idType: _idType,
-      idLast4: last4.isEmpty ? (base?.idLast4 ?? '') : last4,
-      role: _role,
-      propertyId: base?.propertyId ?? widget.propertyId,
-      rating: base?.rating ?? 0,
-      review: base?.review ?? '',
-      notes: base?.notes ?? '',
-    ));
+    final last4 = digits.length <= 4
+        ? digits
+        : digits.substring(digits.length - 4);
+    Navigator.of(context).pop(
+      Person(
+        id: base?.id ?? PropertyStore.newId(),
+        name: name,
+        createdAt: base?.createdAt ?? DateTime.now(),
+        phone: _phone.text.trim(),
+        email: _email.text.trim(),
+        address: _address.text.trim(),
+        emergencyName: _emName.text.trim(),
+        emergencyPhone: _emPhone.text.trim(),
+        idType: _idType,
+        idLast4: last4.isEmpty ? (base?.idLast4 ?? '') : last4,
+        role: _role,
+        propertyId: base?.propertyId ?? widget.propertyId,
+        rating: base?.rating ?? 0,
+        review: base?.review ?? '',
+        notes: base?.notes ?? '',
+      ),
+    );
   }
 
   @override
@@ -168,9 +192,19 @@ class _PersonFormState extends State<PersonForm> {
           ),
           const SizedBox(height: 12),
         ],
-        TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Full name *')),
+        TextField(
+          controller: _name,
+          autofocus: widget.initial == null,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Full name *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Mobile number *')),
+        TextField(
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          inputFormatters: phoneFormatters,
+          decoration: const InputDecoration(labelText: 'Mobile number *'),
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: _email,
@@ -179,25 +213,55 @@ class _PersonFormState extends State<PersonForm> {
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             labelText: 'Email (optional)',
-            helperText: 'Optional. If you add one, it must be unique to this resident.',
-            errorText: _email.text.trim().isNotEmpty && !_validEmail(_email.text) ? 'Enter a valid email, for example name@example.com' : null,
+            helperText:
+                'Optional. If you add one, it must be unique to this resident.',
+            errorText:
+                _email.text.trim().isNotEmpty && !_validEmail(_email.text)
+                ? 'Enter a valid email, for example name@example.com'
+                : null,
           ),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _address, textCapitalization: TextCapitalization.sentences, minLines: 1, maxLines: 3, decoration: const InputDecoration(labelText: 'Permanent address *')),
+        TextField(
+          controller: _address,
+          textCapitalization: TextCapitalization.sentences,
+          minLines: 1,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Permanent address *'),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _emName, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Emergency contact name *'))),
+            Expanded(
+              child: TextField(
+                controller: _emName,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Emergency contact name *',
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _emPhone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Emergency number *'))),
+            Expanded(
+              child: TextField(
+                controller: _emPhone,
+                keyboardType: TextInputType.phone,
+                inputFormatters: phoneFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Emergency number *',
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _role,
           decoration: const InputDecoration(labelText: 'Role'),
-          items: [for (final r in personRoles) DropdownMenuItem(value: r, child: Text(r))],
+          items: [
+            for (final r in personRoles)
+              DropdownMenuItem(value: r, child: Text(r)),
+          ],
           onChanged: (v) => setState(() => _role = v ?? _role),
         ),
         const SizedBox(height: 12),
@@ -206,10 +270,16 @@ class _PersonFormState extends State<PersonForm> {
             Expanded(
               child: DropdownButtonFormField<String>(
                 initialValue: _idType,
-                decoration: const InputDecoration(labelText: 'ID proof (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'ID proof (optional)',
+                ),
                 items: [
-                  const DropdownMenuItem(value: '', child: Text('Not recorded')),
-                  for (final t in idTypes) DropdownMenuItem(value: t, child: Text(t)),
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('Not recorded'),
+                  ),
+                  for (final t in idTypes)
+                    DropdownMenuItem(value: t, child: Text(t)),
                 ],
                 onChanged: (v) => setState(() => _idType = v ?? ''),
               ),
@@ -221,7 +291,9 @@ class _PersonFormState extends State<PersonForm> {
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
                   labelText: 'ID number',
-                  helperText: widget.initial?.idLast4.isNotEmpty == true ? 'Saved: ····${widget.initial!.idLast4}' : 'Only the last 4 are kept',
+                  helperText: widget.initial?.idLast4.isNotEmpty == true
+                      ? 'Saved: ····${widget.initial!.idLast4}'
+                      : 'Only the last 4 are kept',
                 ),
               ),
             ),
@@ -232,7 +304,10 @@ class _PersonFormState extends State<PersonForm> {
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save person' : 'Save changes')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(widget.initial == null ? 'Save person' : 'Save changes'),
+        ),
       ],
     );
   }
@@ -280,7 +355,8 @@ class _SavedPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final list = [...persons]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final list = [...persons]
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -296,8 +372,14 @@ class _SavedPicker extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text('${p.role} · ${p.phone}', style: TextStyle(color: c.muted, fontSize: 12)),
+                      Text(
+                        p.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        '${p.role} · ${p.phone}',
+                        style: TextStyle(color: c.muted, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -313,8 +395,16 @@ class _SavedPicker extends StatelessWidget {
 
 /// Adds a person from the saved people, the phone's contacts, or typed details.
 /// Returns the person (new or saved), or null if the owner backed out.
-Future<Person?> addPersonFlow(BuildContext context, PropertyBook book, String propertyId, {String role = 'Tenant'}) async {
-  final saved = [for (final p in book.persons) if (!p.isOwner) p];
+Future<Person?> addPersonFlow(
+  BuildContext context,
+  PropertyBook book,
+  String propertyId, {
+  String role = 'Tenant',
+}) async {
+  final saved = [
+    for (final p in book.persons)
+      if (!p.isOwner) p,
+  ];
   final choice = await FormSheet.show<String>(
     context,
     title: 'Add a person',
@@ -322,7 +412,11 @@ Future<Person?> addPersonFlow(BuildContext context, PropertyBook book, String pr
   );
   if (choice == null || !context.mounted) return null;
   if (choice == 'saved') {
-    return FormSheet.show<Person>(context, title: 'Saved people', child: _SavedPicker(persons: saved));
+    return FormSheet.show<Person>(
+      context,
+      title: 'Saved people',
+      child: _SavedPicker(persons: saved),
+    );
   }
   String name = '';
   String phone = '';
@@ -336,7 +430,13 @@ Future<Person?> addPersonFlow(BuildContext context, PropertyBook book, String pr
   return FormSheet.show<Person>(
     context,
     title: 'Person details',
-    child: PersonForm(propertyId: propertyId, role: role, prefillName: name, prefillPhone: phone, others: book.persons),
+    child: PersonForm(
+      propertyId: propertyId,
+      role: role,
+      prefillName: name,
+      prefillPhone: phone,
+      others: book.persons,
+    ),
   );
 }
 
@@ -382,10 +482,11 @@ class _PersonScreenState extends State<PersonScreen> {
       });
     } catch (e) {
       debugPrint('Person load failed: $e');
-      if (mounted) setState(() {
-        _error = e;
-        _loaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _error = e;
+          _loaded = true;
+        });
     }
   }
 
@@ -395,43 +496,76 @@ class _PersonScreenState extends State<PersonScreen> {
       await PropertyStore.save(next);
       await syncFinance(next);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The change could not be saved. Please try again.')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The change could not be saved. Please try again.'),
+          ),
+        );
     }
   }
 
   Future<void> _edit(Person p) async {
-    final updated = await FormSheet.show<Person>(context, title: 'Edit details', child: PersonForm(initial: p, others: _book.persons));
+    final updated = await FormSheet.show<Person>(
+      context,
+      title: 'Edit details',
+      child: PersonForm(initial: p, others: _book.persons),
+    );
     if (updated == null) return;
-    await _apply(_book.copyWith(
-      persons: [for (final x in _book.persons) x.id == p.id ? updated : x],
-      tenancies: [for (final t in _book.tenancies) t.personId == p.id ? t.copyWith(name: updated.name, phone: updated.phone) : t],
-    ));
+    await _apply(
+      _book.copyWith(
+        persons: [for (final x in _book.persons) x.id == p.id ? updated : x],
+        tenancies: [
+          for (final t in _book.tenancies)
+            t.personId == p.id
+                ? t.copyWith(name: updated.name, phone: updated.phone)
+                : t,
+        ],
+      ),
+    );
   }
 
   Future<void> _saveReview(Person p) async {
-    await _apply(_book.copyWith(
-      persons: [for (final x in _book.persons) x.id == p.id ? x.copyWith(rating: _rating, review: _review.text.trim()) : x],
-    ));
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review saved')));
+    await _apply(
+      _book.copyWith(
+        persons: [
+          for (final x in _book.persons)
+            x.id == p.id
+                ? x.copyWith(rating: _rating, review: _review.text.trim())
+                : x,
+        ],
+      ),
+    );
+    if (mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Review saved')));
   }
 
   Future<void> _delete(Person p, {required bool erase}) async {
     final problem = personDeletionProblem(_book, p.id, DateTime.now());
     if (problem != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(problem)));
       return;
     }
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(erase ? 'Erase this guest\'s data?' : 'Delete this person?'),
+        title: Text(
+          erase ? 'Erase this guest\'s data?' : 'Delete this person?',
+        ),
         content: Text(
           '${p.name}\'s details and their stay history will be removed from this device. This cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.monova.expense,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(erase ? 'Erase' : 'Delete'),
           ),
@@ -458,7 +592,9 @@ class _PersonScreenState extends State<PersonScreen> {
         appBar: AppBar(title: const Text('Person')),
         body: EmptyState(
           icon: Icons.error_outline_rounded,
-          title: _error != null ? 'Could not open this person' : 'Person not found',
+          title: _error != null
+              ? 'Could not open this person'
+              : 'Person not found',
           message: 'The record may have been erased or deleted.',
         ),
       );
@@ -474,15 +610,28 @@ class _PersonScreenState extends State<PersonScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 118, child: Text(label, style: TextStyle(color: c.muted, fontSize: 12))),
-            Expanded(child: SelectableText(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+            SizedBox(
+              width: 118,
+              child: Text(
+                label,
+                style: TextStyle(color: c.muted, fontSize: 12),
+              ),
+            ),
+            Expanded(
+              child: SelectableText(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
             IconButton(
               tooltip: 'Copy',
               visualDensity: VisualDensity.compact,
               icon: Icon(Icons.copy_rounded, size: 18, color: c.accentStart),
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: value));
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
+                if (mounted)
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('$label copied')));
               },
             ),
           ],
@@ -494,8 +643,16 @@ class _PersonScreenState extends State<PersonScreen> {
       appBar: AppBar(
         title: Text(p.name),
         actions: [
-          IconButton(tooltip: 'Edit', icon: const Icon(Icons.edit_outlined), onPressed: () => _edit(p)),
-          IconButton(tooltip: 'Delete', icon: const Icon(Icons.delete_outline_rounded), onPressed: () => _delete(p, erase: false)),
+          IconButton(
+            tooltip: 'Edit',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => _edit(p),
+          ),
+          IconButton(
+            tooltip: 'Delete',
+            icon: const Icon(Icons.delete_outline_rounded),
+            onPressed: () => _delete(p, erase: false),
+          ),
         ],
       ),
       body: ListView(
@@ -511,14 +668,26 @@ class _PersonScreenState extends State<PersonScreen> {
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: c.accentStart,
-                      child: Text(p.name.isEmpty ? '?' : p.name[0].toUpperCase(), style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w800)),
+                      child: Text(
+                        p.name.isEmpty ? '?' : p.name[0].toUpperCase(),
+                        style: TextStyle(
+                          color: c.onAccent,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                          Text(
+                            p.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 17,
+                            ),
+                          ),
                           Text(
                             '${p.role}${property == null ? '' : ' · ${property.name}'}',
                             style: TextStyle(color: c.muted, fontSize: 12),
@@ -534,7 +703,10 @@ class _PersonScreenState extends State<PersonScreen> {
                 info('Address', p.address),
                 info('Emergency contact', p.emergencyName),
                 info('Emergency number', p.emergencyPhone),
-                info('ID proof', p.idType.isEmpty ? '' : '${p.idType} ····${p.idLast4}'),
+                info(
+                  'ID proof',
+                  p.idType.isEmpty ? '' : '${p.idType} ····${p.idLast4}',
+                ),
                 info('Added on', dayLabel(p.createdAt)),
               ],
             ),
@@ -553,7 +725,12 @@ class _PersonScreenState extends State<PersonScreen> {
                       IconButton(
                         tooltip: '$i star${i == 1 ? '' : 's'}',
                         visualDensity: VisualDensity.compact,
-                        icon: Icon(i <= _rating ? Icons.star_rounded : Icons.star_border_rounded, color: c.warning),
+                        icon: Icon(
+                          i <= _rating
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: c.warning,
+                        ),
                         onPressed: () => setState(() => _rating = i),
                       ),
                   ],
@@ -562,10 +739,16 @@ class _PersonScreenState extends State<PersonScreen> {
                   controller: _review,
                   minLines: 2,
                   maxLines: 5,
-                  decoration: const InputDecoration(labelText: 'Your review of this person', alignLabelWithHint: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Your review of this person',
+                    alignLabelWithHint: true,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                FilledButton(onPressed: () => _saveReview(p), child: const Text('Save review')),
+                FilledButton(
+                  onPressed: () => _saveReview(p),
+                  child: const Text('Save review'),
+                ),
               ],
             ),
           ),
@@ -573,7 +756,12 @@ class _PersonScreenState extends State<PersonScreen> {
           const SectionTitle('History'),
           const SizedBox(height: 8),
           if (stays.isEmpty)
-            MonovaCard(child: Text('No stays recorded yet.', style: TextStyle(color: c.muted)))
+            MonovaCard(
+              child: Text(
+                'No stays recorded yet.',
+                style: TextStyle(color: c.muted),
+              ),
+            )
           else
             for (final t in stays) ...[
               MonovaCard(
@@ -589,7 +777,11 @@ class _PersonScreenState extends State<PersonScreen> {
                     const SizedBox(height: 2),
                     Text(
                       'In ${dayLabel(t.checkIn)}'
-                      '${t.actualCheckout != null ? ' · out ${dayLabel(t.actualCheckout!)}' : t.checkIn.isAfter(today) ? ' · booked' : ' · staying'}',
+                      '${t.actualCheckout != null
+                          ? ' · out ${dayLabel(t.actualCheckout!)}'
+                          : t.checkIn.isAfter(today)
+                          ? ' · booked'
+                          : ' · staying'}',
                       style: TextStyle(color: c.muted, fontSize: 12),
                     ),
                     if (t.actualCheckout != null)
@@ -608,7 +800,9 @@ class _PersonScreenState extends State<PersonScreen> {
             book: _book,
             payments: paymentsOfPerson(_book, p.id),
             onChanged: _apply,
-            propertyId: stays.isNotEmpty ? stays.first.propertyId : p.propertyId,
+            propertyId: stays.isNotEmpty
+                ? stays.first.propertyId
+                : p.propertyId,
             personId: p.id,
             roomId: stays.isNotEmpty ? stays.first.roomId : '',
             tenancyId: stays.isNotEmpty ? stays.first.id : '',
@@ -628,7 +822,10 @@ class _PersonScreenState extends State<PersonScreen> {
                   OutlinedButton.icon(
                     onPressed: () => _delete(p, erase: true),
                     icon: Icon(Icons.delete_sweep_outlined, color: c.expense),
-                    label: Text('Erase guest data now', style: TextStyle(color: c.expense)),
+                    label: Text(
+                      'Erase guest data now',
+                      style: TextStyle(color: c.expense),
+                    ),
                   ),
                 ],
               ),
@@ -639,4 +836,3 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 }
-

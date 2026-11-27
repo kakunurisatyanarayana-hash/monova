@@ -82,7 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (q == null) {
             return const Scaffold(body: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('This QR code link is incomplete. Please ask the hostel for a new code.'))));
           }
-          return ComplaintFormPage(code: q.code, room: q.room, floor: q.floor);
+          return ComplaintFormPage(code: q.code, room: q.room, floor: q.floor, phone: q.phone, hostelName: q.hostelName);
         },
       ),
       GoRoute(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../core/complaint_store.dart';
+import '../../core/complaints.dart';
 import '../../core/format.dart';
 import '../../core/property_money.dart';
 import '../../core/property_store.dart';
@@ -24,14 +26,14 @@ String _id() => PropertyStore.newId();
 bool _validPhone(String s) => s.replaceAll(RegExp(r'\D'), '').length >= 10;
 
 Color _statusColor(MonovaColors c, RoomStatus s) => switch (s) {
-      RoomStatus.available => c.income,
-      RoomStatus.partiallyOccupied => c.accentStart,
-      RoomStatus.fullyOccupied => c.accentEnd,
-      RoomStatus.reserved => c.warning,
-      RoomStatus.vacatingSoon => c.warning,
-      RoomStatus.underMaintenance => c.expense,
-      RoomStatus.temporarilyUnavailable => c.muted,
-    };
+  RoomStatus.available => c.income,
+  RoomStatus.partiallyOccupied => c.accentStart,
+  RoomStatus.fullyOccupied => c.accentEnd,
+  RoomStatus.reserved => c.warning,
+  RoomStatus.vacatingSoon => c.warning,
+  RoomStatus.underMaintenance => c.expense,
+  RoomStatus.temporarilyUnavailable => c.muted,
+};
 
 /// Loads the book, erasing hotel guest data past the retention period first.
 Future<(PropertyBook, int)> _loadBook() async {
@@ -69,20 +71,29 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       });
       if (removed > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$removed old hotel guest record(s) erased after $guestRetentionDays days.')),
+          SnackBar(
+            content: Text(
+              '$removed old hotel guest record(s) erased after $guestRetentionDays days.',
+            ),
+          ),
         );
       }
     } catch (e) {
       debugPrint('Properties load failed: $e');
-      if (mounted) setState(() {
-        _error = e;
-        _loaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _error = e;
+          _loaded = true;
+        });
     }
   }
 
   Future<void> _addProperty() async {
-    final result = await FormSheet.show<Property>(context, title: 'Add a property', child: const _PropertyForm());
+    final result = await FormSheet.show<Property>(
+      context,
+      title: 'Add a property',
+      child: const _PropertyForm(),
+    );
     if (result == null) return;
     final next = _book.copyWith(properties: [..._book.properties, result]);
     setState(() => _book = next);
@@ -95,43 +106,56 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Property and rooms')),
       floatingActionButton: _loaded && _error == null
-          ? FloatingActionButton.extended(onPressed: _addProperty, icon: const Icon(Icons.add_rounded), label: const Text('Add property'))
+          ? FloatingActionButton.extended(
+              onPressed: _addProperty,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add property'),
+            )
           : null,
       body: !_loaded
           ? const LoadingBox()
           : _error != null
-              ? const EmptyState(icon: Icons.error_outline_rounded, title: 'Could not open properties', message: 'Nothing has been changed. Close and open the page again.')
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  children: [
-                    if (_book.properties.isEmpty)
-                      EmptyState(
-                        icon: Icons.apartment_rounded,
-                        title: 'No property yet',
-                        message: 'Add a hotel, hostel, PG, apartment or individual property. Then add its rooms and people.',
-                        actionLabel: 'Add the first property',
-                        onAction: _addProperty,
-                      )
-                    else
-                      for (final p in _book.properties) ...[
-                        _PropertyTile(
-                          property: p,
-                          summary: summarizeProperty(p.id, _book, today),
-                          onTap: () async {
-                            await context.push('/property/${p.id}');
-                            await _load();
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+          ? const EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Could not open properties',
+              message:
+                  'Nothing has been changed. Close and open the page again.',
+            )
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              children: [
+                if (_book.properties.isEmpty)
+                  EmptyState(
+                    icon: Icons.apartment_rounded,
+                    title: 'No property yet',
+                    message: 'Add a hotel, hostel, PG, apartment or individual property. Then add its rooms and people.',
+                    actionLabel: 'Add the first property',
+                    onAction: _addProperty,
+                  )
+                else
+                  for (final p in _book.properties) ...[
+                    _PropertyTile(
+                      property: p,
+                      summary: summarizeProperty(p.id, _book, today),
+                      onTap: () async {
+                        await context.push('/property/${p.id}');
+                        await _load();
+                      },
+                    ),
+                    const SizedBox(height: 10),
                   ],
-                ),
+              ],
+            ),
     );
   }
 }
 
 class _PropertyTile extends StatelessWidget {
-  const _PropertyTile({required this.property, required this.summary, required this.onTap});
+  const _PropertyTile({
+    required this.property,
+    required this.summary,
+    required this.onTap,
+  });
 
   final Property property;
   final PropertySummary summary;
@@ -151,7 +175,10 @@ class _PropertyTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(property.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  property.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${property.category}${property.address.isEmpty ? '' : ' · ${property.address}'}',
@@ -181,7 +208,8 @@ class PropertyDashboardScreen extends StatefulWidget {
   final String id;
 
   @override
-  State<PropertyDashboardScreen> createState() => _PropertyDashboardScreenState();
+  State<PropertyDashboardScreen> createState() =>
+      _PropertyDashboardScreenState();
 }
 
 class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
@@ -196,6 +224,9 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
 
   /// The summary tile whose filter is on, so the room list can say what it is showing.
   String? _quick;
+
+  /// Every complaint on this phone, used to mark rooms that have an open one.
+  List<Complaint> _complaints = const [];
 
   /// Tapping a summary tile sets the filter that matches it. Tiles without a room filter show every room.
   void _applyTile(String tile) {
@@ -233,16 +264,20 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
   Future<void> _load() async {
     try {
       final (book, _) = await _loadBook();
-      if (mounted) setState(() {
-        _book = book;
-        _loaded = true;
-      });
+      final complaints = await ComplaintStore.loadComplaints();
+      if (mounted)
+        setState(() {
+          _book = book;
+          _complaints = complaints;
+          _loaded = true;
+        });
     } catch (e) {
       debugPrint('Property load failed: $e');
-      if (mounted) setState(() {
-        _error = e;
-        _loaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _error = e;
+          _loaded = true;
+        });
     }
   }
 
@@ -252,14 +287,29 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
       await PropertyStore.save(next);
       await syncFinance(next);
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The change could not be saved. Please try again.')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The change could not be saved. Please try again.'),
+          ),
+        );
     }
   }
 
   Future<void> _editProperty(Property p) async {
-    final result = await FormSheet.show<Property>(context, title: 'Edit property', child: _PropertyForm(initial: p));
+    final result = await FormSheet.show<Property>(
+      context,
+      title: 'Edit property',
+      child: _PropertyForm(initial: p),
+    );
     if (result == null) return;
-    await _apply(_book.copyWith(properties: [for (final x in _book.properties) x.id == p.id ? result : x]));
+    await _apply(
+      _book.copyWith(
+        properties: [
+          for (final x in _book.properties) x.id == p.id ? result : x,
+        ],
+      ),
+    );
   }
 
   Future<void> _deleteProperty(Property p) async {
@@ -267,11 +317,18 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Delete ${p.name}?'),
-        content: const Text('Its rooms, stays and people will be removed from this device. This cannot be undone.'),
+        content: const Text(
+          'Its rooms, stays and people will be removed from this device. This cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.monova.expense,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -284,11 +341,18 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
   }
 
   Future<void> _addRoom(Property p) async {
-    final existing = _book.roomsOf(p.id).map((r) => r.number.toLowerCase()).toSet();
+    final existing = _book
+        .roomsOf(p.id)
+        .map((r) => r.number.toLowerCase())
+        .toSet();
     final result = await FormSheet.show<Room>(
       context,
       title: 'Add a room',
-      child: _RoomForm(propertyId: p.id, existingNumbers: existing, propertyFloors: p.floors),
+      child: _RoomForm(
+        propertyId: p.id,
+        existingNumbers: existing,
+        propertyFloors: p.floors,
+      ),
     );
     if (result == null) return;
     await _apply(_book.copyWith(rooms: [..._book.rooms, result]));
@@ -311,7 +375,14 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
   }
 
   Future<void> _toggleMaintenanceHere(Room room) async {
-    await _apply(_book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? r.copyWith(maintenance: !room.maintenance) : r]));
+    await _apply(
+      _book.copyWith(
+        rooms: [
+          for (final r in _book.rooms)
+            r.id == room.id ? r.copyWith(maintenance: !room.maintenance) : r,
+        ],
+      ),
+    );
   }
 
   Future<void> _openRoom(Room room) async {
@@ -330,7 +401,8 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
     // Vacancy is checked separately from status, because a shared room can have vacant beds and still be occupied.
     switch (_vacancy) {
       case 'Vacant rooms':
-        if (s.hasOccupants || s.room.maintenance || s.room.unavailable) return false;
+        if (s.hasOccupants || s.room.maintenance || s.room.unavailable)
+          return false;
       case 'Rooms with vacant beds':
         if (s.availableBeds <= 0) return false;
       case 'Occupied rooms':
@@ -342,7 +414,9 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
       case 'Under maintenance':
         if (!s.room.maintenance) return false;
     }
-    if (_search.trim().isNotEmpty && !s.room.number.toLowerCase().contains(_search.trim().toLowerCase())) return false;
+    if (_search.trim().isNotEmpty &&
+        !s.room.number.toLowerCase().contains(_search.trim().toLowerCase()))
+      return false;
     return true;
   }
 
@@ -356,35 +430,63 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
         appBar: AppBar(title: const Text('Property')),
         body: EmptyState(
           icon: Icons.error_outline_rounded,
-          title: _error != null ? 'Could not open this property' : 'Property not found',
-          message: 'It may have been deleted. Go back and choose another property.',
+          title: _error != null
+              ? 'Could not open this property'
+              : 'Property not found',
+          message:
+              'It may have been deleted. Go back and choose another property.',
         ),
       );
     }
 
     final today = DateTime.now();
     final summary = summarizeProperty(property.id, _book, today);
-    final floors = {for (final r in summary.rooms) r.room.floor}.toList()..sort();
-    final types = {for (final r in summary.rooms) r.room.type}.toList()..sort();
-    final shown = summary.rooms.where(_matches).toList();
-    final people = [for (final p in _book.persons) if (p.propertyId == property.id) p]
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    final stays = [for (final t in _book.tenancies) if (t.propertyId == property.id) t];
-    final vacated = stays.where((t) => t.vacated).toList()..sort((a, b) => b.actualCheckout!.compareTo(a.actualCheckout!));
-    final arrivals = [for (final t in stays) if (!t.checkIn.isAfter(today)) t]..sort((a, b) => b.checkIn.compareTo(a.checkIn));
+    // Rooms with an open complaint, counted by room number, so they can be shown in red.
+    final openByRoom = <String, int>{};
+    for (final x in _complaints) {
+      if (x.propertyId == property.id && x.isOpen)
+        openByRoom[x.roomNumber] = (openByRoom[x.roomNumber] ?? 0) + 1;
+    }
+    final openComplaintCount = _complaints
+        .where((x) => x.propertyId == property.id && x.isOpen)
+        .length;
+    final people = [
+      for (final p in _book.persons)
+        if (p.propertyId == property.id) p,
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final stays = [
+      for (final t in _book.tenancies)
+        if (t.propertyId == property.id) t,
+    ];
+    final vacated = stays.where((t) => t.vacated).toList()
+      ..sort((a, b) => b.actualCheckout!.compareTo(a.actualCheckout!));
+    final arrivals = [
+      for (final t in stays)
+        if (!t.checkIn.isAfter(today)) t,
+    ]..sort((a, b) => b.checkIn.compareTo(a.checkIn));
 
     return Scaffold(
       appBar: AppBar(
         title: Text(property.name),
         actions: [
-          IconButton(tooltip: 'Hostel summary, complaints and reviews', icon: const Icon(Icons.dashboard_customize_outlined), onPressed: () => context.push('/property/${property.id}/hub')),
-          IconButton(tooltip: 'Edit property', icon: const Icon(Icons.edit_outlined), onPressed: () => _editProperty(property)),
+          IconButton(
+            tooltip: 'Hostel summary, complaints and reviews',
+            icon: const Icon(Icons.dashboard_customize_outlined),
+            onPressed: () => context.push('/property/${property.id}/hub'),
+          ),
+          IconButton(
+            tooltip: 'Edit property',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => _editProperty(property),
+          ),
           PopupMenuButton<String>(
             tooltip: 'More',
             onSelected: (v) {
               if (v == 'delete') _deleteProperty(property);
             },
-            itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Delete property'))],
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'delete', child: Text('Delete property')),
+            ],
           ),
         ],
       ),
@@ -403,16 +505,79 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                _Stat(label: 'Total rooms', value: '${summary.totalRooms}', onHero: true, selected: _quick == null, onTap: () => _applyTile('Total rooms')),
-                _Stat(label: 'Available rooms', value: '${summary.availableRooms}', onHero: true, selected: _quick == 'Available rooms', onTap: () => _applyTile('Available rooms')),
-                _Stat(label: 'Occupied rooms', value: '${summary.occupiedRooms}', onHero: true, selected: _quick == 'Occupied rooms', onTap: () => _applyTile('Occupied rooms')),
-                _Stat(label: 'Partially occupied', value: '${summary.partiallyOccupiedRooms}', onHero: true, selected: _quick == 'Partially occupied', onTap: () => _applyTile('Partially occupied')),
-                _Stat(label: 'Reserved rooms', value: '${summary.reservedRooms}', onHero: true, selected: _quick == 'Reserved rooms', onTap: () => _applyTile('Reserved rooms')),
-                _Stat(label: 'Under maintenance', value: '${summary.maintenanceRooms}', onHero: true, selected: _quick == 'Under maintenance', onTap: () => _applyTile('Under maintenance')),
-                _Stat(label: 'Available beds', value: '${summary.availableBeds}', onHero: true, selected: _quick == 'Available beds', onTap: () => _applyTile('Available beds')),
-                _Stat(label: 'Total beds', value: '${summary.totalBeds}', onHero: true, onTap: () => _applyTile('Total beds')),
-                _Stat(label: 'Living here now', value: '${summary.activeTenants}', onHero: true),
-                _Stat(label: 'Upcoming vacancies', value: '${summary.upcomingVacancies.length}', onHero: true),
+                _Stat(
+                  label: 'Total rooms',
+                  value: '${summary.totalRooms}',
+                  onHero: true,
+                  selected: _quick == null,
+                  onTap: () => _applyTile('Total rooms'),
+                ),
+                _Stat(
+                  label: 'Available rooms',
+                  value: '${summary.availableRooms}',
+                  onHero: true,
+                  selected: _quick == 'Available rooms',
+                  onTap: () => _applyTile('Available rooms'),
+                ),
+                _Stat(
+                  label: 'Occupied rooms',
+                  value: '${summary.occupiedRooms}',
+                  onHero: true,
+                  selected: _quick == 'Occupied rooms',
+                  onTap: () => _applyTile('Occupied rooms'),
+                ),
+                _Stat(
+                  label: 'Partially occupied',
+                  value: '${summary.partiallyOccupiedRooms}',
+                  onHero: true,
+                  selected: _quick == 'Partially occupied',
+                  onTap: () => _applyTile('Partially occupied'),
+                ),
+                _Stat(
+                  label: 'Reserved rooms',
+                  value: '${summary.reservedRooms}',
+                  onHero: true,
+                  selected: _quick == 'Reserved rooms',
+                  onTap: () => _applyTile('Reserved rooms'),
+                ),
+                _Stat(
+                  label: 'Under maintenance',
+                  value: '${summary.maintenanceRooms}',
+                  onHero: true,
+                  selected: _quick == 'Under maintenance',
+                  onTap: () => _applyTile('Under maintenance'),
+                ),
+                _Stat(
+                  label: 'Available beds',
+                  value: '${summary.availableBeds}',
+                  onHero: true,
+                  selected: _quick == 'Available beds',
+                  onTap: () => _applyTile('Available beds'),
+                ),
+                _Stat(
+                  label: 'Total beds',
+                  value: '${summary.totalBeds}',
+                  onHero: true,
+                  onTap: () => _applyTile('Total beds'),
+                ),
+                _Stat(
+                  label: 'Living here now',
+                  value: '${summary.activeTenants}',
+                  onHero: true,
+                ),
+                _Stat(
+                  label: 'Upcoming vacancies',
+                  value: '${summary.upcomingVacancies.length}',
+                  onHero: true,
+                ),
+                _Stat(
+                  label: 'Open complaints',
+                  value: '$openComplaintCount',
+                  onHero: true,
+                  alert: openComplaintCount > 0,
+                  onTap: () =>
+                      context.push('/property/${property.id}/complaints'),
+                ),
               ],
             ),
           ),
@@ -433,7 +598,11 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
                   Expanded(
                     child: Text(
                       'Guest details at this hotel are erased $guestRetentionDays days after each guest checks out.',
-                      style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+                      style: TextStyle(
+                        color: c.muted,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -442,16 +611,30 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
           ],
           const SizedBox(height: 18),
           if (property.hasLocation) ...[
-            PropertyMapPreview(latitude: property.latitude!, longitude: property.longitude!, exact: property.showExactLocation),
+            PropertyMapPreview(
+              latitude: property.latitude!,
+              longitude: property.longitude!,
+              exact: property.showExactLocation,
+            ),
             const SizedBox(height: 6),
             Text(
-              [property.address, property.cityVillage, property.mandal, property.district, property.state, property.pinCode].where((s) => s.isNotEmpty).join(', '),
+              [
+                property.address,
+                property.cityVillage,
+                property.mandal,
+                property.district,
+                property.state,
+                property.pinCode,
+              ].where((s) => s.isNotEmpty).join(', '),
               style: TextStyle(color: c.muted, fontSize: 12),
             ),
             const SizedBox(height: 14),
           ],
           if (!property.hasLocation && property.address.isNotEmpty) ...[
-            Text(property.address, style: TextStyle(color: c.muted, fontSize: 12)),
+            Text(
+              property.address,
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
             const SizedBox(height: 14),
           ],
           MoneyThisMonth(book: _book, propertyId: property.id),
@@ -464,52 +647,8 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
             title: 'Transactions and expenses',
           ),
           const SizedBox(height: 18),
-          const SectionTitle('Room Availability'),
+          const SectionTitle('Vacancy'),
           const SizedBox(height: 8),
-          TextField(
-            onChanged: (v) => setState(() => _search = v),
-            decoration: const InputDecoration(labelText: 'Search room number', prefixIcon: Icon(Icons.search_rounded)),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _FilterBox<int>(label: 'Floor', value: _floor, items: floors, labelOf: floorLabel, onChanged: (v) => setState(() {
-                    _floor = v;
-                    _quick = null;
-                  })),
-              _FilterBox<String>(
-                label: 'Vacancy',
-                value: _vacancy == 'All rooms' ? null : _vacancy,
-                items: const ['Vacant rooms', 'Rooms with vacant beds', 'Occupied rooms', 'Fully occupied', 'Reserved', 'Under maintenance'],
-                labelOf: (t) => t,
-                onChanged: (v) => setState(() {
-                  _vacancy = v ?? 'All rooms';
-                  _quick = null;
-                }),
-              ),
-              _FilterBox<RoomStatus>(label: 'Status', value: _status, items: RoomStatus.values, labelOf: roomStatusLabel, onChanged: (v) => setState(() {
-                    _status = v;
-                    _quick = null;
-                  })),
-              _FilterBox<String>(label: 'Sharing type', value: _type, items: types, labelOf: (t) => t, onChanged: (v) => setState(() {
-                    _type = v;
-                    _quick = null;
-                  })),
-            ],
-          ),
-          if (_quick != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Row(
-                children: [
-                  Expanded(child: Text('Showing: $_quick', style: TextStyle(color: c.ink, fontWeight: FontWeight.w700))),
-                  TextButton(onPressed: () => _applyTile('Total rooms'), child: const Text('Show all rooms')),
-                ],
-              ),
-            ),
-          const SizedBox(height: 12),
           if (summary.rooms.isEmpty)
             EmptyState(
               icon: Icons.meeting_room_outlined,
@@ -518,24 +657,27 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
               actionLabel: 'Add a room',
               onAction: () => _addRoom(property),
             )
-          else if (shown.isEmpty)
-            const EmptyState(icon: Icons.search_off_rounded, title: 'No room matches', message: 'Clear a filter or change the search.')
           else
-            for (final s in shown) ...[
-              _RoomTile(
-                snapshot: s,
-                onTap: () => _openRoom(s.room),
-                onEdit: () => _editRoomHere(s.room),
-                onMaintenance: () => _toggleMaintenanceHere(s.room),
-                onDelete: () => _deleteRoomHere(s.room),
-              ),
-              const SizedBox(height: 8),
-            ],
+            // Sharing and vacancy filters at the top, then one tile per room. Tap a tile to open the room.
+            _VacancyBoard(
+              rooms: summary.rooms,
+              openByRoom: openByRoom,
+              onOpen: (room) => _openRoom(room),
+            ),
           const SizedBox(height: 18),
-          SectionTitle('People', action: 'Add person', onAction: () => _addPerson(property)),
+          SectionTitle(
+            'People',
+            action: 'Add person',
+            onAction: () => _addPerson(property),
+          ),
           const SizedBox(height: 8),
           if (people.isEmpty)
-            MonovaCard(child: Text('No people added yet. Add a guest, tenant or family member from contacts or type their details.', style: TextStyle(color: c.muted)))
+            MonovaCard(
+              child: Text(
+                'No people added yet. Add a guest, tenant or family member from contacts or type their details.',
+                style: TextStyle(color: c.muted),
+              ),
+            )
           else
             for (final p in people) ...[
               MonovaCard(
@@ -549,8 +691,14 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                          Text('${p.role} · ${p.phone}', style: TextStyle(color: c.muted, fontSize: 12)),
+                          Text(
+                            p.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            '${p.role} · ${p.phone}',
+                            style: TextStyle(color: c.muted, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
@@ -564,13 +712,20 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
           const SectionTitle('Upcoming vacancies'),
           const SizedBox(height: 8),
           if (summary.upcomingVacancies.isEmpty)
-            MonovaCard(child: Text('Nobody is due to leave in the next $vacancyWindowDays days.', style: TextStyle(color: c.muted)))
+            MonovaCard(
+              child: Text(
+                'Nobody is due to leave in the next $vacancyWindowDays days.',
+                style: TextStyle(color: c.muted),
+              ),
+            )
           else
             for (final t in summary.upcomingVacancies) ...[
               _StayTile(
                 stay: t,
                 room: _book.roomById(t.roomId),
-                line: t.expectedCheckout == null ? 'No expected checkout date' : 'Expected to leave ${dayLabel(t.expectedCheckout!)}',
+                line: t.expectedCheckout == null
+                    ? 'No expected checkout date'
+                    : 'Expected to leave ${dayLabel(t.expectedCheckout!)}',
               ),
               const SizedBox(height: 8),
             ],
@@ -578,20 +733,38 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
           const SectionTitle('Recently vacated'),
           const SizedBox(height: 8),
           if (vacated.isEmpty)
-            MonovaCard(child: Text('No checkouts yet.', style: TextStyle(color: c.muted)))
+            MonovaCard(
+              child: Text(
+                'No checkouts yet.',
+                style: TextStyle(color: c.muted),
+              ),
+            )
           else
             for (final t in vacated.take(5)) ...[
-              _StayTile(stay: t, room: _book.roomById(t.roomId), line: 'Left ${dayLabel(t.actualCheckout!)}'),
+              _StayTile(
+                stay: t,
+                room: _book.roomById(t.roomId),
+                line: 'Left ${dayLabel(t.actualCheckout!)}',
+              ),
               const SizedBox(height: 8),
             ],
           const SizedBox(height: 18),
           const SectionTitle('Recent check-ins'),
           const SizedBox(height: 8),
           if (arrivals.isEmpty)
-            MonovaCard(child: Text('No check-ins yet.', style: TextStyle(color: c.muted)))
+            MonovaCard(
+              child: Text(
+                'No check-ins yet.',
+                style: TextStyle(color: c.muted),
+              ),
+            )
           else
             for (final t in arrivals.take(5)) ...[
-              _StayTile(stay: t, room: _book.roomById(t.roomId), line: 'Checked in ${dayLabel(t.checkIn)}'),
+              _StayTile(
+                stay: t,
+                room: _book.roomById(t.roomId),
+                line: 'Checked in ${dayLabel(t.checkIn)}',
+              ),
               const SizedBox(height: 8),
             ],
         ],
@@ -601,11 +774,21 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, this.onHero = false, this.selected = false, this.onTap});
+  const _Stat({
+    required this.label,
+    required this.value,
+    this.onHero = false,
+    this.selected = false,
+    this.alert = false,
+    this.onTap,
+  });
 
   final String label;
   final String value;
   final bool onHero;
+
+  /// Solid red tile, used for complaints that still need action.
+  final bool alert;
 
   /// Outlines the tile while its filter is on.
   final bool selected;
@@ -616,21 +799,39 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final fg = onHero ? c.onAccent : c.ink;
+    final fg = alert ? Colors.white : (onHero ? c.onAccent : c.ink);
     final tile = Container(
       width: 150,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: onHero ? c.onAccent.withValues(alpha: 0.14) : c.raised,
+        color: alert
+            ? c.expense
+            : (onHero ? c.onAccent.withValues(alpha: 0.14) : c.raised),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: selected ? c.onAccent : Colors.transparent, width: 2),
+        border: Border.all(
+          color: selected ? c.onAccent : Colors.transparent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: TextStyle(
+              color: fg,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: onHero ? c.onAccent.withValues(alpha: 0.9) : c.muted, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: onHero ? c.onAccent.withValues(alpha: 0.9) : c.muted,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -638,13 +839,23 @@ class _Stat extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
-      child: InkWell(borderRadius: BorderRadius.circular(16), onTap: onTap, child: tile),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: tile,
+      ),
     );
   }
 }
 
 class _FilterBox<T> extends StatelessWidget {
-  const _FilterBox({required this.label, required this.value, required this.items, required this.labelOf, required this.onChanged});
+  const _FilterBox({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.labelOf,
+    required this.onChanged,
+  });
 
   final String label;
   final T? value;
@@ -662,7 +873,11 @@ class _FilterBox<T> extends StatelessWidget {
         decoration: InputDecoration(labelText: label),
         items: [
           DropdownMenuItem<T?>(value: null, child: Text('All')),
-          for (final i in items) DropdownMenuItem<T?>(value: i, child: Text(labelOf(i), overflow: TextOverflow.ellipsis)),
+          for (final i in items)
+            DropdownMenuItem<T?>(
+              value: i,
+              child: Text(labelOf(i), overflow: TextOverflow.ellipsis),
+            ),
         ],
         onChanged: onChanged,
       ),
@@ -672,7 +887,11 @@ class _FilterBox<T> extends StatelessWidget {
 
 /// Edits a room: its number, floor, sharing, rent and type. Returns the updated book, or null when cancelled or refused.
 /// Changing a whole-room rental to per-bed moves the people in it to beds, when they fit.
-Future<PropertyBook?> editRoomFlow(BuildContext context, PropertyBook book, Room room) async {
+Future<PropertyBook?> editRoomFlow(
+  BuildContext context,
+  PropertyBook book,
+  Room room,
+) async {
   final others = {
     for (final r in book.roomsOf(room.propertyId))
       if (r.id != room.id) r.number.toLowerCase(),
@@ -680,34 +899,56 @@ Future<PropertyBook?> editRoomFlow(BuildContext context, PropertyBook book, Room
   final updated = await FormSheet.show<Room>(
     context,
     title: 'Edit room ${room.number}',
-    child: _RoomForm(propertyId: room.propertyId, existingNumbers: others, propertyFloors: book.propertyById(room.propertyId)?.floors ?? 1, initial: room),
+    child: _RoomForm(
+      propertyId: room.propertyId,
+      existingNumbers: others,
+      propertyFloors: book.propertyById(room.propertyId)?.floors ?? 1,
+      initial: room,
+    ),
   );
   if (updated == null) return null;
-  final withRoom = book.copyWith(rooms: [for (final r in book.rooms) r.id == room.id ? updated : r]);
+  final withRoom = book.copyWith(
+    rooms: [for (final r in book.rooms) r.id == room.id ? updated : r],
+  );
   final (moved, problem) = moveWholeRoomStays(withRoom, updated);
   if (problem != null) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+    if (context.mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(problem)));
     return null;
   }
   return moved;
 }
 
 /// Deletes a room (it is hidden and its history kept), after checking nobody is in it or booked.
-Future<PropertyBook?> deleteRoomFlow(BuildContext context, PropertyBook book, Room room) async {
+Future<PropertyBook?> deleteRoomFlow(
+  BuildContext context,
+  PropertyBook book,
+  Room room,
+) async {
   final problem = roomDeletionProblem(book, room.id, DateTime.now());
   if (problem != null) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+    if (context.mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(problem)));
     return null;
   }
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text('Delete room ${room.number}?'),
-      content: const Text('The room will be hidden from the dashboard. Its past stays stay in the history.'),
+      content: const Text(
+        'The room will be hidden from the dashboard. Its past stays stay in the history.',
+      ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+          style: FilledButton.styleFrom(
+            backgroundColor: context.monova.expense,
+          ),
           onPressed: () => Navigator.pop(ctx, true),
           child: const Text('Delete'),
         ),
@@ -715,13 +956,19 @@ Future<PropertyBook?> deleteRoomFlow(BuildContext context, PropertyBook book, Ro
     ),
   );
   if (ok != true) return null;
-  return book.copyWith(rooms: [for (final r in book.rooms) r.id == room.id ? room.copyWith(archived: true) : r]);
+  return book.copyWith(
+    rooms: [
+      for (final r in book.rooms)
+        r.id == room.id ? room.copyWith(archived: true) : r,
+    ],
+  );
 }
 
 class _RoomTile extends StatelessWidget {
   const _RoomTile({
     required this.snapshot,
     required this.onTap,
+    this.openComplaints = 0,
     this.onEdit,
     this.onMaintenance,
     this.onDelete,
@@ -729,6 +976,9 @@ class _RoomTile extends StatelessWidget {
 
   final RoomSnapshot snapshot;
   final VoidCallback onTap;
+
+  /// Open complaints for this room. Any number above zero shows the room in red.
+  final int openComplaints;
   final VoidCallback? onEdit;
   final VoidCallback? onMaintenance;
   final VoidCallback? onDelete;
@@ -737,7 +987,9 @@ class _RoomTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final room = snapshot.room;
-    final color = _statusColor(c, snapshot.status);
+    final color = openComplaints > 0
+        ? c.expense
+        : _statusColor(c, snapshot.status);
     final bedLine = room.wholeRoomRental
         ? (snapshot.hasOccupants ? 'Whole room let' : 'Whole room free')
         : '${snapshot.availableBeds} of ${room.beds} beds free · ${room.beds} sharing';
@@ -750,26 +1002,60 @@ class _RoomTile extends StatelessWidget {
           Container(
             width: 52,
             padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
-            child: Text(room.number, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.w800)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              room.number,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: color, fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${floorLabel(room.floor)} · ${room.type}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  '${floorLabel(room.floor)} · ${room.type}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 2),
                 Text(bedLine, style: TextStyle(color: c.muted, fontSize: 12)),
                 if (names.isNotEmpty)
-                  Text(names, style: TextStyle(color: c.muted, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    names,
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (openComplaints > 0)
+                  Text(
+                    '$openComplaints open complaint${openComplaints == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      color: c.expense,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
-            child: Text(roomStatusLabel(snapshot.status), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              roomStatusLabel(snapshot.status),
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           PopupMenuButton<String>(
             tooltip: 'Room options',
@@ -785,13 +1071,270 @@ class _RoomTile extends StatelessWidget {
               }
             },
             itemBuilder: (_) => [
-              if (onEdit != null) const PopupMenuItem(value: 'edit', child: Text('Edit room')),
+              if (onEdit != null)
+                const PopupMenuItem(value: 'edit', child: Text('Edit room')),
               if (onMaintenance != null)
-                PopupMenuItem(value: 'maintenance', child: Text(room.maintenance ? 'Finish maintenance' : 'Mark under maintenance')),
-              if (onDelete != null) const PopupMenuItem(value: 'delete', child: Text('Delete room')),
+                PopupMenuItem(
+                  value: 'maintenance',
+                  child: Text(
+                    room.maintenance
+                        ? 'Finish maintenance'
+                        : 'Mark under maintenance',
+                  ),
+                ),
+              if (onDelete != null)
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete room'),
+                ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Vacancy on the dashboard: a sharing filter and a vacancy filter at the top, then one tile per room.
+/// A tile shows the room's free beds and status, is red while it has an open complaint, and opens the room.
+class _VacancyBoard extends StatefulWidget {
+  const _VacancyBoard({
+    required this.rooms,
+    required this.openByRoom,
+    required this.onOpen,
+  });
+
+  final List<RoomSnapshot> rooms;
+  final Map<String, int> openByRoom;
+  final void Function(Room room) onOpen;
+
+  @override
+  State<_VacancyBoard> createState() => _VacancyBoardState();
+}
+
+class _VacancyBoardState extends State<_VacancyBoard> {
+  /// Beds in the room (1 sharing, 2 sharing...). Null means all.
+  int? _sharing;
+
+  /// all, bed (has a vacant bed), full (no bed free), empty (no one in the room).
+  String _vacancy = 'all';
+
+  bool _match(RoomSnapshot s) {
+    if (_sharing != null && s.room.beds != _sharing) return false;
+    switch (_vacancy) {
+      case 'bed':
+        return s.availableBeds > 0;
+      case 'full':
+        return s.availableBeds == 0;
+      case 'empty':
+        return !s.hasOccupants;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final sharings = {for (final s in widget.rooms) s.room.beds}.toList()
+      ..sort();
+    final shown =
+        [
+          for (final s in widget.rooms)
+            if (_match(s)) s,
+        ]..sort(
+          (a, b) => a.room.floor != b.room.floor
+              ? a.room.floor.compareTo(b.room.floor)
+              : a.room.number.compareTo(b.room.number),
+        );
+    final label = TextStyle(
+      color: c.muted,
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+    );
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: c.glassFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Sharing', style: label),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('All'),
+                selected: _sharing == null,
+                onSelected: (_) => setState(() => _sharing = null),
+              ),
+              for (final n in sharings)
+                ChoiceChip(
+                  label: Text(n == 1 ? '1 sharing' : '$n sharing'),
+                  selected: _sharing == n,
+                  onSelected: (_) => setState(() => _sharing = n),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text('Vacancy', style: label),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('All rooms'),
+                selected: _vacancy == 'all',
+                onSelected: (_) => setState(() => _vacancy = 'all'),
+              ),
+              ChoiceChip(
+                label: const Text('Vacant beds'),
+                selected: _vacancy == 'bed',
+                onSelected: (_) => setState(() => _vacancy = 'bed'),
+              ),
+              ChoiceChip(
+                label: const Text('Full'),
+                selected: _vacancy == 'full',
+                onSelected: (_) => setState(() => _vacancy = 'full'),
+              ),
+              ChoiceChip(
+                label: const Text('Whole room free'),
+                selected: _vacancy == 'empty',
+                onSelected: (_) => setState(() => _vacancy = 'empty'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Showing ${shown.length} of ${widget.rooms.length} rooms',
+            style: TextStyle(
+              color: c.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (shown.isEmpty)
+            Text(
+              'No room matches these filters.',
+              style: TextStyle(color: c.muted),
+            )
+          else
+            EqualTileGrid(
+              minTileWidth: 160,
+              tileHeight: 104,
+              children: [
+                for (final s in shown)
+                  _RoomBedTile(
+                    snapshot: s,
+                    open: widget.openByRoom[s.room.number] ?? 0,
+                    onTap: () => widget.onOpen(s.room),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoomBedTile extends StatelessWidget {
+  const _RoomBedTile({
+    required this.snapshot,
+    required this.open,
+    required this.onTap,
+  });
+
+  final RoomSnapshot snapshot;
+  final int open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final room = snapshot.room;
+    final free =
+        snapshot.availableBeds > 0 ||
+        (room.wholeRoomRental && !snapshot.hasOccupants);
+    final beds = room.wholeRoomRental
+        ? (snapshot.hasOccupants ? 'Whole room let' : 'Whole room free')
+        : '${snapshot.availableBeds} of ${room.beds} beds free';
+    return Material(
+      color: c.glassFill,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: open > 0 ? c.expense : c.border,
+          width: open > 0 ? 1.6 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Room ${room.number}',
+                      style: TextStyle(
+                        color: c.ink,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                  if (open > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: c.expense,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        '$open open',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${floorLabel(room.floor)} · ${room.beds} sharing',
+                style: TextStyle(color: c.muted, fontSize: 12),
+              ),
+              const Spacer(),
+              Text(
+                beds,
+                style: TextStyle(
+                  color: free ? c.income : c.muted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              Text(
+                roomStatusLabel(snapshot.status),
+                style: TextStyle(color: c.muted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -809,7 +1352,9 @@ class _StayTile extends StatelessWidget {
     final c = context.monova;
     return MonovaCard(
       padding: const EdgeInsets.all(14),
-      onTap: stay.personId.isEmpty ? null : () => context.push('/person/${stay.personId}'),
+      onTap: stay.personId.isEmpty
+          ? null
+          : () => context.push('/person/${stay.personId}'),
       child: Row(
         children: [
           Icon(Icons.person_outline_rounded, color: c.accentStart),
@@ -818,7 +1363,10 @@ class _StayTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(stay.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  stay.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${room == null ? 'Room deleted' : 'Room ${room!.number}${stay.wholeRoom ? '' : ', bed ${stay.bed}'}'} · $line',
@@ -827,7 +1375,15 @@ class _StayTile extends StatelessWidget {
               ],
             ),
           ),
-          if (stay.vacatingSoon) Text('Vacating soon', style: TextStyle(color: c.warning, fontSize: 11, fontWeight: FontWeight.w700)),
+          if (stay.vacatingSoon)
+            Text(
+              'Vacating soon',
+              style: TextStyle(
+                color: c.warning,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
         ],
       ),
     );
@@ -836,7 +1392,11 @@ class _StayTile extends StatelessWidget {
 
 /// The room sheet: every bed (or the whole room) with who is in it, add person, check out, edit and delete.
 class _RoomDetail extends StatefulWidget {
-  const _RoomDetail({required this.roomId, required this.book, required this.onChanged});
+  const _RoomDetail({
+    required this.roomId,
+    required this.book,
+    required this.onChanged,
+  });
 
   final String roomId;
   final PropertyBook book;
@@ -861,25 +1421,54 @@ class _RoomDetailState extends State<_RoomDetail> {
     final stay = await FormSheet.show<Tenancy>(
       context,
       title: 'Check in ${person.name}',
-      child: _CheckInForm(room: room, tenancies: withPerson0.tenancies, person: person, initialBed: bed),
+      child: _CheckInForm(
+        room: room,
+        tenancies: withPerson0.tenancies,
+        person: person,
+        initialBed: bed,
+      ),
     );
     if (stay == null) return;
     _set(withPerson0.copyWith(tenancies: [...withPerson0.tenancies, stay]));
   }
 
   Future<void> _checkOut(Tenancy stay) async {
-    final result = await FormSheet.show<Tenancy>(context, title: 'Check out ${stay.name}', child: _CheckOutForm(stay: stay));
+    final result = await FormSheet.show<Tenancy>(
+      context,
+      title: 'Check out ${stay.name}',
+      child: _CheckOutForm(stay: stay),
+    );
     if (result == null) return;
-    _set(_book.copyWith(tenancies: [for (final t in _book.tenancies) t.id == stay.id ? result : t]));
+    _set(
+      _book.copyWith(
+        tenancies: [
+          for (final t in _book.tenancies) t.id == stay.id ? result : t,
+        ],
+      ),
+    );
   }
 
   void _toggleVacating(Tenancy stay) {
-    _set(_book.copyWith(tenancies: [for (final t in _book.tenancies) t.id == stay.id ? t.copyWith(vacatingSoon: !t.vacatingSoon) : t]));
+    _set(
+      _book.copyWith(
+        tenancies: [
+          for (final t in _book.tenancies)
+            t.id == stay.id ? t.copyWith(vacatingSoon: !t.vacatingSoon) : t,
+        ],
+      ),
+    );
   }
 
   void _setRoom(Room room, {bool? maintenance, bool? unavailable}) {
-    final updated = room.copyWith(maintenance: maintenance, unavailable: unavailable);
-    _set(_book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? updated : r]));
+    final updated = room.copyWith(
+      maintenance: maintenance,
+      unavailable: unavailable,
+    );
+    _set(
+      _book.copyWith(
+        rooms: [for (final r in _book.rooms) r.id == room.id ? updated : r],
+      ),
+    );
   }
 
   Future<void> _editRoom(Room room) async {
@@ -899,7 +1488,10 @@ class _RoomDetailState extends State<_RoomDetail> {
     final c = context.monova;
     final room = _book.roomById(widget.roomId);
     if (room == null || room.archived) {
-      return const Padding(padding: EdgeInsets.all(16), child: Text('This room has been deleted.'));
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text('This room has been deleted.'),
+      );
     }
     final snap = snapshotRoom(room, _book.tenancies, DateTime.now());
     final statusColor = _statusColor(c, snap.status);
@@ -908,7 +1500,11 @@ class _RoomDetailState extends State<_RoomDetail> {
       return Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: c.raised, borderRadius: BorderRadius.circular(14), border: Border.all(color: c.border)),
+        decoration: BoxDecoration(
+          color: c.raised,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border),
+        ),
         child: Row(
           children: [
             Expanded(
@@ -916,19 +1512,36 @@ class _RoomDetailState extends State<_RoomDetail> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(label, style: TextStyle(color: c.muted, fontSize: 12)),
+                        Text(
+                          label,
+                          style: TextStyle(color: c.muted, fontSize: 12),
+                        ),
                         const SizedBox(height: 2),
-                        Text('Free', style: TextStyle(color: c.income, fontWeight: FontWeight.w700)),
+                        Text(
+                          'Free',
+                          style: TextStyle(
+                            color: c.income,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     )
                   : InkWell(
-                      onTap: stay.personId.isEmpty ? null : () => context.push('/person/${stay.personId}'),
+                      onTap: stay.personId.isEmpty
+                          ? null
+                          : () => context.push('/person/${stay.personId}'),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(label, style: TextStyle(color: c.muted, fontSize: 12)),
+                          Text(
+                            label,
+                            style: TextStyle(color: c.muted, fontSize: 12),
+                          ),
                           const SizedBox(height: 2),
-                          Text(stay.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(
+                            stay.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                           Text(
                             'Since ${dayLabel(stay.checkIn)}${stay.expectedCheckout == null ? '' : ' · leaves ${dayLabel(stay.expectedCheckout!)}'}',
                             style: TextStyle(color: c.muted, fontSize: 12),
@@ -938,14 +1551,25 @@ class _RoomDetailState extends State<_RoomDetail> {
                     ),
             ),
             if (stay == null)
-              FilledButton.tonal(onPressed: () => _addToBed(room, bed), child: const Text('Add person'))
+              FilledButton.tonal(
+                onPressed: () => _addToBed(room, bed),
+                child: const Text('Add person'),
+              )
             else ...[
               IconButton(
-                tooltip: stay.vacatingSoon ? 'Clear vacating soon' : 'Mark vacating soon',
-                icon: Icon(stay.vacatingSoon ? Icons.flag_rounded : Icons.flag_outlined, color: c.warning),
+                tooltip: stay.vacatingSoon
+                    ? 'Clear vacating soon'
+                    : 'Mark vacating soon',
+                icon: Icon(
+                  stay.vacatingSoon ? Icons.flag_rounded : Icons.flag_outlined,
+                  color: c.warning,
+                ),
                 onPressed: () => _toggleVacating(stay),
               ),
-              FilledButton.tonal(onPressed: () => _checkOut(stay), child: const Text('Check out')),
+              FilledButton.tonal(
+                onPressed: () => _checkOut(stay),
+                child: const Text('Check out'),
+              ),
             ],
           ],
         ),
@@ -973,8 +1597,17 @@ class _RoomDetailState extends State<_RoomDetail> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
-              child: Text(roomStatusLabel(snap.status), style: TextStyle(color: statusColor, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                roomStatusLabel(snap.status),
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -998,7 +1631,9 @@ class _RoomDetailState extends State<_RoomDetail> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Temporarily unavailable'),
-          subtitle: const Text('Use for any other reason the room must not be let out.'),
+          subtitle: const Text(
+            'Use for any other reason the room must not be let out.',
+          ),
           value: room.unavailable,
           onChanged: (v) => _setRoom(room, unavailable: v),
         ),
@@ -1029,7 +1664,12 @@ class _RoomDetailState extends State<_RoomDetail> {
 
 /// Allocates a person to a bed (or the whole room) for a stay: dates, rent, advance and deposit.
 class _CheckInForm extends StatefulWidget {
-  const _CheckInForm({required this.room, required this.tenancies, required this.person, required this.initialBed});
+  const _CheckInForm({
+    required this.room,
+    required this.tenancies,
+    required this.person,
+    required this.initialBed,
+  });
 
   final Room room;
   final List<Tenancy> tenancies;
@@ -1054,7 +1694,8 @@ class _CheckInFormState extends State<_CheckInForm> {
   @override
   void initState() {
     super.initState();
-    if (widget.room.rentCents > 0) _rent.text = (widget.room.rentCents / 100).toStringAsFixed(0);
+    if (widget.room.rentCents > 0)
+      _rent.text = (widget.room.rentCents / 100).toStringAsFixed(0);
   }
 
   @override
@@ -1081,21 +1722,23 @@ class _CheckInFormState extends State<_CheckInForm> {
       setState(() => _error = problem);
       return;
     }
-    Navigator.of(context).pop(Tenancy(
-      id: _id(),
-      propertyId: widget.room.propertyId,
-      roomId: widget.room.id,
-      bed: bed,
-      personId: widget.person.id,
-      name: widget.person.name,
-      phone: widget.person.phone,
-      checkIn: dayOnly(_checkIn),
-      expectedCheckout: expected == null ? null : dayOnly(expected),
-      rentCents: _cents(_rent.text),
-      depositCents: _cents(_deposit.text),
-      advanceCents: _cents(_advance.text),
-      notes: _notes.text.trim(),
-    ));
+    Navigator.of(context).pop(
+      Tenancy(
+        id: _id(),
+        propertyId: widget.room.propertyId,
+        roomId: widget.room.id,
+        bed: bed,
+        personId: widget.person.id,
+        name: widget.person.name,
+        phone: widget.person.phone,
+        checkIn: dayOnly(_checkIn),
+        expectedCheckout: expected == null ? null : dayOnly(expected),
+        rentCents: _cents(_rent.text),
+        depositCents: _cents(_deposit.text),
+        advanceCents: _cents(_advance.text),
+        notes: _notes.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -1111,7 +1754,12 @@ class _CheckInFormState extends State<_CheckInForm> {
             children: [
               Icon(Icons.person_outline_rounded, color: c.accentStart),
               const SizedBox(width: 10),
-              Expanded(child: Text('${widget.person.name} · ${widget.person.phone}', style: const TextStyle(fontWeight: FontWeight.w700))),
+              Expanded(
+                child: Text(
+                  '${widget.person.name} · ${widget.person.phone}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
             ],
           ),
         ),
@@ -1120,11 +1768,19 @@ class _CheckInFormState extends State<_CheckInForm> {
           DropdownButtonFormField<int>(
             initialValue: _bed,
             decoration: const InputDecoration(labelText: 'Bed'),
-            items: [for (var b = 1; b <= room.beds; b++) DropdownMenuItem(value: b, child: Text('Bed $b'))],
+            items: [
+              for (var b = 1; b <= room.beds; b++)
+                DropdownMenuItem(value: b, child: Text('Bed $b')),
+            ],
             onChanged: (v) => setState(() => _bed = v ?? _bed),
           ),
         if (!room.wholeRoomRental) const SizedBox(height: 12),
-        DateSelector(label: 'Check-in date', value: _checkIn, firstYear: 2020, onChanged: (d) => setState(() => _checkIn = d)),
+        DateSelector(
+          label: 'Check-in date',
+          value: _checkIn,
+          firstYear: 2020,
+          onChanged: (d) => setState(() => _checkIn = d),
+        ),
         const SizedBox(height: 8),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -1133,23 +1789,59 @@ class _CheckInFormState extends State<_CheckInForm> {
           onChanged: (v) => setState(() => _useExpected = v),
         ),
         if (_useExpected)
-          DateSelector(label: 'Expected checkout', value: _expected, firstYear: 2020, onChanged: (d) => setState(() => _expected = d)),
+          DateSelector(
+            label: 'Expected checkout',
+            value: _expected,
+            firstYear: 2020,
+            onChanged: (d) => setState(() => _expected = d),
+          ),
         const SizedBox(height: 12),
         TextField(
           controller: _rent,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: InputDecoration(labelText: 'Rent or tariff (${room.billing.toLowerCase()})', prefixText: '₹ '),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: InputDecoration(
+            labelText: 'Rent or tariff (${room.billing.toLowerCase()})',
+            prefixText: '₹ ',
+          ),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _advance, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Advance paid', prefixText: '₹ '))),
+            Expanded(
+              child: TextField(
+                controller: _advance,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: amountFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Advance paid',
+                  prefixText: '₹ ',
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _deposit, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Deposit', prefixText: '₹ '))),
+            Expanded(
+              child: TextField(
+                controller: _deposit,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: amountFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Deposit',
+                  prefixText: '₹ ',
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Notes (optional)')),
+        TextField(
+          controller: _notes,
+          decoration: const InputDecoration(labelText: 'Notes (optional)'),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
@@ -1185,7 +1877,12 @@ class _CheckOutFormState extends State<_CheckOutForm> {
 
   void _save() {
     try {
-      final updated = checkOutTenancy(widget.stay, _on, deductionCents: _cents(_deduction.text), reason: _reason.text.trim());
+      final updated = checkOutTenancy(
+        widget.stay,
+        _on,
+        deductionCents: _cents(_deduction.text),
+        reason: _reason.text.trim(),
+      );
       Navigator.of(context).pop(updated);
     } on ArgumentError catch (e) {
       setState(() => _error = e.message.toString());
@@ -1207,7 +1904,10 @@ class _CheckOutFormState extends State<_CheckOutForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Checked in ${dayLabel(stay.checkIn)}', style: TextStyle(color: c.muted, fontSize: 12)),
+              Text(
+                'Checked in ${dayLabel(stay.checkIn)}',
+                style: TextStyle(color: c.muted, fontSize: 12),
+              ),
               const SizedBox(height: 4),
               Text('Deposit received: ${money(stay.depositCents / 100)}'),
               Text('Advance paid: ${money(stay.advanceCents / 100)}'),
@@ -1215,20 +1915,39 @@ class _CheckOutFormState extends State<_CheckOutForm> {
           ),
         ),
         const SizedBox(height: 12),
-        DateSelector(label: 'Checkout date', value: _on, firstYear: 2020, onChanged: (d) => setState(() => _on = d)),
+        DateSelector(
+          label: 'Checkout date',
+          value: _on,
+          firstYear: 2020,
+          onChanged: (d) => setState(() => _on = d),
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: _deduction,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Deduction from deposit', prefixText: '₹ '),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Deduction from deposit',
+            prefixText: '₹ ',
+          ),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _reason, decoration: const InputDecoration(labelText: 'Reason for deduction (optional)')),
+        TextField(
+          controller: _reason,
+          decoration: const InputDecoration(
+            labelText: 'Reason for deduction (optional)',
+          ),
+        ),
         const SizedBox(height: 12),
         Text(
-          refund >= 0 ? 'Refund to ${stay.name}: ${money(refund / 100)}' : '${stay.name} still owes: ${money(-refund / 100)}',
-          style: TextStyle(color: refund >= 0 ? c.income : c.expense, fontWeight: FontWeight.w700),
+          refund >= 0
+              ? 'Refund to ${stay.name}: ${money(refund / 100)}'
+              : '${stay.name} still owes: ${money(-refund / 100)}',
+          style: TextStyle(
+            color: refund >= 0 ? c.income : c.expense,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),
@@ -1243,7 +1962,12 @@ class _CheckOutFormState extends State<_CheckOutForm> {
 
 /// Adds or edits a room. Sharing is the number of beds: pick 1 to 6, or 7 or more and type the number.
 class _RoomForm extends StatefulWidget {
-  const _RoomForm({required this.propertyId, required this.existingNumbers, required this.propertyFloors, this.initial});
+  const _RoomForm({
+    required this.propertyId,
+    required this.existingNumbers,
+    required this.propertyFloors,
+    this.initial,
+  });
 
   /// The total floors registered for the property. The floor dropdown offers only these.
   final int propertyFloors;
@@ -1257,13 +1981,21 @@ class _RoomForm extends StatefulWidget {
 }
 
 class _RoomFormState extends State<_RoomForm> {
-  late final _number = TextEditingController(text: widget.initial?.number ?? '');
-  late int _floorValue = widget.initial?.floor ?? 0;
-  late final _moreCtrl = TextEditingController(text: (widget.initial?.beds ?? 0) > 6 ? '${widget.initial!.beds}' : '7');
-  late final _rent = TextEditingController(
-    text: (widget.initial?.rentCents ?? 0) > 0 ? (widget.initial!.rentCents / 100).toStringAsFixed(0) : '',
+  late final _number = TextEditingController(
+    text: widget.initial?.number ?? '',
   );
-  late final _amenities = TextEditingController(text: widget.initial?.amenities ?? '');
+  late int _floorValue = widget.initial?.floor ?? 0;
+  late final _moreCtrl = TextEditingController(
+    text: (widget.initial?.beds ?? 0) > 6 ? '${widget.initial!.beds}' : '7',
+  );
+  late final _rent = TextEditingController(
+    text: (widget.initial?.rentCents ?? 0) > 0
+        ? (widget.initial!.rentCents / 100).toStringAsFixed(0)
+        : '',
+  );
+  late final _amenities = TextEditingController(
+    text: widget.initial?.amenities ?? '',
+  );
   late final _notes = TextEditingController(text: widget.initial?.notes ?? '');
   late int _beds = widget.initial?.beds ?? 1;
   late bool _more = (widget.initial?.beds ?? 1) > 6;
@@ -1292,7 +2024,9 @@ class _RoomFormState extends State<_RoomForm> {
       return;
     }
     if (floor < -5 || floor > 200) {
-      setState(() => _error = 'Enter the floor: 0 for ground, 1 for 1st floor, 2 for 2nd floor, and -1 for basement.');
+      setState(
+        () => _error = 'Enter the floor: 0 for ground, 1 for 1st floor, 2 for 2nd floor, and -1 for basement.',
+      );
       return;
     }
     if (_more && beds < 7) {
@@ -1304,22 +2038,24 @@ class _RoomFormState extends State<_RoomForm> {
       return;
     }
     final base = widget.initial;
-    Navigator.of(context).pop(Room(
-      id: base?.id ?? _id(),
-      propertyId: widget.propertyId,
-      number: number,
-      floor: floor,
-      type: _whole ? 'Entire room' : sharingLabel(beds),
-      beds: beds,
-      wholeRoomRental: _whole,
-      rentCents: _cents(_rent.text),
-      billing: _billing,
-      maintenance: base?.maintenance ?? false,
-      unavailable: base?.unavailable ?? false,
-      archived: false,
-      amenities: _amenities.text.trim(),
-      notes: _notes.text.trim(),
-    ));
+    Navigator.of(context).pop(
+      Room(
+        id: base?.id ?? _id(),
+        propertyId: widget.propertyId,
+        number: number,
+        floor: floor,
+        type: _whole ? 'Entire room' : sharingLabel(beds),
+        beds: beds,
+        wholeRoomRental: _whole,
+        rentCents: _cents(_rent.text),
+        billing: _billing,
+        maintenance: base?.maintenance ?? false,
+        unavailable: base?.unavailable ?? false,
+        archived: false,
+        amenities: _amenities.text.trim(),
+        notes: _notes.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -1328,21 +2064,40 @@ class _RoomFormState extends State<_RoomForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(controller: _number, autofocus: widget.initial == null, decoration: const InputDecoration(labelText: 'Room number or name', hintText: '101, Garden view')),
+        TextField(
+          controller: _number,
+          autofocus: widget.initial == null,
+          decoration: const InputDecoration(
+            labelText: 'Room number or name',
+            hintText: '101, Garden view',
+          ),
+        ),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
           key: ValueKey('room-floor-$_floorValue'),
           initialValue: _floorValue,
           isExpanded: true,
           menuMaxHeight: 320,
-          decoration: const InputDecoration(labelText: 'Floor', helperText: 'Choose the floor the room is on'),
-          items: [for (final f in roomFloorOptions(propertyFloors: widget.propertyFloors, current: _floorValue)) DropdownMenuItem(value: f, child: Text(floorLabel(f)))],
+          decoration: const InputDecoration(
+            labelText: 'Floor',
+            helperText: 'Choose the floor the room is on',
+          ),
+          items: [
+            for (final f in roomFloorOptions(
+              propertyFloors: widget.propertyFloors,
+              current: _floorValue,
+            ))
+              DropdownMenuItem(value: f, child: Text(floorLabel(f))),
+          ],
           onChanged: (v) {
             if (v != null) setState(() => _floorValue = v);
           },
         ),
         const SizedBox(height: 14),
-        Text('Sharing: how many people share this room', style: TextStyle(color: c.muted, fontSize: 12)),
+        Text(
+          'Sharing: how many people share this room',
+          style: TextStyle(color: c.muted, fontSize: 12),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -1371,9 +2126,13 @@ class _RoomFormState extends State<_RoomForm> {
           const SizedBox(height: 10),
           TextField(
             controller: _moreCtrl,
-            keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters,
-            decoration: const InputDecoration(labelText: 'Number of people (7 or more)'),
-            onChanged: (v) => setState(() => _beds = int.tryParse(v.trim()) ?? _beds),
+            keyboardType: TextInputType.number,
+            inputFormatters: wholeNumberFormatters,
+            decoration: const InputDecoration(
+              labelText: 'Number of people (7 or more)',
+            ),
+            onChanged: (v) =>
+                setState(() => _beds = int.tryParse(v.trim()) ?? _beds),
           ),
         ],
         const SizedBox(height: 8),
@@ -1393,8 +2152,14 @@ class _RoomFormState extends State<_RoomForm> {
             Expanded(
               child: TextField(
                 controller: _rent,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-                decoration: const InputDecoration(labelText: 'Rent or tariff', prefixText: '₹ '),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: amountFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Rent or tariff',
+                  prefixText: '₹ ',
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -1402,22 +2167,37 @@ class _RoomFormState extends State<_RoomForm> {
               child: DropdownButtonFormField<String>(
                 initialValue: _billing,
                 decoration: const InputDecoration(labelText: 'Billed'),
-                items: [for (final b in billingTypes) DropdownMenuItem(value: b, child: Text(b))],
+                items: [
+                  for (final b in billingTypes)
+                    DropdownMenuItem(value: b, child: Text(b)),
+                ],
                 onChanged: (v) => setState(() => _billing = v ?? _billing),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        TextField(controller: _amenities, decoration: const InputDecoration(labelText: 'Amenities (optional)', hintText: 'Attached bath, Wi-Fi, AC')),
+        TextField(
+          controller: _amenities,
+          decoration: const InputDecoration(
+            labelText: 'Amenities (optional)',
+            hintText: 'Attached bath, Wi-Fi, AC',
+          ),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Notes (optional)')),
+        TextField(
+          controller: _notes,
+          decoration: const InputDecoration(labelText: 'Notes (optional)'),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save room' : 'Save changes')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(widget.initial == null ? 'Save room' : 'Save changes'),
+        ),
       ],
     );
   }
@@ -1435,25 +2215,51 @@ class _PropertyForm extends StatefulWidget {
 
 class _PropertyFormState extends State<_PropertyForm> {
   late final _name = TextEditingController(text: widget.initial?.name ?? '');
-  late final _address = TextEditingController(text: widget.initial?.address ?? '');
+  late final _address = TextEditingController(
+    text: widget.initial?.address ?? '',
+  );
   late final _state = TextEditingController(text: widget.initial?.state ?? '');
-  late final _district = TextEditingController(text: widget.initial?.district ?? '');
-  late final _cityVillage = TextEditingController(text: widget.initial?.cityVillage ?? '');
-  late final _mandal = TextEditingController(text: widget.initial?.mandal ?? '');
+  late final _district = TextEditingController(
+    text: widget.initial?.district ?? '',
+  );
+  late final _cityVillage = TextEditingController(
+    text: widget.initial?.cityVillage ?? '',
+  );
+  late final _mandal = TextEditingController(
+    text: widget.initial?.mandal ?? '',
+  );
   late final _pin = TextEditingController(text: widget.initial?.pinCode ?? '');
-  late final _lat = TextEditingController(text: widget.initial?.latitude?.toStringAsFixed(6) ?? '');
-  late final _lng = TextEditingController(text: widget.initial?.longitude?.toStringAsFixed(6) ?? '');
+  late final _lat = TextEditingController(
+    text: widget.initial?.latitude?.toStringAsFixed(6) ?? '',
+  );
+  late final _lng = TextEditingController(
+    text: widget.initial?.longitude?.toStringAsFixed(6) ?? '',
+  );
   late final _phone = TextEditingController(text: widget.initial?.phone ?? '');
-  late final _floors = TextEditingController(text: '${widget.initial?.floors ?? 1}');
-  late final _description = TextEditingController(text: widget.initial?.description ?? '');
+  late final _floors = TextEditingController(
+    text: '${widget.initial?.floors ?? 1}',
+  );
+  late final _description = TextEditingController(
+    text: widget.initial?.description ?? '',
+  );
   late final _rent = TextEditingController(
-    text: (widget.initial?.defaultRentCents ?? 0) > 0 ? (widget.initial!.defaultRentCents / 100).toStringAsFixed(0) : '',
+    text: (widget.initial?.defaultRentCents ?? 0) > 0
+        ? (widget.initial!.defaultRentCents / 100).toStringAsFixed(0)
+        : '',
   );
   late final _notes = TextEditingController(text: widget.initial?.notes ?? '');
-  late final _ownerName = TextEditingController(text: widget.initial?.ownerName ?? '');
-  late final _ownerPhone = TextEditingController(text: widget.initial?.ownerPhone ?? '');
-  late final _ownerEmail = TextEditingController(text: widget.initial?.ownerEmail ?? '');
-  late final _ownerAddress = TextEditingController(text: widget.initial?.ownerAddress ?? '');
+  late final _ownerName = TextEditingController(
+    text: widget.initial?.ownerName ?? '',
+  );
+  late final _ownerPhone = TextEditingController(
+    text: widget.initial?.ownerPhone ?? '',
+  );
+  late final _ownerEmail = TextEditingController(
+    text: widget.initial?.ownerEmail ?? '',
+  );
+  late final _ownerAddress = TextEditingController(
+    text: widget.initial?.ownerAddress ?? '',
+  );
   late String _category = widget.initial?.category ?? propertyCategories.first;
   late bool _exact = widget.initial?.showExactLocation ?? false;
 
@@ -1464,8 +2270,24 @@ class _PropertyFormState extends State<_PropertyForm> {
   @override
   void dispose() {
     for (final c in [
-      _name, _address, _state, _district, _cityVillage, _mandal, _pin, _lat, _lng,
-      _phone, _floors, _description, _rent, _notes, _ownerName, _ownerPhone, _ownerEmail, _ownerAddress,
+      _name,
+      _address,
+      _state,
+      _district,
+      _cityVillage,
+      _mandal,
+      _pin,
+      _lat,
+      _lng,
+      _phone,
+      _floors,
+      _description,
+      _rent,
+      _notes,
+      _ownerName,
+      _ownerPhone,
+      _ownerEmail,
+      _ownerAddress,
     ]) {
       c.dispose();
     }
@@ -1483,7 +2305,9 @@ class _PropertyFormState extends State<_PropertyForm> {
 
   /// Opens the map. The owner can search, move the pin, or use the device's location; the address fields are then filled.
   Future<void> _pickOnMap() async {
-    final start = double.tryParse(_lat.text.trim()) != null && double.tryParse(_lng.text.trim()) != null
+    final start =
+        double.tryParse(_lat.text.trim()) != null &&
+            double.tryParse(_lng.text.trim()) != null
         ? LatLng(double.parse(_lat.text.trim()), double.parse(_lng.text.trim()))
         : null;
     final pick = await Navigator.of(context).push<MapPick>(
@@ -1505,15 +2329,20 @@ class _PropertyFormState extends State<_PropertyForm> {
           final typed = _address.text.trim();
           // Replace the address when it is empty or is still the address found last time.
           // A typed address is kept; the found one is offered below the field instead.
-          if (typed.isEmpty || typed == _foundAddress) _address.text = p.displayName;
+          if (typed.isEmpty || typed == _foundAddress)
+            _address.text = p.displayName;
           _foundAddress = p.displayName;
         }
       }
     });
     if (pick.place == null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('The point is saved. The address could not be looked up, so type it in.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The point is saved. The address could not be looked up, so type it in.',
+          ),
+        ),
+      );
     }
   }
 
@@ -1533,9 +2362,15 @@ class _PropertyFormState extends State<_PropertyForm> {
     } else if (pin.isNotEmpty && !RegExp(r'^\d{6}$').hasMatch(pin)) {
       problem = 'The PIN code is 6 digits.';
     } else if ((latText.isNotEmpty || lngText.isNotEmpty) &&
-        (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180)) {
+        (lat == null ||
+            lng == null ||
+            lat < -90 ||
+            lat > 90 ||
+            lng < -180 ||
+            lng > 180)) {
       problem = 'Enter both latitude (-90 to 90) and longitude (-180 to 180), or leave both empty.';
-    } else if (_ownerName.text.trim().isEmpty || !_validPhone(_ownerPhone.text)) {
+    } else if (_ownerName.text.trim().isEmpty ||
+        !_validPhone(_ownerPhone.text)) {
       problem = 'Enter the owner\'s name and a mobile number with at least 10 digits.';
     } else if (_ownerAddress.text.trim().isEmpty) {
       problem = 'Enter the owner\'s address.';
@@ -1544,57 +2379,78 @@ class _PropertyFormState extends State<_PropertyForm> {
       setState(() => _error = problem);
       return;
     }
-    Navigator.of(context).pop(Property(
-      id: widget.initial?.id ?? _id(),
-      name: name,
-      category: _category,
-      address: _address.text.trim(),
-      state: _state.text.trim(),
-      district: _district.text.trim(),
-      cityVillage: _cityVillage.text.trim(),
-      mandal: _mandal.text.trim(),
-      pinCode: pin,
-      latitude: lat,
-      longitude: lng,
-      showExactLocation: _exact && lat != null && lng != null,
-      phone: _phone.text.trim(),
-      floors: floors!,
-      description: _description.text.trim(),
-      defaultRentCents: _cents(_rent.text),
-      notes: _notes.text.trim(),
-      ownerName: _ownerName.text.trim(),
-      ownerPhone: _ownerPhone.text.trim(),
-      ownerEmail: _ownerEmail.text.trim(),
-      ownerAddress: _ownerAddress.text.trim(),
-    ));
+    Navigator.of(context).pop(
+      Property(
+        id: widget.initial?.id ?? _id(),
+        name: name,
+        category: _category,
+        address: _address.text.trim(),
+        state: _state.text.trim(),
+        district: _district.text.trim(),
+        cityVillage: _cityVillage.text.trim(),
+        mandal: _mandal.text.trim(),
+        pinCode: pin,
+        latitude: lat,
+        longitude: lng,
+        showExactLocation: _exact && lat != null && lng != null,
+        phone: _phone.text.trim(),
+        floors: floors!,
+        description: _description.text.trim(),
+        defaultRentCents: _cents(_rent.text),
+        notes: _notes.text.trim(),
+        ownerName: _ownerName.text.trim(),
+        ownerPhone: _ownerPhone.text.trim(),
+        ownerEmail: _ownerEmail.text.trim(),
+        ownerAddress: _ownerAddress.text.trim(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final hasPoint = double.tryParse(_lat.text.trim()) != null && double.tryParse(_lng.text.trim()) != null;
+    final hasPoint =
+        double.tryParse(_lat.text.trim()) != null &&
+        double.tryParse(_lng.text.trim()) != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('What kind of property is it?', style: TextStyle(color: c.muted, fontSize: 12)),
+        Text(
+          'What kind of property is it?',
+          style: TextStyle(color: c.muted, fontSize: 12),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
             for (final cat in propertyCategories)
-              ChoiceChip(label: Text(cat), selected: _category == cat, onSelected: (_) => setState(() => _category = cat)),
+              ChoiceChip(
+                label: Text(cat),
+                selected: _category == cat,
+                onSelected: (_) => setState(() => _category = cat),
+              ),
           ],
         ),
         const SizedBox(height: 14),
-        TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Property name *')),
+        TextField(
+          controller: _name,
+          autofocus: widget.initial == null,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Property name *'),
+        ),
         const SizedBox(height: 14),
-        Text('Address', style: TextStyle(fontWeight: FontWeight.w800, color: c.ink)),
+        Text(
+          'Address',
+          style: TextStyle(fontWeight: FontWeight.w800, color: c.ink),
+        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _pickOnMap,
           icon: const Icon(Icons.map_rounded, size: 18),
-          label: Text(hasPoint ? 'Change location on map' : 'Pick location on map'),
+          label: Text(
+            hasPoint ? 'Change location on map' : 'Pick location on map',
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -1616,7 +2472,12 @@ class _PropertyFormState extends State<_PropertyForm> {
           Row(
             children: [
               Expanded(
-                child: Text('Found on the map: $_foundAddress', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 12)),
+                child: Text(
+                  'Found on the map: $_foundAddress',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: c.muted, fontSize: 12),
+                ),
               ),
               TextButton(
                 onPressed: () => setState(() => _address.text = _foundAddress!),
@@ -1628,53 +2489,134 @@ class _PropertyFormState extends State<_PropertyForm> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _cityVillage, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'City or village'))),
+            Expanded(
+              child: TextField(
+                controller: _cityVillage,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'City or village'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _mandal, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Mandal or locality'))),
+            Expanded(
+              child: TextField(
+                controller: _mandal,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Mandal or locality',
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _district, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'District'))),
+            Expanded(
+              child: TextField(
+                controller: _district,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'District'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _state, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'State'))),
+            Expanded(
+              child: TextField(
+                controller: _state,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'State'),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        TextField(controller: _pin, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'PIN code', helperText: '6 digits')),
+        TextField(
+          controller: _pin,
+          keyboardType: TextInputType.number,
+          inputFormatters: wholeNumberFormatters,
+          decoration: const InputDecoration(
+            labelText: 'PIN code',
+            helperText: '6 digits',
+          ),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _lat, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters, decoration: const InputDecoration(labelText: 'Latitude (optional)'))),
+            Expanded(
+              child: TextField(
+                controller: _lat,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                inputFormatters: signedDecimalFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Latitude (optional)',
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _lng, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters, decoration: const InputDecoration(labelText: 'Longitude (optional)'))),
+            Expanded(
+              child: TextField(
+                controller: _lng,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                inputFormatters: signedDecimalFormatters,
+                decoration: const InputDecoration(
+                  labelText: 'Longitude (optional)',
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Show the exact location publicly'),
-          subtitle: const Text('Off shows only the area around the property. Use it only with the owner\'s consent.'),
+          subtitle: const Text(
+            'Off shows only the area around the property. Use it only with the owner\'s consent.',
+          ),
           value: _exact,
           onChanged: hasPoint ? (v) => setState(() => _exact = v) : null,
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Property phone'))),
+            Expanded(
+              child: TextField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                inputFormatters: phoneFormatters,
+                decoration: const InputDecoration(labelText: 'Property phone'),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _floors, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Total floors *'))),
+            Expanded(
+              child: TextField(
+                controller: _floors,
+                keyboardType: TextInputType.number,
+                inputFormatters: wholeNumberFormatters,
+                decoration: const InputDecoration(labelText: 'Total floors *'),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _rent,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Default rent or tariff (optional)', prefixText: '₹ '),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Default rent or tariff (optional)',
+            prefixText: '₹ ',
+          ),
         ),
         const SizedBox(height: 18),
-        Text('Owner', style: TextStyle(fontWeight: FontWeight.w800, color: c.ink)),
+        Text(
+          'Owner',
+          style: TextStyle(fontWeight: FontWeight.w800, color: c.ink),
+        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _pickOwner,
@@ -1682,23 +2624,55 @@ class _PropertyFormState extends State<_PropertyForm> {
           label: const Text('Pick owner from contacts'),
         ),
         const SizedBox(height: 10),
-        TextField(controller: _ownerName, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Owner name *')),
+        TextField(
+          controller: _ownerName,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Owner name *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _ownerPhone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Owner mobile *')),
+        TextField(
+          controller: _ownerPhone,
+          keyboardType: TextInputType.phone,
+          inputFormatters: phoneFormatters,
+          decoration: const InputDecoration(labelText: 'Owner mobile *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _ownerEmail, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Owner email (optional)')),
+        TextField(
+          controller: _ownerEmail,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Owner email (optional)',
+          ),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _ownerAddress, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Owner address *')),
+        TextField(
+          controller: _ownerAddress,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(labelText: 'Owner address *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _description, decoration: const InputDecoration(labelText: 'Description (optional)')),
+        TextField(
+          controller: _description,
+          decoration: const InputDecoration(
+            labelText: 'Description (optional)',
+          ),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _notes, decoration: const InputDecoration(labelText: 'Notes (optional)')),
+        TextField(
+          controller: _notes,
+          decoration: const InputDecoration(labelText: 'Notes (optional)'),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save property' : 'Save changes')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(
+            widget.initial == null ? 'Save property' : 'Save changes',
+          ),
+        ),
       ],
     );
   }

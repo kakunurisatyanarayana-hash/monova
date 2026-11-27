@@ -20,6 +20,7 @@ import '../../core/property_store.dart';
 import '../../core/share_text.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import 'complaint_status_tiles.dart';
 
 /// The hostel hub: the owner's summary of beds, complaints and feedback, with the things to do next.
 class HostelHubScreen extends StatefulWidget {
@@ -64,21 +65,38 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
   /// Turns on QR complaints for this hostel. Needs a verified owner account, so the form can route complaints to it.
   Future<void> _publishQr(Property property) async {
     try {
-      final code = await HostelPublish.publish(propertyId: property.id, name: property.name);
+      final code = await HostelPublish.publish(
+        propertyId: property.id,
+        name: property.name,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('QR complaints are on for this hostel. Print the room codes now.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'QR complaints are on for this hostel. Print the room codes now.',
+            ),
+          ),
+        );
       }
       debugPrint('Hostel code published: $code');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
   Future<void> _pickRoomQr(Property property, List<Room> rooms) async {
     final code = await HostelPublish.codeFor(property.id);
-    final sorted = [...rooms]..sort((a, b) => a.floor != b.floor ? a.floor.compareTo(b.floor) : a.number.compareTo(b.number));
+    final sorted = [...rooms]
+      ..sort(
+        (a, b) => a.floor != b.floor
+            ? a.floor.compareTo(b.floor)
+            : a.number.compareTo(b.number),
+      );
     if (sorted.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add a room first.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Add a room first.')));
       return;
     }
     await FormSheet.show<void>(
@@ -97,7 +115,12 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
               onTap: () => FormSheet.show<void>(
                 context,
                 title: 'Room ${r.number} code',
-                child: RoomQrSheet(property: property, room: r, hostelCode: code),
+                child: RoomQrSheet(
+                  property: property,
+                  room: r,
+                  hostelCode: code,
+                  onTurnOn: () => _publishQr(property),
+                ),
               ),
             ),
         ],
@@ -110,12 +133,24 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
     final c = context.monova;
     final book = _book;
     if (_error != null) {
-      return const Scaffold(body: EmptyState(icon: Icons.error_outline_rounded, title: 'Could not open the hostel', message: 'Nothing was changed. Try again.'));
+      return const Scaffold(
+        body: EmptyState(
+          icon: Icons.error_outline_rounded,
+          title: 'Could not open the hostel',
+          message: 'Nothing was changed. Try again.',
+        ),
+      );
     }
     if (book == null) return const Scaffold(body: LoadingBox());
     final property = book.propertyById(widget.id);
     if (property == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.search_off_rounded, title: 'Property not found', message: 'It may have been deleted.'));
+      return const Scaffold(
+        body: EmptyState(
+          icon: Icons.search_off_rounded,
+          title: 'Property not found',
+          message: 'It may have been deleted.',
+        ),
+      );
     }
     final rooms = book.roomsOf(property.id);
     final summary = summarizeProperty(property.id, book, DateTime.now());
@@ -123,9 +158,15 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
     final occupied = summary.rooms.fold<int>(0, (t, s) => t + s.occupiedBeds);
     final vacant = (totalBeds - occupied).clamp(0, totalBeds);
     final occupancy = totalBeds == 0 ? 0 : (occupied * 100 / totalBeds).round();
-    final mine = [for (final x in _complaints) if (x.propertyId == property.id) x];
+    final mine = [
+      for (final x in _complaints)
+        if (x.propertyId == property.id) x,
+    ];
     final counts = ComplaintCounts.of(mine);
-    final myFeedback = [for (final f in _feedback) if (f.propertyId == property.id) f]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final myFeedback = [
+      for (final f in _feedback)
+        if (f.propertyId == property.id) f,
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final maintenance = rooms.where((r) => r.maintenance).length;
 
     return Scaffold(
@@ -133,7 +174,10 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          Text('Floors, rooms, beds and complaints for this hostel.', style: TextStyle(color: c.muted, fontSize: 12)),
+          Text(
+            'Floors, rooms, beds and complaints for this hostel.',
+            style: TextStyle(color: c.muted, fontSize: 12),
+          ),
           const SizedBox(height: 12),
           EqualTileGrid(
             minTileWidth: 150,
@@ -145,8 +189,17 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
               _Stat(label: ht('Occupied beds'), value: '$occupied', c: c),
               _Stat(label: ht('Vacant beds'), value: '$vacant', c: c),
               _Stat(label: ht('Occupancy'), value: '$occupancy%', c: c),
-              _Stat(label: ht('Pending complaints'), value: '${counts.pending}', c: c, alert: counts.pending > 0),
-              _Stat(label: ht('Maintenance rooms'), value: '$maintenance', c: c),
+              _Stat(
+                label: ht('Pending complaints'),
+                value: '${counts.pending}',
+                c: c,
+                alert: counts.pending > 0,
+              ),
+              _Stat(
+                label: ht('Maintenance rooms'),
+                value: '$maintenance',
+                c: c,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -156,14 +209,44 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
             minTileWidth: 150,
             tileHeight: 64,
             children: [
-              _Action(icon: Icons.apartment_rounded, label: ht('Floors and rooms'), onTap: () => context.push('/property/${property.id}')),
-              _Action(icon: Icons.person_add_alt_rounded, label: ht('Add resident'), onTap: () => context.push('/property/${property.id}')),
-              _Action(icon: Icons.event_available_rounded, label: ht('View vacancies'), onTap: () => context.push('/property/${property.id}')),
-              _Action(icon: Icons.report_problem_outlined, label: ht('Complaints'), onTap: () => context.push('/property/${property.id}/complaints')),
-              _Action(icon: Icons.rate_review_outlined, label: ht('Reviews and suggestions'), onTap: () => context.push('/property/${property.id}/feedback')),
-              _Action(icon: Icons.qr_code_2_rounded, label: ht('Room QR codes'), onTap: () => _pickRoomQr(property, rooms)),
-              _Action(icon: Icons.qr_code_scanner_rounded, label: 'Turn on QR complaints', onTap: () => _publishQr(property)),
+              _Action(
+                icon: Icons.apartment_rounded,
+                label: ht('Floors and rooms'),
+                onTap: () => context.push('/property/${property.id}'),
+              ),
+              _Action(
+                icon: Icons.person_add_alt_rounded,
+                label: ht('Add resident'),
+                onTap: () => context.push('/property/${property.id}'),
+              ),
+              _Action(
+                icon: Icons.report_problem_outlined,
+                label: counts.pending > 0
+                    ? '${ht('Complaints')} · ${counts.pending} ${ht('pending')}'
+                    : ht('Complaints'),
+                alert: counts.pending > 0,
+                onTap: () =>
+                    context.push('/property/${property.id}/complaints'),
+              ),
+              _Action(
+                icon: Icons.rate_review_outlined,
+                label: ht('Reviews and suggestions'),
+                onTap: () => context.push('/property/${property.id}/feedback'),
+              ),
+              _Action(
+                icon: Icons.qr_code_2_rounded,
+                label: ht('Room QR codes'),
+                onTap: () => _pickRoomQr(property, rooms),
+              ),
             ],
+          ),
+          const SizedBox(height: 16),
+          SectionTitle(ht('Vacancies')),
+          const SizedBox(height: 8),
+          _VacancyPanel(
+            propertyId: property.id,
+            rooms: summary.rooms,
+            openByRoom: openComplaintsByRoom(mine),
           ),
           const SizedBox(height: 16),
           SectionTitle(ht('Complaints')),
@@ -174,8 +257,16 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _CountRow(label: ht('New (open)'), value: counts.open, c: c),
-                _CountRow(label: ht('Acknowledged'), value: counts.acknowledged, c: c),
-                _CountRow(label: ht('In progress'), value: counts.inProgress, c: c),
+                _CountRow(
+                  label: ht('Acknowledged'),
+                  value: counts.acknowledged,
+                  c: c,
+                ),
+                _CountRow(
+                  label: ht('In progress'),
+                  value: counts.inProgress,
+                  c: c,
+                ),
                 _CountRow(label: ht('Resolved'), value: counts.resolved, c: c),
                 _CountRow(label: ht('Closed'), value: counts.closed, c: c),
               ],
@@ -187,7 +278,10 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
           if (myFeedback.isEmpty)
             MonovaCard(
               padding: const EdgeInsets.all(14),
-              child: Text('None yet. Record a review or suggestion when a resident gives one.', style: TextStyle(color: c.muted, height: 1.4)),
+              child: Text(
+                'None yet. Record a review or suggestion when a resident gives one.',
+                style: TextStyle(color: c.muted, height: 1.4),
+              ),
             )
           else
             for (final f in myFeedback.take(5)) _FeedbackTile(item: f),
@@ -198,7 +292,12 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, required this.c, this.alert = false});
+  const _Stat({
+    required this.label,
+    required this.value,
+    required this.c,
+    this.alert = false,
+  });
 
   final String label;
   final String value;
@@ -216,10 +315,20 @@ class _Stat extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(value, style: TextStyle(color: alert ? c.expense : c.ink, fontSize: 22, fontWeight: FontWeight.w800)),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: alert ? c.expense : c.ink,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: c.muted, fontSize: 12, height: 1.25)),
+          Text(
+            label,
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.25),
+          ),
         ],
       ),
     );
@@ -227,23 +336,161 @@ class _Stat extends StatelessWidget {
 }
 
 class _Action extends StatelessWidget {
-  const _Action({required this.icon, required this.label, required this.onTap});
+  const _Action({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.alert = false,
+  });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
+  /// Shown in red, for example when complaints are waiting.
+  final bool alert;
+
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
+    final color = alert ? c.expense : c.accentStart;
     return MonovaCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: c.accentStart, size: 20),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 10),
-          Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: alert ? c.expense : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Open complaints per room number, for marking rooms in red.
+Map<String, int> openComplaintsByRoom(List<Complaint> complaints) {
+  final out = <String, int>{};
+  for (final x in complaints) {
+    if (x.isOpen) out[x.roomNumber] = (out[x.roomNumber] ?? 0) + 1;
+  }
+  return out;
+}
+
+/// Vacancies on the hub: filter chips and the matching rooms. Tapping a room opens it on the property page.
+class _VacancyPanel extends StatefulWidget {
+  const _VacancyPanel({
+    required this.propertyId,
+    required this.rooms,
+    required this.openByRoom,
+  });
+
+  final String propertyId;
+  final List<RoomSnapshot> rooms;
+  final Map<String, int> openByRoom;
+
+  @override
+  State<_VacancyPanel> createState() => _VacancyPanelState();
+}
+
+class _VacancyPanelState extends State<_VacancyPanel> {
+  static const _filters = [
+    'All rooms',
+    'Vacant rooms',
+    'Rooms with vacant beds',
+    'Occupied rooms',
+    'Fully occupied',
+    'Reserved',
+    'Under maintenance',
+  ];
+  String _filter = 'All rooms';
+  int? _floor;
+
+  static bool _matches(RoomSnapshot s, String f) => switch (f) {
+    'Vacant rooms' =>
+      !s.hasOccupants && !s.room.maintenance && !s.room.unavailable,
+    'Rooms with vacant beds' => s.availableBeds > 0,
+    'Occupied rooms' => s.hasOccupants,
+    'Fully occupied' => s.status == RoomStatus.fullyOccupied,
+    'Reserved' => s.status == RoomStatus.reserved,
+    'Under maintenance' => s.room.maintenance,
+    _ => true,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    // Room numbers only, grouped by floor. Tapping a number opens the room on the property page.
+    final floors = {for (final s in widget.rooms) s.room.floor}.toList()
+      ..sort();
+    return MonovaCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final f in floors) ...[
+            Text(
+              floorLabel(f),
+              style: TextStyle(
+                color: c.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final s in widget.rooms)
+                  if (s.room.floor == f)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () =>
+                          context.push('/property/${widget.propertyId}'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (((widget.openByRoom[s.room.number] ?? 0) > 0)
+                                      ? c.expense
+                                      : (s.availableBeds > 0
+                                            ? c.income
+                                            : c.muted))
+                                  .withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          s.room.number,
+                          style: TextStyle(
+                            color: (widget.openByRoom[s.room.number] ?? 0) > 0
+                                ? c.expense
+                                : (s.availableBeds > 0 ? c.income : c.muted),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          Text(
+            ht('Green: has a free bed. Grey: full. Red: open complaint.'),
+            style: TextStyle(color: c.muted, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -263,8 +510,13 @@ class _CountRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: TextStyle(color: c.ink))),
-          Text('$value', style: TextStyle(color: c.ink, fontWeight: FontWeight.w800)),
+          Expanded(
+            child: Text(label, style: TextStyle(color: c.ink)),
+          ),
+          Text(
+            '$value',
+            style: TextStyle(color: c.ink, fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );
@@ -286,13 +538,23 @@ class _FeedbackTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${feedbackKindLabel(item.kind)} · ${item.residentName} · ${dayLabel(item.createdAt)}', style: TextStyle(color: c.muted, fontSize: 12)),
-            if (item.rating > 0) Text('${'★' * item.rating}${'☆' * (5 - item.rating)}', style: TextStyle(color: c.accentStart)),
+            Text(
+              '${feedbackKindLabel(item.kind)} · ${item.residentName} · ${dayLabel(item.createdAt)}',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
+            if (item.rating > 0)
+              Text(
+                '${'★' * item.rating}${'☆' * (5 - item.rating)}',
+                style: TextStyle(color: c.accentStart),
+              ),
             const SizedBox(height: 4),
             Text(item.text, style: TextStyle(color: c.ink, height: 1.4)),
             if (item.ownerReply.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text('Owner reply: ${item.ownerReply}', style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+              Text(
+                'Owner reply: ${item.ownerReply}',
+                style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+              ),
             ],
           ],
         ),
@@ -385,9 +647,18 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     if (!_loaded || book == null) return const Scaffold(body: LoadingBox());
     final property = book.propertyById(widget.id);
     if (property == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.search_off_rounded, title: 'Property not found', message: 'It may have been deleted.'));
+      return const Scaffold(
+        body: EmptyState(
+          icon: Icons.search_off_rounded,
+          title: 'Property not found',
+          message: 'It may have been deleted.',
+        ),
+      );
     }
-    final mine = [for (final x in _all) if (x.propertyId == property.id) x]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final mine = [
+      for (final x in _all)
+        if (x.propertyId == property.id) x,
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final shown = mine.where((x) {
       if (_status != null && x.status != _status) return false;
       if (_category != null && x.category != _category) return false;
@@ -407,18 +678,27 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
         children: [
-          Text(
-            '${counts.pending} pending · ${counts.resolved} resolved · ${mine.length} in total',
-            style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+          ComplaintStatusTiles(
+            complaints: mine,
+            selected: _status,
+            onPick: (s) => setState(() => _status = _status == s ? null : s),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              ChoiceChip(label: const Text('All status'), selected: _status == null, onSelected: (_) => setState(() => _status = null)),
+              ChoiceChip(
+                label: const Text('All status'),
+                selected: _status == null,
+                onSelected: (_) => setState(() => _status = null),
+              ),
               for (final s in ComplaintStatus.values)
-                ChoiceChip(label: Text(complaintStatusLabel(s)), selected: _status == s, onSelected: (_) => setState(() => _status = s)),
+                ChoiceChip(
+                  label: Text(complaintStatusLabel(s)),
+                  selected: _status == s,
+                  onSelected: (_) => setState(() => _status = s),
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -431,8 +711,12 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: [
-                    const DropdownMenuItem<String?>(value: null, child: Text('All categories')),
-                    for (final cat in complaintCategories) DropdownMenuItem<String?>(value: cat, child: Text(cat)),
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('All categories'),
+                    ),
+                    for (final cat in complaintCategories)
+                      DropdownMenuItem<String?>(value: cat, child: Text(cat)),
                   ],
                   onChanged: (v) => setState(() => _category = v),
                 ),
@@ -445,8 +729,15 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Floor'),
                   items: [
-                    const DropdownMenuItem<int?>(value: null, child: Text('All floors')),
-                    for (final f in floors) DropdownMenuItem<int?>(value: f, child: Text(floorLabel(f))),
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('All floors'),
+                    ),
+                    for (final f in floors)
+                      DropdownMenuItem<int?>(
+                        value: f,
+                        child: Text(floorLabel(f)),
+                      ),
                   ],
                   onChanged: (v) => setState(() => _floor = v),
                 ),
@@ -465,7 +756,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
               ),
             )
           else
-            for (final x in shown) _ComplaintRow(complaint: x, onTap: () => _open(property, x)),
+            for (final x in shown)
+              _ComplaintRow(complaint: x, onTap: () => _open(property, x)),
         ],
       ),
     );
@@ -495,23 +787,54 @@ class _ComplaintRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${ht(x.category)} · ${ht('Room')} ${x.roomNumber}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    '${ht(x.category)} · ${ht('Room')} ${x.roomNumber}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 2),
-                  Text('${floorLabel(x.floor)} · ${x.residentName} · ${dayLabel(x.createdAt)}', style: TextStyle(color: c.muted, fontSize: 12)),
+                  Text(
+                    '${floorLabel(x.floor)} · ${x.residentName} · ${dayLabel(x.createdAt)}',
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  ),
                   const SizedBox(height: 2),
-                  Text(x.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.ink, fontSize: 13)),
+                  Text(
+                    x.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: c.ink, fontSize: 13),
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             Column(
               children: [
-                Text(x.ticket, style: TextStyle(color: c.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+                Text(
+                  x.ticket,
+                  style: TextStyle(
+                    color: c.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(99)),
-                  child: Text(ht(complaintStatusLabel(x.status)), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    ht(complaintStatusLabel(x.status)),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -524,7 +847,12 @@ class _ComplaintRow extends StatelessWidget {
 
 /// Registers a complaint that arrived by WhatsApp, a call, or in person. Warns when the same problem is already open.
 class _NewComplaintForm extends StatefulWidget {
-  const _NewComplaintForm({required this.property, required this.rooms, required this.existing, required this.onSave});
+  const _NewComplaintForm({
+    required this.property,
+    required this.rooms,
+    required this.existing,
+    required this.onSave,
+  });
 
   final Property property;
   final List<Room> rooms;
@@ -555,17 +883,22 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
 
   Complaint? get _duplicate => _room == null
       ? null
-      : duplicateOf(widget.existing, propertyId: widget.property.id, roomNumber: _room!.number, category: _category);
+      : duplicateOf(
+          widget.existing,
+          propertyId: widget.property.id,
+          roomNumber: _room!.number,
+          category: _category,
+        );
 
   Future<void> _submit() async {
     final room = _room;
     final problem = room == null
         ? 'Choose the room.'
         : _name.text.trim().isEmpty
-            ? 'Enter the resident\'s name.'
-            : _description.text.trim().length < 5
-                ? 'Describe the problem in a few words.'
-                : null;
+        ? 'Enter the resident\'s name.'
+        : _description.text.trim().length < 5
+        ? 'Describe the problem in a few words.'
+        : null;
     if (problem != null) {
       setState(() => _error = problem);
       return;
@@ -573,7 +906,8 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
     final dup = _duplicate;
     if (dup != null && !_confirmDuplicate) {
       setState(() {
-        _error = 'This problem is already open as ${dup.ticket}. Press Register again to log it anyway.';
+        _error =
+            'This problem is already open as ${dup.ticket}. Press Register again to log it anyway.';
         _confirmDuplicate = true;
       });
       return;
@@ -595,21 +929,29 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
     );
     await widget.onSave(complaint);
     await queueComplaintForSync(complaint, (_) {});
-    await NotificationStore.add(AppNotification(
-      id: 'complaint|${complaint.id}|open',
-      kind: NotificationKind.complaint,
-      title: 'New complaint ${complaint.ticket}',
-      body: 'Room ${complaint.roomNumber} · ${complaint.category}. Open it to acknowledge.',
-      createdAt: now,
-      route: '/property/${complaint.propertyId}/complaints',
-    ));
+    await NotificationStore.add(
+      AppNotification(
+        id: 'complaint|${complaint.id}|open',
+        kind: NotificationKind.complaint,
+        title: 'New complaint ${complaint.ticket}',
+        body:
+            'Room ${complaint.roomNumber} · ${complaint.category}. Open it to acknowledge.',
+        createdAt: now,
+        route: '/property/${complaint.propertyId}/complaints',
+      ),
+    );
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final rooms = [...widget.rooms]..sort((a, b) => a.floor != b.floor ? a.floor.compareTo(b.floor) : a.number.compareTo(b.number));
+    final rooms = [...widget.rooms]
+      ..sort(
+        (a, b) => a.floor != b.floor
+            ? a.floor.compareTo(b.floor)
+            : a.number.compareTo(b.number),
+      );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -620,7 +962,11 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
           isExpanded: true,
           decoration: const InputDecoration(labelText: 'Room *'),
           items: [
-            for (final r in rooms) DropdownMenuItem(value: r, child: Text('${floorLabel(r.floor)} · Room ${r.number}')),
+            for (final r in rooms)
+              DropdownMenuItem(
+                value: r,
+                child: Text('${floorLabel(r.floor)} · Room ${r.number}'),
+              ),
           ],
           onChanged: (v) => setState(() {
             _room = v;
@@ -629,28 +975,52 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
           }),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Resident name *')),
+        TextField(
+          controller: _name,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Resident name *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Contact number (optional)')),
+        TextField(
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          inputFormatters: phoneFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Contact number (optional)',
+          ),
+        ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _category,
           isExpanded: true,
           decoration: const InputDecoration(labelText: 'Category'),
-          items: [for (final cat in complaintCategories) DropdownMenuItem(value: cat, child: Text(cat))],
+          items: [
+            for (final cat in complaintCategories)
+              DropdownMenuItem(value: cat, child: Text(cat)),
+          ],
           onChanged: (v) => setState(() {
             _category = v ?? _category;
             _confirmDuplicate = false;
           }),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _description, maxLines: 3, decoration: const InputDecoration(labelText: 'Problem *', hintText: 'Bathroom water leakage')),
+        TextField(
+          controller: _description,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Problem *',
+            hintText: 'Bathroom water leakage',
+          ),
+        ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: _source,
           isExpanded: true,
           decoration: const InputDecoration(labelText: 'How it arrived'),
-          items: [for (final s in complaintSources) DropdownMenuItem(value: s, child: Text(s))],
+          items: [
+            for (final s in complaintSources)
+              DropdownMenuItem(value: s, child: Text(s)),
+          ],
           onChanged: (v) => setState(() => _source = v ?? _source),
         ),
         if (_error != null) ...[
@@ -658,7 +1028,12 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
           Text(_error!, style: TextStyle(color: c.expense, height: 1.4)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _submit, child: Text(_confirmDuplicate ? 'Register anyway' : 'Register complaint')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(
+            _confirmDuplicate ? 'Register anyway' : 'Register complaint',
+          ),
+        ),
       ],
     );
   }
@@ -666,7 +1041,12 @@ class _NewComplaintFormState extends State<_NewComplaintForm> {
 
 /// One complaint: its status, who it is assigned to, internal notes, resolution, history, and a WhatsApp reply.
 class _ComplaintDetail extends StatefulWidget {
-  const _ComplaintDetail({required this.complaint, required this.hostel, required this.hostelPhone, required this.onChanged});
+  const _ComplaintDetail({
+    required this.complaint,
+    required this.hostel,
+    required this.hostelPhone,
+    required this.onChanged,
+  });
 
   final Complaint complaint;
   final String hostel;
@@ -704,14 +1084,17 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
     await widget.onChanged(next);
     if (statusChanged) {
       await queueComplaintForSync(next, (_) {});
-      await NotificationStore.add(AppNotification(
-        id: 'complaint|${next.id}|${next.status.name}',
-        kind: NotificationKind.complaint,
-        title: 'Complaint ${next.ticket}: ${complaintStatusLabel(next.status)}',
-        body: 'Room ${next.roomNumber} · ${next.category}',
-        createdAt: DateTime.now(),
-        route: '/property/${next.propertyId}/complaints',
-      ));
+      await NotificationStore.add(
+        AppNotification(
+          id: 'complaint|${next.id}|${next.status.name}',
+          kind: NotificationKind.complaint,
+          title:
+              'Complaint ${next.ticket}: ${complaintStatusLabel(next.status)}',
+          body: 'Room ${next.roomNumber} · ${next.category}',
+          createdAt: DateTime.now(),
+          route: '/property/${next.propertyId}/complaints',
+        ),
+      );
     }
   }
 
@@ -719,11 +1102,16 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
     final to = nextStatus(_c.status);
     if (to == null) return;
     final now = DateTime.now();
-    await _store(_c.copyWith(
-      status: to,
-      updatedAt: now,
-      history: [..._c.history, StatusChange(at: now, from: _c.status, to: to, note: '')],
-    ));
+    await _store(
+      _c.copyWith(
+        status: to,
+        updatedAt: now,
+        history: [
+          ..._c.history,
+          StatusChange(at: now, from: _c.status, to: to, note: ''),
+        ],
+      ),
+    );
   }
 
   Future<void> _addNote() async {
@@ -731,23 +1119,44 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
     if (t.isEmpty) return;
     final now = DateTime.now();
     _note.clear();
-    await _store(_c.copyWith(internalNotes: [..._c.internalNotes, StatusChange(at: now, from: null, to: _c.status, note: t)], updatedAt: now));
+    await _store(
+      _c.copyWith(
+        internalNotes: [
+          ..._c.internalNotes,
+          StatusChange(at: now, from: null, to: _c.status, note: t),
+        ],
+        updatedAt: now,
+      ),
+    );
   }
 
   Future<void> _saveAssignment() async {
-    await _store(_c.copyWith(assignedTo: _assign.text.trim(), updatedAt: DateTime.now()));
+    await _store(
+      _c.copyWith(assignedTo: _assign.text.trim(), updatedAt: DateTime.now()),
+    );
   }
 
   Future<void> _saveResolution() async {
     final now = DateTime.now();
-    await _store(_c.copyWith(resolution: _resolution.text.trim(), updatedAt: now));
+    await _store(
+      _c.copyWith(resolution: _resolution.text.trim(), updatedAt: now),
+    );
   }
 
   Future<void> _sendUpdate() async {
-    final link = whatsappLink(_c.residentPhone, complaintUpdateMessage(_c, hostel: widget.hostel));
+    final link = whatsappLink(
+      _c.residentPhone,
+      complaintUpdateMessage(_c, hostel: widget.hostel),
+    );
     if (link == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This complaint has no contact number. Add one, or reply in person.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This complaint has no contact number. Add one, or reply in person.',
+            ),
+          ),
+        );
       }
       return;
     }
@@ -762,34 +1171,69 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('${_c.category} · ${floorLabel(_c.floor)} · Room ${_c.roomNumber}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+        Text(
+          '${_c.category} · ${floorLabel(_c.floor)} · Room ${_c.roomNumber}',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
         const SizedBox(height: 4),
-        Text('${_c.residentName}${_c.residentPhone.isEmpty ? '' : ' · ${_c.residentPhone}'}', style: TextStyle(color: c.muted)),
+        Text(
+          '${_c.residentName}${_c.residentPhone.isEmpty ? '' : ' · ${_c.residentPhone}'}',
+          style: TextStyle(color: c.muted),
+        ),
         const SizedBox(height: 6),
         Text(_c.description, style: TextStyle(color: c.ink, height: 1.4)),
         const SizedBox(height: 6),
-        Text('Ref ${_c.ticket} · ${_c.source} · ${dayLabel(_c.createdAt)}', style: TextStyle(color: c.muted, fontSize: 12)),
+        Text(
+          'Ref ${_c.ticket} · ${_c.source} · ${dayLabel(_c.createdAt)}',
+          style: TextStyle(color: c.muted, fontSize: 12),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: Text('Status: ${complaintStatusLabel(_c.status)}', style: const TextStyle(fontWeight: FontWeight.w700))),
-            if (next != null) FilledButton(onPressed: _advance, child: Text('Mark ${complaintStatusLabel(next).toLowerCase()}')),
+            Expanded(
+              child: Text(
+                'Status: ${complaintStatusLabel(_c.status)}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            if (next != null)
+              FilledButton(
+                onPressed: _advance,
+                child: Text('Mark ${complaintStatusLabel(next).toLowerCase()}'),
+              ),
           ],
         ),
         const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
-              child: TextField(controller: _assign, decoration: const InputDecoration(labelText: 'Assigned to', hintText: 'Plumber or staff name')),
+              child: TextField(
+                controller: _assign,
+                decoration: const InputDecoration(
+                  labelText: 'Assigned to',
+                  hintText: 'Plumber or staff name',
+                ),
+              ),
             ),
             const SizedBox(width: 10),
-            OutlinedButton(onPressed: _saveAssignment, child: const Text('Save')),
+            OutlinedButton(
+              onPressed: _saveAssignment,
+              child: const Text('Save'),
+            ),
           ],
         ),
         const SizedBox(height: 14),
         Row(
           children: [
-            Expanded(child: TextField(controller: _note, decoration: const InputDecoration(labelText: 'Internal note', helperText: 'Only the owner and staff see this'))),
+            Expanded(
+              child: TextField(
+                controller: _note,
+                decoration: const InputDecoration(
+                  labelText: 'Internal note',
+                  helperText: 'Only the owner and staff see this',
+                ),
+              ),
+            ),
             const SizedBox(width: 10),
             OutlinedButton(onPressed: _addNote, child: const Text('Add')),
           ],
@@ -797,12 +1241,25 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
         for (final n in _c.internalNotes)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text('${dayLabel(n.at)}: ${n.note}', style: TextStyle(color: c.muted, fontSize: 12)),
+            child: Text(
+              '${dayLabel(n.at)}: ${n.note}',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
           ),
         const SizedBox(height: 14),
-        TextField(controller: _resolution, maxLines: 2, decoration: const InputDecoration(labelText: 'Resolution comments', helperText: 'What was done, shown to the resident')),
+        TextField(
+          controller: _resolution,
+          maxLines: 2,
+          decoration: const InputDecoration(
+            labelText: 'Resolution comments',
+            helperText: 'What was done, shown to the resident',
+          ),
+        ),
         const SizedBox(height: 8),
-        OutlinedButton(onPressed: _saveResolution, child: const Text('Save resolution')),
+        OutlinedButton(
+          onPressed: _saveResolution,
+          child: const Text('Save resolution'),
+        ),
         const SizedBox(height: 14),
         OutlinedButton.icon(
           onPressed: _sendUpdate,
@@ -813,10 +1270,16 @@ class _ComplaintDetailState extends State<_ComplaintDetail> {
         Text('History', style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         if (_c.history.isEmpty)
-          Text('Registered as ${complaintStatusLabel(ComplaintStatus.open)}. No status changes yet.', style: TextStyle(color: c.muted, fontSize: 12))
+          Text(
+            'Registered as ${complaintStatusLabel(ComplaintStatus.open)}. No status changes yet.',
+            style: TextStyle(color: c.muted, fontSize: 12),
+          )
         else
           for (final h in _c.history)
-            Text('${dayLabel(h.at)}: ${h.from == null ? '' : '${complaintStatusLabel(h.from!)} → '}${complaintStatusLabel(h.to)}', style: TextStyle(color: c.muted, fontSize: 12)),
+            Text(
+              '${dayLabel(h.at)}: ${h.from == null ? '' : '${complaintStatusLabel(h.from!)} → '}${complaintStatusLabel(h.to)}',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
       ],
     );
   }
@@ -879,7 +1342,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       child: _ReplyForm(
         initial: f.ownerReply,
         onSave: (text) async {
-          final next = [for (final x in _all) x.id == f.id ? x.withReply(text) : x];
+          final next = [
+            for (final x in _all) x.id == f.id ? x.withReply(text) : x,
+          ];
           await ComplaintStore.saveFeedback(next);
           if (mounted) setState(() => _all = next);
         },
@@ -894,11 +1359,25 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (!_loaded || book == null) return const Scaffold(body: LoadingBox());
     final property = book.propertyById(widget.id);
     if (property == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.search_off_rounded, title: 'Property not found', message: 'It may have been deleted.'));
+      return const Scaffold(
+        body: EmptyState(
+          icon: Icons.search_off_rounded,
+          title: 'Property not found',
+          message: 'It may have been deleted.',
+        ),
+      );
     }
-    final mine = [for (final f in _all) if (f.propertyId == property.id) f]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final rated = [for (final f in mine) if (f.rating > 0) f.rating];
-    final average = rated.isEmpty ? null : rated.fold<int>(0, (t, r) => t + r) / rated.length;
+    final mine = [
+      for (final f in _all)
+        if (f.propertyId == property.id) f,
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final rated = [
+      for (final f in mine)
+        if (f.rating > 0) f.rating,
+    ];
+    final average = rated.isEmpty
+        ? null
+        : rated.fold<int>(0, (t, r) => t + r) / rated.length;
     return Scaffold(
       appBar: AppBar(title: const Text('Reviews and suggestions')),
       floatingActionButton: FloatingActionButton.extended(
@@ -922,7 +1401,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           if (mine.isEmpty)
             MonovaCard(
               padding: const EdgeInsets.all(14),
-              child: Text('Nothing recorded yet.', style: TextStyle(color: c.muted)),
+              child: Text(
+                'Nothing recorded yet.',
+                style: TextStyle(color: c.muted),
+              ),
             )
           else
             for (final f in mine)
@@ -935,20 +1417,45 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     children: [
                       Row(
                         children: [
-                          Expanded(child: Text(feedbackKindLabel(f.kind), style: const TextStyle(fontWeight: FontWeight.w700))),
-                          Text(dayLabel(f.createdAt), style: TextStyle(color: c.muted, fontSize: 12)),
+                          Expanded(
+                            child: Text(
+                              feedbackKindLabel(f.kind),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            dayLabel(f.createdAt),
+                            style: TextStyle(color: c.muted, fontSize: 12),
+                          ),
                         ],
                       ),
-                      Text('${f.residentName}${f.rating > 0 ? '  ${'★' * f.rating}${'☆' * (5 - f.rating)}' : ''}', style: TextStyle(color: c.muted, fontSize: 12)),
+                      Text(
+                        '${f.residentName}${f.rating > 0 ? '  ${'★' * f.rating}${'☆' * (5 - f.rating)}' : ''}',
+                        style: TextStyle(color: c.muted, fontSize: 12),
+                      ),
                       const SizedBox(height: 4),
                       Text(f.text, style: TextStyle(color: c.ink, height: 1.4)),
                       if (f.ownerReply.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text('Owner reply: ${f.ownerReply}', style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+                        Text(
+                          'Owner reply: ${f.ownerReply}',
+                          style: TextStyle(
+                            color: c.muted,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                        ),
                       ],
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton(onPressed: () => _reply(f), child: Text(f.ownerReply.isEmpty ? 'Reply' : 'Edit reply')),
+                        child: TextButton(
+                          onPressed: () => _reply(f),
+                          child: Text(
+                            f.ownerReply.isEmpty ? 'Reply' : 'Edit reply',
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -961,7 +1468,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 }
 
 class _FeedbackForm extends StatefulWidget {
-  const _FeedbackForm({required this.propertyId, required this.existing, required this.onSave});
+  const _FeedbackForm({
+    required this.propertyId,
+    required this.existing,
+    required this.onSave,
+  });
 
   final String propertyId;
   final List<ResidentFeedback> existing;
@@ -986,34 +1497,43 @@ class _FeedbackFormState extends State<_FeedbackForm> {
   }
 
   Future<void> _submit() async {
-    final problem = feedbackProblem(text: _text.text, kind: _kind, rating: _rating, residentName: _name.text);
+    final problem = feedbackProblem(
+      text: _text.text,
+      kind: _kind,
+      rating: _rating,
+      residentName: _name.text,
+    );
     if (problem != null) {
       setState(() => _error = problem);
       return;
     }
     // The same resident saying the same thing twice on the same day is a duplicate.
     final today = DateTime.now();
-    final dup = widget.existing.any((f) =>
-        f.propertyId == widget.propertyId &&
-        f.kind == _kind &&
-        f.residentName.toLowerCase() == _name.text.trim().toLowerCase() &&
-        f.text.trim().toLowerCase() == _text.text.trim().toLowerCase() &&
-        f.createdAt.year == today.year &&
-        f.createdAt.month == today.month &&
-        f.createdAt.day == today.day);
+    final dup = widget.existing.any(
+      (f) =>
+          f.propertyId == widget.propertyId &&
+          f.kind == _kind &&
+          f.residentName.toLowerCase() == _name.text.trim().toLowerCase() &&
+          f.text.trim().toLowerCase() == _text.text.trim().toLowerCase() &&
+          f.createdAt.year == today.year &&
+          f.createdAt.month == today.month &&
+          f.createdAt.day == today.day,
+    );
     if (dup) {
       setState(() => _error = 'This was already recorded today.');
       return;
     }
-    await widget.onSave(ResidentFeedback(
-      id: today.microsecondsSinceEpoch.toString(),
-      propertyId: widget.propertyId,
-      kind: _kind,
-      residentName: _name.text.trim(),
-      text: _text.text.trim(),
-      rating: _kind == FeedbackKind.review ? _rating : 0,
-      createdAt: today,
-    ));
+    await widget.onSave(
+      ResidentFeedback(
+        id: today.microsecondsSinceEpoch.toString(),
+        propertyId: widget.propertyId,
+        kind: _kind,
+        residentName: _name.text.trim(),
+        text: _text.text.trim(),
+        rating: _kind == FeedbackKind.review ? _rating : 0,
+        createdAt: today,
+      ),
+    );
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -1028,7 +1548,10 @@ class _FeedbackFormState extends State<_FeedbackForm> {
           initialValue: _kind,
           isExpanded: true,
           decoration: const InputDecoration(labelText: 'Type'),
-          items: [for (final k in FeedbackKind.values) DropdownMenuItem(value: k, child: Text(feedbackKindLabel(k)))],
+          items: [
+            for (final k in FeedbackKind.values)
+              DropdownMenuItem(value: k, child: Text(feedbackKindLabel(k))),
+          ],
           onChanged: (v) => setState(() => _kind = v ?? _kind),
         ),
         if (_kind == FeedbackKind.review) ...[
@@ -1038,15 +1561,28 @@ class _FeedbackFormState extends State<_FeedbackForm> {
               for (var i = 1; i <= 5; i++)
                 IconButton(
                   onPressed: () => setState(() => _rating = i),
-                  icon: Icon(i <= _rating ? Icons.star_rounded : Icons.star_outline_rounded, color: c.accentStart),
+                  icon: Icon(
+                    i <= _rating
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: c.accentStart,
+                  ),
                 ),
             ],
           ),
         ],
         const SizedBox(height: 8),
-        TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Resident name *')),
+        TextField(
+          controller: _name,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Resident name *'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _text, maxLines: 4, decoration: const InputDecoration(labelText: 'What they said *')),
+        TextField(
+          controller: _text,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'What they said *'),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense, height: 1.4)),
@@ -1083,7 +1619,14 @@ class _ReplyFormState extends State<_ReplyForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(controller: _text, maxLines: 3, decoration: const InputDecoration(labelText: 'Your reply', helperText: 'The resident\'s own words stay unchanged')),
+        TextField(
+          controller: _text,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Your reply',
+            helperText: 'The resident\'s own words stay unchanged',
+          ),
+        ),
         const SizedBox(height: 12),
         FilledButton(
           onPressed: () async {
@@ -1102,39 +1645,52 @@ class _ReplyFormState extends State<_ReplyForm> {
 /// A QR code for one room. Scanning it with any phone's camera opens WhatsApp to the hostel number,
 /// with the room already filled in. The resident does not need Monova.
 class RoomQrSheet extends StatelessWidget {
-  const RoomQrSheet({super.key, required this.property, required this.room, this.hostelCode});
+  const RoomQrSheet({
+    super.key,
+    required this.property,
+    required this.room,
+    this.hostelCode,
+    this.onTurnOn,
+  });
 
   final Property property;
   final Room room;
 
-  /// Set once QR complaints are turned on. The code then opens the complaint form instead of WhatsApp.
+  /// Set once QR complaints are turned on. Until then the form offers WhatsApp only.
   final String? hostelCode;
+
+  /// Turns on direct complaints to Monova for this hostel.
+  final VoidCallback? onTurnOn;
 
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
-    final message = complaintMessage(
-      hostel: property.name,
+    // One code per room. It opens the form, where the resident chooses WhatsApp or a direct complaint to Monova.
+    // The hostel code is added once QR complaints are on; the WhatsApp number and name are always included.
+    final formLink = complaintFormLink(
+      CloudConfig.hostingBase,
+      code: hostelCode ?? '',
       room: room.number,
-      floorText: floorLabel(room.floor),
-      category: 'Other',
-      description: 'Please describe the problem',
+      floor: room.floor,
+      phone: property.phone,
+      hostelName: property.name,
     );
-    final code = hostelCode;
-    final formLink = code == null ? null : complaintFormLink(CloudConfig.hostingBase, code: code, room: room.number, floor: room.floor);
-    final link = formLink ?? whatsappLink(property.phone, message);
+    final String? link = formLink;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Room ${room.number} · ${floorLabel(room.floor)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+        Text(
+          'Room ${room.number} · ${floorLabel(room.floor)}',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
         const SizedBox(height: 6),
         Text(
           link == null
-              ? 'Add the hostel\'s WhatsApp number on the property first, then this code can open WhatsApp.'
+              ? 'Turn on QR complaints for this hostel first. Then this code opens the complaint form.'
               : formLink != null
-                  ? 'Print this and put it in the room. A resident scans it with any phone camera and fills in a short form. No app or WhatsApp needed.'
-                  : 'Print this and put it in the room. A resident scans it with any phone camera; WhatsApp opens with the room filled in, and they only type the problem.',
+              ? 'Print this and put it in the room. A resident scans it with any phone camera and fills in a short form. No app or WhatsApp needed.'
+              : 'Print this and put it in the room. A resident scans it with any phone camera; WhatsApp opens with the room filled in, and they only type the problem.',
           style: TextStyle(color: c.muted, height: 1.45),
         ),
         const SizedBox(height: 14),
@@ -1143,13 +1699,34 @@ class RoomQrSheet extends StatelessWidget {
             child: Container(
               color: Colors.white,
               padding: const EdgeInsets.all(12),
-              child: QrImageView(data: link, size: 220, errorCorrectionLevel: QrErrorCorrectLevel.M),
+              child: QrImageView(
+                data: link,
+                size: 220,
+                errorCorrectionLevel: QrErrorCorrectLevel.M,
+              ),
             ),
           ),
         const SizedBox(height: 14),
+        if (hostelCode == null && onTurnOn != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Right now residents can send by WhatsApp only. Turn on direct complaints to Monova too, so they can choose either. Then reprint this room\'s code, because the new code is different.',
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onTurnOn,
+            icon: const Icon(Icons.cloud_done_rounded, size: 18),
+            label: const Text('Turn on direct complaints'),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (link != null)
           FilledButton.icon(
-            onPressed: () => shareText('Complaint for ${property.name}, Room ${room.number}: $link', subject: 'Room ${room.number} complaint code'),
+            onPressed: () => shareText(
+              'Complaint for ${property.name}, Room ${room.number}: $link',
+              subject: 'Room ${room.number} complaint code',
+            ),
             icon: const Icon(Icons.share_rounded, size: 18),
             label: const Text('Share code link'),
           ),

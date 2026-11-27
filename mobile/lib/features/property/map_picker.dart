@@ -23,7 +23,8 @@ const _tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const _userAgentPackage = 'com.monova.monova_app';
 
 /// Distance in metres between two points, for checking whether the pin is still on the chosen place.
-double _distanceMetres(LatLng a, LatLng b) => const Distance().as(LengthUnit.Meter, a, b);
+double _distanceMetres(LatLng a, LatLng b) =>
+    const Distance().as(LengthUnit.Meter, a, b);
 
 /// Lets the owner move the map under a fixed pin, search for a place, or use the device's location.
 /// Everything still works without location permission, and the address can always be typed by hand.
@@ -89,24 +90,45 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        messenger.showSnackBar(const SnackBar(content: Text('Location is turned off on this device. Move the map by hand instead.')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Location is turned off on this device. Move the map by hand instead.',
+            ),
+          ),
+        );
         return;
       }
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-        messenger.showSnackBar(const SnackBar(content: Text('Location permission is off. Move the map by hand instead.')));
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Location permission is off. Move the map by hand instead.',
+            ),
+          ),
+        );
         return;
       }
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       if (!mounted) return;
       _controller.move(LatLng(position.latitude, position.longitude), 17);
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('The device location could not be read. Move the map by hand. $e')));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'The device location could not be read. Move the map by hand. $e',
+          ),
+        ),
+      );
     }
   }
 
@@ -116,7 +138,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     GeoPlace? place;
     final chosen = _chosen;
     // Still at the chosen search result: use its address as found. Otherwise look up where the pin is now.
-    if (chosen != null && _distanceMetres(point, LatLng(chosen.latitude, chosen.longitude)) < 30) {
+    if (chosen != null &&
+        _distanceMetres(point, LatLng(chosen.latitude, chosen.longitude)) <
+            30) {
       place = chosen;
     } else {
       try {
@@ -145,7 +169,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               onTap: (_, __) => setState(() => _results = const []),
             ),
             children: [
-              TileLayer(urlTemplate: _tileUrl, userAgentPackageName: _userAgentPackage),
+              TileLayer(
+                urlTemplate: _tileUrl,
+                userAgentPackageName: _userAgentPackage,
+              ),
             ],
           ),
           // The pin stays in the middle; moving the map moves the chosen point.
@@ -153,7 +180,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             child: Center(
               child: Transform.translate(
                 offset: const Offset(0, -20),
-                child: Icon(Icons.location_on_rounded, size: 44, color: c.expense),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  size: 44,
+                  color: c.expense,
+                ),
               ),
             ),
           ),
@@ -175,7 +206,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           onSubmitted: (_) => _runSearch(),
                           decoration: const InputDecoration(
                             labelText: 'Search village, town, locality or PIN',
-                            
                           ),
                         ),
                       ),
@@ -196,7 +226,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             ListTile(
                               dense: true,
                               leading: const Icon(Icons.place_rounded),
-                              title: Text(p.displayName, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              title: Text(
+                                p.displayName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               onTap: () => _showPlace(p),
                             ),
                         ],
@@ -205,7 +239,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   if (_message != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text(_message!, style: TextStyle(color: c.muted, fontSize: 12)),
+                      child: Text(
+                        _message!,
+                        style: TextStyle(color: c.muted, fontSize: 12),
+                      ),
                     ),
                 ],
               ),
@@ -237,7 +274,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _busy ? null : _confirm,
-                          child: Text(_busy ? 'Looking up the address…' : 'Use this location'),
+                          child: Text(
+                            _busy
+                                ? 'Looking up the address…'
+                                : 'Use this location',
+                          ),
                         ),
                       ),
                     ],
@@ -254,7 +295,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
 /// A small, non-interactive map for the property page. An exact point shows a pin; an approximate listing shows only an area.
 class PropertyMapPreview extends StatelessWidget {
-  const PropertyMapPreview({super.key, required this.latitude, required this.longitude, required this.exact});
+  const PropertyMapPreview({
+    super.key,
+    required this.latitude,
+    required this.longitude,
+    required this.exact,
+  });
 
   final double latitude;
   final double longitude;
@@ -274,25 +320,43 @@ class PropertyMapPreview extends StatelessWidget {
               options: MapOptions(
                 initialCenter: point,
                 initialZoom: exact ? 16 : 14,
-                interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
               ),
               children: [
-                TileLayer(urlTemplate: _tileUrl, userAgentPackageName: _userAgentPackage),
+                TileLayer(
+                  urlTemplate: _tileUrl,
+                  userAgentPackageName: _userAgentPackage,
+                ),
                 if (exact)
-                  MarkerLayer(markers: [
-                    Marker(point: point, width: 40, height: 40, child: Icon(Icons.location_on_rounded, size: 36, color: c.expense)),
-                  ])
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: point,
+                        width: 40,
+                        height: 40,
+                        child: Icon(
+                          Icons.location_on_rounded,
+                          size: 36,
+                          color: c.expense,
+                        ),
+                      ),
+                    ],
+                  )
                 else
-                  CircleLayer(circles: [
-                    CircleMarker(
-                      point: point,
-                      radius: 700,
-                      useRadiusInMeter: true,
-                      color: c.accentStart.withValues(alpha: 0.18),
-                      borderColor: c.accentStart,
-                      borderStrokeWidth: 2,
-                    ),
-                  ]),
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: point,
+                        radius: 700,
+                        useRadiusInMeter: true,
+                        color: c.accentStart.withValues(alpha: 0.18),
+                        borderColor: c.accentStart,
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
+                  ),
               ],
             ),
             Positioned(
@@ -302,7 +366,9 @@ class PropertyMapPreview extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 color: c.base.withValues(alpha: 0.8),
                 child: Text(
-                  exact ? '© OpenStreetMap' : 'Approximate area · © OpenStreetMap',
+                  exact
+                      ? '© OpenStreetMap'
+                      : 'Approximate area · © OpenStreetMap',
                   style: TextStyle(color: c.muted, fontSize: 10),
                 ),
               ),

@@ -15,12 +15,12 @@ int _cents(String text) {
 }
 
 String kindLabel(String kind) => switch (kind) {
-      'rent' => 'Rent received',
-      'advance' => 'Advance received',
-      'deposit' => 'Deposit received',
-      'refund' => 'Deposit refunded',
-      _ => 'Expense',
-    };
+  'rent' => 'Rent received',
+  'advance' => 'Advance received',
+  'deposit' => 'Deposit received',
+  'refund' => 'Deposit refunded',
+  _ => 'Expense',
+};
 
 /// The payment form, for a new payment or to edit one. A property-level form (no guest) also records expenses.
 class PaymentForm extends StatefulWidget {
@@ -49,14 +49,23 @@ class PaymentForm extends StatefulWidget {
 
 class _PaymentFormState extends State<PaymentForm> {
   late final _amount = TextEditingController(
-    text: widget.initial == null ? '' : (widget.initial!.amountCents / 100).toStringAsFixed(2),
+    text: widget.initial == null
+        ? ''
+        : (widget.initial!.amountCents / 100).toStringAsFixed(2),
   );
-  late final _period = TextEditingController(text: widget.initial?.periodLabel ?? '');
-  late final _reference = TextEditingController(text: widget.initial?.reference ?? '');
+  late final _period = TextEditingController(
+    text: widget.initial?.periodLabel ?? '',
+  );
+  late final _reference = TextEditingController(
+    text: widget.initial?.reference ?? '',
+  );
   late final _note = TextEditingController(text: widget.initial?.note ?? '');
-  late String _kind = widget.initial?.kind ?? (widget.expenseOnly ? 'expense' : 'rent');
+  late String _kind =
+      widget.initial?.kind ?? (widget.expenseOnly ? 'expense' : 'rent');
   late String _method = widget.initial?.method ?? paymentMethods.first;
-  late String _category = widget.initial?.category.isNotEmpty == true ? widget.initial!.category : expenseCategories.first;
+  late String _category = widget.initial?.category.isNotEmpty == true
+      ? widget.initial!.category
+      : expenseCategories.first;
   late DateTime _date = widget.initial?.date ?? dayOnly(DateTime.now());
   String? _error;
 
@@ -79,21 +88,25 @@ class _PaymentFormState extends State<PaymentForm> {
       return;
     }
     final base = widget.initial;
-    Navigator.of(context).pop(Payment(
-      id: base?.id ?? PropertyStore.newId(),
-      propertyId: base?.propertyId ?? widget.propertyId,
-      kind: _kind,
-      amountCents: cents,
-      date: _date,
-      roomId: base?.roomId ?? widget.roomId,
-      tenancyId: base?.tenancyId ?? widget.tenancyId,
-      personId: base?.personId ?? widget.personId,
-      method: _method,
-      periodLabel: _kind == 'rent' || _kind == 'advance' ? _period.text.trim() : '',
-      reference: _reference.text.trim(),
-      note: _note.text.trim(),
-      category: _kind == 'expense' ? _category : '',
-    ));
+    Navigator.of(context).pop(
+      Payment(
+        id: base?.id ?? PropertyStore.newId(),
+        propertyId: base?.propertyId ?? widget.propertyId,
+        kind: _kind,
+        amountCents: cents,
+        date: _date,
+        roomId: base?.roomId ?? widget.roomId,
+        tenancyId: base?.tenancyId ?? widget.tenancyId,
+        personId: base?.personId ?? widget.personId,
+        method: _method,
+        periodLabel: _kind == 'rent' || _kind == 'advance'
+            ? _period.text.trim()
+            : '',
+        reference: _reference.text.trim(),
+        note: _note.text.trim(),
+        category: _kind == 'expense' ? _category : '',
+      ),
+    );
   }
 
   @override
@@ -107,11 +120,31 @@ class _PaymentFormState extends State<PaymentForm> {
           initialValue: _kind,
           decoration: const InputDecoration(labelText: 'What is this for?'),
           items: [
-            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'rent', child: Text('Rent received')),
-            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'advance', child: Text('Advance received')),
-            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'deposit', child: Text('Deposit received (kept separately)')),
-            if (!widget.expenseOnly || isExpense) const DropdownMenuItem(value: 'refund', child: Text('Deposit refunded')),
-            if (_canRecordExpense || isExpense) const DropdownMenuItem(value: 'expense', child: Text('Expense (electricity, repairs...)')),
+            if (!widget.expenseOnly || isExpense)
+              const DropdownMenuItem(
+                value: 'rent',
+                child: Text('Rent received'),
+              ),
+            if (!widget.expenseOnly || isExpense)
+              const DropdownMenuItem(
+                value: 'advance',
+                child: Text('Advance received'),
+              ),
+            if (!widget.expenseOnly || isExpense)
+              const DropdownMenuItem(
+                value: 'deposit',
+                child: Text('Deposit received (kept separately)'),
+              ),
+            if (!widget.expenseOnly || isExpense)
+              const DropdownMenuItem(
+                value: 'refund',
+                child: Text('Deposit refunded'),
+              ),
+            if (_canRecordExpense || isExpense)
+              const DropdownMenuItem(
+                value: 'expense',
+                child: Text('Expense (electricity, repairs...)'),
+              ),
           ],
           onChanged: (v) => setState(() => _kind = v ?? _kind),
         ),
@@ -120,7 +153,10 @@ class _PaymentFormState extends State<PaymentForm> {
           DropdownButtonFormField<String>(
             initialValue: _category,
             decoration: const InputDecoration(labelText: 'Expense type'),
-            items: [for (final cat in expenseCategories) DropdownMenuItem(value: cat, child: Text(cat))],
+            items: [
+              for (final cat in expenseCategories)
+                DropdownMenuItem(value: cat, child: Text(cat)),
+            ],
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
           const SizedBox(height: 12),
@@ -128,32 +164,65 @@ class _PaymentFormState extends State<PaymentForm> {
         TextField(
           controller: _amount,
           autofocus: widget.initial == null,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Amount',
+            prefixText: '₹ ',
+          ),
         ),
         const SizedBox(height: 12),
-        DateSelector(label: 'Date', value: _date, firstYear: 2020, onChanged: (d) => setState(() => _date = d)),
+        DateSelector(
+          label: 'Date',
+          value: _date,
+          firstYear: 2020,
+          onChanged: (d) => setState(() => _date = d),
+        ),
         const SizedBox(height: 12),
         if (_kind == 'rent' || _kind == 'advance') ...[
-          TextField(controller: _period, decoration: const InputDecoration(labelText: 'Month or period (optional)', hintText: 'Dec 2026')),
+          TextField(
+            controller: _period,
+            decoration: const InputDecoration(
+              labelText: 'Month or period (optional)',
+              hintText: 'Dec 2026',
+            ),
+          ),
           const SizedBox(height: 12),
         ],
         DropdownButtonFormField<String>(
           initialValue: _method,
           decoration: const InputDecoration(labelText: 'How was it paid?'),
-          items: [for (final m in paymentMethods) DropdownMenuItem(value: m, child: Text(m))],
+          items: [
+            for (final m in paymentMethods)
+              DropdownMenuItem(value: m, child: Text(m)),
+          ],
           onChanged: (v) => setState(() => _method = v ?? _method),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _reference, decoration: const InputDecoration(labelText: 'Reference number (optional)')),
+        TextField(
+          controller: _reference,
+          decoration: const InputDecoration(
+            labelText: 'Reference number (optional)',
+          ),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _note, decoration: const InputDecoration(labelText: 'Note (optional)')),
+        TextField(
+          controller: _note,
+          decoration: const InputDecoration(labelText: 'Note (optional)'),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? (isExpense ? 'Save expense' : 'Save payment') : 'Save changes')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(
+            widget.initial == null
+                ? (isExpense ? 'Save expense' : 'Save payment')
+                : 'Save changes',
+          ),
+        ),
       ],
     );
   }
@@ -205,10 +274,21 @@ class PaymentsSection extends StatelessWidget {
     final updated = await FormSheet.show<Payment>(
       context,
       title: 'Edit ${kindLabel(p.kind).toLowerCase()}',
-      child: PaymentForm(propertyId: p.propertyId, personId: p.personId, roomId: p.roomId, tenancyId: p.tenancyId, expenseOnly: expenseOnly, initial: p),
+      child: PaymentForm(
+        propertyId: p.propertyId,
+        personId: p.personId,
+        roomId: p.roomId,
+        tenancyId: p.tenancyId,
+        expenseOnly: expenseOnly,
+        initial: p,
+      ),
     );
     if (updated == null) return;
-    onChanged(book.copyWith(payments: [for (final x in book.payments) x.id == p.id ? updated : x]));
+    onChanged(
+      book.copyWith(
+        payments: [for (final x in book.payments) x.id == p.id ? updated : x],
+      ),
+    );
   }
 
   Future<void> _delete(BuildContext context, Payment p) async {
@@ -216,11 +296,18 @@ class PaymentsSection extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete this transaction?'),
-        content: Text('${kindLabel(p.kind)} of ${money(p.amountCents / 100)} will be removed from the records and from Monova Finance.'),
+        content: Text(
+          '${kindLabel(p.kind)} of ${money(p.amountCents / 100)} will be removed from the records and from Monova Finance.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.monova.expense,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -228,7 +315,14 @@ class PaymentsSection extends StatelessWidget {
       ),
     );
     if (ok != true) return;
-    onChanged(book.copyWith(payments: [for (final x in book.payments) if (x.id != p.id) x]));
+    onChanged(
+      book.copyWith(
+        payments: [
+          for (final x in book.payments)
+            if (x.id != p.id) x,
+        ],
+      ),
+    );
   }
 
   @override
@@ -258,10 +352,34 @@ class PaymentsSection extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Expanded(child: _Total(label: 'Income', value: money(income / 100), color: c.income)),
-              Expanded(child: _Total(label: 'Expenses', value: money(spent / 100), color: c.expense)),
-              Expanded(child: _Total(label: 'Net', value: money((income - spent) / 100), color: income >= spent ? c.income : c.expense)),
-              Expanded(child: _Total(label: 'Entries', value: '${payments.length}', color: c.ink)),
+              Expanded(
+                child: _Total(
+                  label: 'Income',
+                  value: money(income / 100),
+                  color: c.income,
+                ),
+              ),
+              Expanded(
+                child: _Total(
+                  label: 'Expenses',
+                  value: money(spent / 100),
+                  color: c.expense,
+                ),
+              ),
+              Expanded(
+                child: _Total(
+                  label: 'Net',
+                  value: money((income - spent) / 100),
+                  color: income >= spent ? c.income : c.expense,
+                ),
+              ),
+              Expanded(
+                child: _Total(
+                  label: 'Entries',
+                  value: '${payments.length}',
+                  color: c.ink,
+                ),
+              ),
             ],
           ),
         ),
@@ -269,7 +387,9 @@ class PaymentsSection extends StatelessWidget {
         if (shown.isEmpty)
           MonovaCard(
             child: Text(
-              expenseOnly ? 'No expenses recorded yet. Electricity, water and repairs go here.' : 'No transactions recorded yet.',
+              expenseOnly
+                  ? 'No expenses recorded yet. Electricity, water and repairs go here.'
+                  : 'No transactions recorded yet.',
               style: TextStyle(color: c.muted),
             ),
           )
@@ -300,11 +420,21 @@ class PaymentsSection extends StatelessWidget {
                     '${p.isExpense || p.kind == 'refund' ? '−' : ''}${money(p.amountCents / 100)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: p.isExpense || p.kind == 'refund' ? c.expense : c.income,
+                      color: p.isExpense || p.kind == 'refund'
+                          ? c.expense
+                          : c.income,
                     ),
                   ),
-                  IconButton(tooltip: 'Edit', icon: Icon(Icons.edit_outlined, color: c.accentStart), onPressed: () => _edit(context, p)),
-                  IconButton(tooltip: 'Delete', icon: Icon(Icons.delete_outline_rounded, color: c.muted), onPressed: () => _delete(context, p)),
+                  IconButton(
+                    tooltip: 'Edit',
+                    icon: Icon(Icons.edit_outlined, color: c.accentStart),
+                    onPressed: () => _edit(context, p),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete',
+                    icon: Icon(Icons.delete_outline_rounded, color: c.muted),
+                    onPressed: () => _delete(context, p),
+                  ),
                 ],
               ),
             ),
@@ -328,7 +458,14 @@ class _Total extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 14)),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w800,
+            fontSize: 14,
+          ),
+        ),
         const SizedBox(height: 2),
         Text(label, style: TextStyle(color: c.muted, fontSize: 11)),
       ],
@@ -347,29 +484,48 @@ class MoneyThisMonth extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final now = DateTime.now();
-    final m = monthMoney(book, propertyId: propertyId, year: now.year, month: now.month);
+    final m = monthMoney(
+      book,
+      propertyId: propertyId,
+      year: now.year,
+      month: now.month,
+    );
     Widget tile(String label, String value, Color color) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 16)),
-              const SizedBox(height: 2),
-              Text(label, style: TextStyle(color: c.muted, fontSize: 12)),
-            ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
           ),
-        );
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(color: c.muted, fontSize: 12)),
+        ],
+      ),
+    );
     return MonovaCard(
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Money in ${monthLabel(now.year, now.month)}', style: TextStyle(color: c.muted, fontSize: 12)),
+          Text(
+            'Money in ${monthLabel(now.year, now.month)}',
+            style: TextStyle(color: c.muted, fontSize: 12),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
               tile('Rent collected', money(m.rentCents / 100), c.income),
               tile('Expenses', money(m.expenseCents / 100), c.expense),
-              tile('Net', money(m.netCents / 100), m.netCents >= 0 ? c.income : c.expense),
+              tile(
+                'Net',
+                money(m.netCents / 100),
+                m.netCents >= 0 ? c.income : c.expense,
+              ),
             ],
           ),
           const SizedBox(height: 12),

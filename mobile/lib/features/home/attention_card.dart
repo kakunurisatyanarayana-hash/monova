@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/attention.dart';
+import '../../core/complaint_store.dart';
 import '../../core/entry_store.dart';
 import '../../core/i18n.dart';
 import '../../core/money_plans.dart';
@@ -45,15 +46,18 @@ class _AttentionCardState extends State<AttentionCard> {
           await scheduleReminderAlert(r);
         }
       }
+      final complaints = await ComplaintStore.loadComplaints();
       final items = [
+        ...complaintAttentionItems(complaints, book),
         ...attentionItems(purchases: purchases, book: book, today: now),
         ...reminderAttentionItems(reminders, now),
         ...sipAttention(await SipStore.load(), now),
       ];
-      if (mounted) setState(() {
-        _items = items;
-        _loaded = true;
-      });
+      if (mounted)
+        setState(() {
+          _items = items;
+          _loaded = true;
+        });
     } catch (_) {
       // A damaged record must not break the Home page; the card just shows nothing to do.
       if (mounted) setState(() => _loaded = true);
@@ -71,7 +75,12 @@ class _AttentionCardState extends State<AttentionCard> {
           children: [
             Icon(Icons.check_circle_outline_rounded, color: c.income),
             const SizedBox(width: 10),
-            Expanded(child: Text(tr('attention_none'), style: TextStyle(color: c.muted))),
+            Expanded(
+              child: Text(
+                tr('attention_none'),
+                style: TextStyle(color: c.muted),
+              ),
+            ),
           ],
         ),
       );
@@ -84,9 +93,17 @@ class _AttentionCardState extends State<AttentionCard> {
         children: [
           Row(
             children: [
-              Expanded(child: Text(tr('attention_title'), style: Theme.of(context).textTheme.titleMedium)),
+              Expanded(
+                child: Text(
+                  tr('attention_title'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
               if (_items.length > shown.length)
-                Text('+${_items.length - shown.length} more', style: TextStyle(color: c.muted, fontSize: 12)),
+                Text(
+                  '+${_items.length - shown.length} more',
+                  style: TextStyle(color: c.muted, fontSize: 12),
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -114,8 +131,14 @@ class _AttentionCardState extends State<AttentionCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                          Text(item.detail, style: TextStyle(color: c.muted, fontSize: 12)),
+                          Text(
+                            item.title,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            item.detail,
+                            style: TextStyle(color: c.muted, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
@@ -136,8 +159,11 @@ List<AttentionItem> sipAttention(List<SipPlan> plans, DateTime now) {
     for (final p in plans)
       if (pendingCents(p, now) > 0)
         AttentionItem(
-          title: sipStateFor(p, now) == SipState.pending ? 'SIP due today: ${p.name}' : 'SIP unpaid: ${p.name}',
-          detail: '${money(pendingCents(p, now) / 100)} unpaid · tap to mark paid',
+          title: sipStateFor(p, now) == SipState.pending
+              ? 'SIP due today: ${p.name}'
+              : 'SIP unpaid: ${p.name}',
+          detail:
+              '${money(pendingCents(p, now) / 100)} unpaid · tap to mark paid',
           route: '/sip',
           urgent: sipStateFor(p, now) == SipState.pending,
         ),
