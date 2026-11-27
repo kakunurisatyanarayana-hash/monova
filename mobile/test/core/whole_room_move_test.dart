@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:monova_app/core/property_store.dart';
 
 void main() {
+  normalizeTests();
   final today = DateTime(2026, 11, 27);
   final whole = Tenancy(id: 's', propertyId: 'p', roomId: 'r', bed: 0, name: 'Asha', checkIn: DateTime(2026, 11, 1));
 
@@ -24,4 +25,23 @@ void main() {
     expect(problem, contains('only 1 free beds'));
     expect(moved.tenancies.every((t) => t.bed == 0), isTrue);
   });
+}
+
+void normalizeTests() {
+  test('records left as whole-room in a per-bed room are repaired on load', () {
+    final room = Room(id: 'r', propertyId: 'p', number: '409', beds: 5);
+    final stay = Tenancy(id: 's', propertyId: 'p', roomId: 'r', bed: 0, name: 'Satyanarayana', checkIn: DateTime(2026, 11, 1));
+    final fixed = normalizeRooms(PropertyBook(rooms: [room], tenancies: [stay]));
+    final snap = snapshotRoom(room, fixed.tenancies, DateTime(2026, 11, 27));
+    expect(snap.occupiedBeds, 1);
+    expect(snap.availableBeds, 4);
+  });
+
+  test('a whole-room rental is left alone', () {
+    final room = Room(id: 'r', propertyId: 'p', number: 'V', beds: 1, wholeRoomRental: true);
+    final stay = Tenancy(id: 's', propertyId: 'p', roomId: 'r', bed: 0, name: 'A', checkIn: DateTime(2026, 11, 1));
+    final book = PropertyBook(rooms: [room], tenancies: [stay]);
+    expect(identical(normalizeRooms(book), book), isTrue);
+  }
+  );
 }

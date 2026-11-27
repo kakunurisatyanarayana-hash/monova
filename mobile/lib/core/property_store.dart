@@ -704,6 +704,18 @@ PropertyBook deletePerson(PropertyBook book, String personId) => book.copyWith(
   );
 }
 
+/// Moves people recorded as holding a whole room into beds, in rooms that are rented per bed.
+/// Such records can be left behind by an earlier edit. Rooms where the people do not fit are left as they are.
+PropertyBook normalizeRooms(PropertyBook book) {
+  var result = book;
+  for (final room in book.rooms) {
+    if (room.wholeRoomRental) continue;
+    final (next, problem) = moveWholeRoomStays(result, room);
+    if (problem == null) result = next;
+  }
+  return result;
+}
+
 /// Everything the property module stores on this device.
 class PropertyBook {
   const PropertyBook({this.properties = const [], this.rooms = const [], this.tenancies = const [], this.persons = const []});
@@ -769,9 +781,10 @@ class PropertyStore {
 
   /// Loads the book, first erasing hotel guest data past the retention period. Returns how many records were erased.
   static Future<(PropertyBook, int)> loadWithRetention(DateTime today) async {
-    final book = await load();
+    final raw = await load();
+    final book = normalizeRooms(raw);
     final (kept, removed) = purgeExpiredGuests(book, today);
-    if (removed > 0) await save(kept);
+    if (removed > 0 || !identical(book, raw)) await save(kept);
     return (kept, removed);
   }
 
