@@ -76,7 +76,7 @@ class MainShell extends ConsumerWidget {
     }
     if (ApiConfig.offline) {
       // The offline build keeps passwords, cards and backups on the device, so offer those instead of a sign-in.
-      FormSheet.show<void>(context, title: 'What would you like to save?', child: const _AddChooser());
+      FormSheet.show<void>(context, title: tr('add_options_title'), child: const _AddChooser());
       return;
     }
     FormSheet.show<void>(
@@ -138,7 +138,7 @@ class MainShell extends ConsumerWidget {
             child: Row(
               children: [
                 _NavItem(icon: Icons.home_rounded, label: tr('nav_home'), selected: index == 0, onTap: () => context.go('/home')),
-                _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Money', selected: index == 1, onTap: () => context.go('/money')),
+                _NavItem(icon: Icons.account_balance_wallet_rounded, label: tr('nav_money'), selected: index == 1, onTap: () => context.go('/money')),
                 Expanded(
                   child: Center(
                     child: GestureDetector(
@@ -156,8 +156,8 @@ class MainShell extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _NavItem(icon: Icons.explore_rounded, label: 'Explore', selected: index == 2, onTap: () => context.go('/services')),
-                _NavItem(icon: Icons.person_rounded, label: 'Profile', selected: index == 3, onTap: () => context.go('/settings')),
+                _NavItem(icon: Icons.explore_rounded, label: tr('nav_explore'), selected: index == 2, onTap: () => context.go('/services')),
+                _NavItem(icon: Icons.person_rounded, label: tr('nav_profile'), selected: index == 3, onTap: () => context.go('/settings')),
               ],
             ),
           ),

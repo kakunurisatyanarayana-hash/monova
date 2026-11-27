@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/attention.dart';
 import '../../core/entry_store.dart';
+import '../../core/i18n.dart';
 import '../../core/money_plans.dart';
 import '../../core/notify.dart';
 import '../../core/reminders.dart';
@@ -66,7 +67,7 @@ class _AttentionCardState extends State<AttentionCard> {
           children: [
             Icon(Icons.check_circle_outline_rounded, color: c.income),
             const SizedBox(width: 10),
-            Expanded(child: Text('Nothing needs your attention today.', style: TextStyle(color: c.muted))),
+            Expanded(child: Text(tr('attention_none'), style: TextStyle(color: c.muted))),
           ],
         ),
       );
@@ -79,7 +80,7 @@ class _AttentionCardState extends State<AttentionCard> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Needs attention', style: Theme.of(context).textTheme.titleMedium)),
+              Expanded(child: Text(tr('attention_title'), style: Theme.of(context).textTheme.titleMedium)),
               if (_items.length > shown.length)
                 Text('+${_items.length - shown.length} more', style: TextStyle(color: c.muted, fontSize: 12)),
             ],

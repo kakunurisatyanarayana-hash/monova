@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/entry_store.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/money_plans.dart';
 import '../../core/widgets.dart';
@@ -42,7 +43,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
     final now = DateTime.now();
     final s = _summary;
     return Scaffold(
-      appBar: AppBar(title: const Text('Money')),
+      appBar: AppBar(title: Text(tr('nav_money'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -58,28 +59,28 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Expanded(child: _Figure(label: 'Money in', value: money(s.income / 100), color: c.onAccent)),
-                          Expanded(child: _Figure(label: 'Money out', value: money(s.spent / 100), color: c.onAccent)),
-                          Expanded(child: _Figure(label: 'Left over', value: money(s.savings / 100), color: c.onAccent)),
+                          Expanded(child: _Figure(label: tr('money_in'), value: money(s.income / 100), color: c.onAccent)),
+                          Expanded(child: _Figure(label: tr('money_out'), value: money(s.spent / 100), color: c.onAccent)),
+                          Expanded(child: _Figure(label: tr('money_left'), value: money(s.savings / 100), color: c.onAccent)),
                         ],
                       ),
                     ],
                   ),
           ),
           const SizedBox(height: 18),
-          const SectionTitle('Record and check'),
+          SectionTitle(tr('money_record_check')),
           const SizedBox(height: 8),
-          _MoneyTile(icon: Icons.swap_vert_rounded, title: 'Income and spending', subtitle: 'Add what came in or went out, and see the month', route: '/entries'),
-          _MoneyTile(icon: Icons.receipt_long_rounded, title: 'Purchases and warranties', subtitle: 'What you bought, its warranty and return date', route: '/purchases'),
-          _MoneyTile(icon: Icons.account_balance_outlined, title: 'Loans and borrowing', subtitle: 'Loan instalments, overdue ones, and money you borrowed', route: '/loans'),
-          _MoneyTile(icon: Icons.folder_open_rounded, title: 'Documents and receipts', subtitle: 'Photos of papers, bills and warranty cards', route: '/documents'),
-          _MoneyTile(icon: Icons.picture_as_pdf_rounded, title: 'Monthly report', subtitle: 'Money in and out, spending, budgets and loans as a PDF', route: '/report'),
-          _MoneyTile(icon: Icons.event_repeat_rounded, title: 'Budgets, goals and recurring', subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
-          _MoneyTile(icon: Icons.menu_book_rounded, title: 'Credit book', subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),
-          _MoneyTile(icon: Icons.call_split_rounded, title: 'Split bills and groups', subtitle: 'Share costs and see who pays whom', route: '/tools/split'),
-          _MoneyTile(icon: Icons.apartment_rounded, title: 'Property rent and expenses', subtitle: 'Rent received, deposits and running costs', route: '/property'),
-          _MoneyTile(icon: Icons.credit_card_rounded, title: 'Saved cards', subtitle: 'Card details with a photo, last four digits only', route: '/saved-cards'),
-          _MoneyTile(icon: Icons.calculate_outlined, title: 'Calculators', subtitle: 'Loan, interest, GST, age and more', route: '/tools'),
+          _MoneyTile(icon: Icons.swap_vert_rounded, title: tr('money_income_spending'), subtitle: 'Add what came in or went out, and see the month', route: '/entries'),
+          _MoneyTile(icon: Icons.receipt_long_rounded, title: tr('money_purchases'), subtitle: 'What you bought, its warranty and return date', route: '/purchases'),
+          _MoneyTile(icon: Icons.account_balance_outlined, title: tr('money_loans'), subtitle: 'Loan instalments, overdue ones, and money you borrowed', route: '/loans'),
+          _MoneyTile(icon: Icons.folder_open_rounded, title: tr('money_documents'), subtitle: 'Photos of papers, bills and warranty cards', route: '/documents'),
+          _MoneyTile(icon: Icons.picture_as_pdf_rounded, title: tr('money_report'), subtitle: 'Money in and out, spending, budgets and loans as a PDF', route: '/report'),
+          _MoneyTile(icon: Icons.event_repeat_rounded, title: tr('money_plans'), subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
+          _MoneyTile(icon: Icons.menu_book_rounded, title: tr('money_credit_book'), subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),
+          _MoneyTile(icon: Icons.call_split_rounded, title: tr('money_split'), subtitle: 'Share costs and see who pays whom', route: '/tools/split'),
+          _MoneyTile(icon: Icons.apartment_rounded, title: tr('money_property'), subtitle: 'Rent received, deposits and running costs', route: '/property'),
+          _MoneyTile(icon: Icons.credit_card_rounded, title: tr('money_cards'), subtitle: 'Card details with a photo, last four digits only', route: '/saved-cards'),
+          _MoneyTile(icon: Icons.calculate_outlined, title: tr('money_calculators'), subtitle: 'Loan, interest, GST, age and more', route: '/tools'),
         ],
       ),
     );

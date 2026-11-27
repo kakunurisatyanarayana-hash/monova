@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/notify.dart';
 import '../../core/reminders.dart';
 import '../../core/theme.dart';
@@ -144,9 +145,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
     final coming = [for (final r in open) if (!r.isDueToday(now)) r];
     final done = [for (final r in _all) if (r.done) r]..sort((a, b) => b.dueAt.compareTo(a.dueAt));
     return Scaffold(
-      appBar: AppBar(title: const Text('Reminders')),
+      appBar: AppBar(title: Text(tr('reminders_title'))),
       floatingActionButton: _loaded
-          ? FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add_alarm_rounded), label: const Text('Add reminder'))
+          ? FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add_alarm_rounded), label: Text(tr('add_reminder')))
           : null,
       body: !_loaded
           ? const LoadingBox()
