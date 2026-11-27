@@ -77,3 +77,9 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
+
+// Firebase: the Google services plugin reads google-services.json. It is applied only when that file is present,
+// so builds without it (the offline app) still work. The file is not stored in the repository; see firebase/SETUP.md.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

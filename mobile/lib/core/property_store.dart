@@ -504,6 +504,39 @@ class Tenancy {
       );
 }
 
+/// The label people read for a floor: Basement, Ground floor, 1st Floor, 2nd Floor, 3rd Floor, 4th Floor and so on.
+/// Floors are stored as numbers: 0 is ground, 1 is the first floor, and negative numbers are basements (-1 is Basement).
+String floorLabel(int floor) {
+  if (floor == 0) return 'Ground floor';
+  if (floor < 0) return floor == -1 ? 'Basement' : 'Basement ${-floor}';
+  return '${ordinal(floor)} Floor';
+}
+
+/// The floors offered in the room form: only the floors the owner registered for the property.
+/// The property's "total floors" counts the ground floor, so 4 floors means Ground, 1st, 2nd and 3rd.
+/// [current] is included too, so a room already saved on a floor outside that range still shows its floor.
+List<int> roomFloorOptions({required int propertyFloors, int? current}) {
+  final top = propertyFloors < 1 ? 1 : propertyFloors;
+  final list = [for (var f = 0; f < top; f++) f];
+  if (current != null && !list.contains(current)) {
+    list.add(current);
+    list.sort();
+  }
+  return list;
+}
+
+/// 1st, 2nd, 3rd, 4th, and 11th, 12th, 13th (not 11st, 12nd, 13rd).
+String ordinal(int n) {
+  final tens = n % 100;
+  if (tens >= 11 && tens <= 13) return '${n}th';
+  return switch (n % 10) {
+    1 => '${n}st',
+    2 => '${n}nd',
+    3 => '${n}rd',
+    _ => '${n}th',
+  };
+}
+
 enum RoomStatus { available, partiallyOccupied, fullyOccupied, reserved, vacatingSoon, underMaintenance, temporarilyUnavailable }
 
 String roomStatusLabel(RoomStatus s) => switch (s) {

@@ -22,6 +22,9 @@ const _indiaCentre = LatLng(20.5937, 78.9629);
 const _tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const _userAgentPackage = 'com.monova.monova_app';
 
+/// Distance in metres between two points, for checking whether the pin is still on the chosen place.
+double _distanceMetres(LatLng a, LatLng b) => const Distance().as(LengthUnit.Meter, a, b);
+
 /// Lets the owner move the map under a fixed pin, search for a place, or use the device's location.
 /// Everything still works without location permission, and the address can always be typed by hand.
 class MapPickerScreen extends StatefulWidget {
@@ -40,6 +43,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   List<GeoPlace> _results = const [];
   bool _busy = false;
   String? _message;
+
+  /// The search result the owner chose. Kept so its full address is used as it was found,
+  /// instead of looking the map's centre up again, which can give a different or empty address.
+  GeoPlace? _chosen;
 
   @override
   void dispose() {
@@ -72,7 +79,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   void _showPlace(GeoPlace p) {
     _controller.move(LatLng(p.latitude, p.longitude), 17);
-    setState(() => _results = const []);
+    setState(() {
+      _chosen = p;
+      _results = const [];
+    });
   }
 
   Future<void> _useDeviceLocation() async {
@@ -104,10 +114,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final point = _controller.camera.center;
     setState(() => _busy = true);
     GeoPlace? place;
-    try {
-      place = await _geo.reverse(point.latitude, point.longitude);
-    } catch (_) {
-      place = null;
+    final chosen = _chosen;
+    // Still at the chosen search result: use its address as found. Otherwise look up where the pin is now.
+    if (chosen != null && _distanceMetres(point, LatLng(chosen.latitude, chosen.longitude)) < 30) {
+      place = chosen;
+    } else {
+      try {
+        place = await _geo.reverse(point.latitude, point.longitude);
+      } catch (_) {
+        place = null;
+      }
     }
     if (!mounted) return;
     Navigator.of(context).pop(MapPick(point, place));

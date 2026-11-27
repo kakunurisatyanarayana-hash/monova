@@ -22,6 +22,8 @@
 **/*.jks
 **/*.keystore
 **/key.properties
+# Firebase app config downloaded from the Firebase console. Keep it out of the repository; see firebase/SETUP.md.
+**/google-services.json
 **/local.properties
 **/.env
 

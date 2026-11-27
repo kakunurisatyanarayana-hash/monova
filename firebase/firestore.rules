@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// MONOVA shared store: complaints and reviews only. Resident names, phone numbers, emails and financial records are
+// never stored here (see mobile/lib/core/cloud_docs.dart). Each record belongs to the owner who created it,
+// so one owner's hostels cannot be read or changed by another owner.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function verifiedOwner() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    // Complaints: the owner who created one can read and update it. Nothing is publicly readable.
+    match /complaints/{ticket} {
+      allow create: if verifiedOwner()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['hostel', 'ticket', 'room', 'floor', 'category', 'description', 'status', 'createdAt', 'updatedAt', 'resolution', 'ownerUid'])
+        && request.resource.data.ticket == ticket;
+      allow read: if verifiedOwner() && resource.data.ownerUid == request.auth.uid;
+      allow update: if verifiedOwner()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['hostel', 'ticket', 'room', 'floor', 'category', 'description', 'status', 'createdAt', 'updatedAt', 'resolution', 'ownerUid']);
+      allow delete: if false;
+    }
+
+    // Reviews and feedback: same rule. An owner cannot change a resident's review; updates are refused.
+    match /feedback/{id} {
+      allow create: if verifiedOwner()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['hostel', 'kind', 'rating', 'text', 'createdAt', 'ownerUid']);
+      allow read: if verifiedOwner() && resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

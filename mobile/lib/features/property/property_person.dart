@@ -45,7 +45,7 @@ PropertyBook withPerson(PropertyBook book, Person p) => book.copyWith(
     );
 
 /// The person form: name, mobile, address, emergency contact, and optional email and ID.
-/// Everything except email and ID is required, so every person has complete contact details.
+/// Everything except email and ID is required. An email, when given, must be valid and unique.
 class PersonForm extends StatefulWidget {
   const PersonForm({
     super.key,
@@ -54,6 +54,7 @@ class PersonForm extends StatefulWidget {
     this.role = 'Tenant',
     this.prefillName = '',
     this.prefillPhone = '',
+    this.others = const [],
   });
 
   final Person? initial;
@@ -61,6 +62,9 @@ class PersonForm extends StatefulWidget {
   final String role;
   final String prefillName;
   final String prefillPhone;
+
+  /// The people already saved, so a duplicate email can be refused.
+  final List<Person> others;
 
   @override
   State<PersonForm> createState() => _PersonFormState();
@@ -95,6 +99,18 @@ class _PersonFormState extends State<PersonForm> {
     });
   }
 
+  static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+  bool _validEmail(String text) => _emailPattern.hasMatch(text.trim());
+
+  /// True when another saved person (not this one) already has the same email, ignoring case.
+  bool _duplicateEmail(String text) {
+    final e = text.trim().toLowerCase();
+    if (e.isEmpty) return false;
+    final self = widget.initial?.id;
+    return widget.others.any((p) => p.id != self && p.email.trim().toLowerCase() == e);
+  }
+
   void _save() {
     final name = _name.text.trim();
     String? problem;
@@ -102,6 +118,10 @@ class _PersonFormState extends State<PersonForm> {
       problem = 'Enter the full name.';
     } else if (!_validPhone(_phone.text)) {
       problem = 'Enter a mobile number with at least 10 digits.';
+    } else if (_email.text.trim().isNotEmpty && !_validEmail(_email.text)) {
+      problem = 'Enter a valid email, for example name@example.com, or leave it empty.';
+    } else if (_duplicateEmail(_email.text)) {
+      problem = 'Another resident already uses this email. Check the person or use a different email.';
     } else if (_address.text.trim().isEmpty) {
       problem = 'Enter the address.';
     } else if (_emName.text.trim().isEmpty || !_validPhone(_emPhone.text)) {
@@ -152,7 +172,17 @@ class _PersonFormState extends State<PersonForm> {
         const SizedBox(height: 12),
         TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Mobile number *')),
         const SizedBox(height: 12),
-        TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email (optional)')),
+        TextField(
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            labelText: 'Email (optional)',
+            helperText: 'Optional. If you add one, it must be unique to this resident.',
+            errorText: _email.text.trim().isNotEmpty && !_validEmail(_email.text) ? 'Enter a valid email, for example name@example.com' : null,
+          ),
+        ),
         const SizedBox(height: 12),
         TextField(controller: _address, textCapitalization: TextCapitalization.sentences, minLines: 1, maxLines: 3, decoration: const InputDecoration(labelText: 'Permanent address *')),
         const SizedBox(height: 12),
@@ -306,7 +336,7 @@ Future<Person?> addPersonFlow(BuildContext context, PropertyBook book, String pr
   return FormSheet.show<Person>(
     context,
     title: 'Person details',
-    child: PersonForm(propertyId: propertyId, role: role, prefillName: name, prefillPhone: phone),
+    child: PersonForm(propertyId: propertyId, role: role, prefillName: name, prefillPhone: phone, others: book.persons),
   );
 }
 
@@ -370,7 +400,7 @@ class _PersonScreenState extends State<PersonScreen> {
   }
 
   Future<void> _edit(Person p) async {
-    final updated = await FormSheet.show<Person>(context, title: 'Edit details', child: PersonForm(initial: p));
+    final updated = await FormSheet.show<Person>(context, title: 'Edit details', child: PersonForm(initial: p, others: _book.persons));
     if (updated == null) return;
     await _apply(_book.copyWith(
       persons: [for (final x in _book.persons) x.id == p.id ? updated : x],

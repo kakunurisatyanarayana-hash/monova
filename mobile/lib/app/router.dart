@@ -37,6 +37,9 @@ import '../features/shell/main_shell.dart';
 import '../features/tools/age_and_rent_screens.dart';
 import '../features/tools/calculator_screen.dart';
 import '../features/market/live_market_screen.dart';
+import '../features/property/hostel_screens.dart';
+import '../features/notifications/notification_screen.dart';
+import '../features/cloud/owner_account_screen.dart';
 import '../features/tools/income_tax_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
@@ -111,6 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/loans/:id', builder: (_, s) => LoanDetailScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),
           GoRoute(path: '/property/:id', builder: (_, s) => PropertyDashboardScreen(id: s.pathParameters['id']!)),
+          GoRoute(path: '/notifications', builder: (_, __) => _form(const NotificationCenterScreen())),
+          GoRoute(path: '/owner-account', builder: (_, __) => _form(const OwnerAccountScreen())),
+          GoRoute(path: '/property/:id/hub', builder: (_, s) => HostelHubScreen(id: s.pathParameters['id']!)),
+          GoRoute(path: '/property/:id/complaints', builder: (_, s) => ComplaintsScreen(id: s.pathParameters['id']!)),
+          GoRoute(path: '/property/:id/feedback', builder: (_, s) => FeedbackScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/person/:id', builder: (_, s) => PersonScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/saved-cards', builder: (_, __) => const SavedCardsScreen()),
           GoRoute(path: '/backup', builder: (_, __) => _form(const BackupScreen())),

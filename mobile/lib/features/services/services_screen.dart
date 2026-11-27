@@ -53,6 +53,8 @@ const _sections = [
   ]),
   ServiceSection('Reminders and bills', subtitle: 'Bill dates, EMIs, SIP days, warranty ends and rent days all raise a reminder here.', [
     ServiceItem(title: 'Reminders', icon: Icons.notifications_active_rounded, route: '/reminders'),
+    ServiceItem(title: 'Notifications', icon: Icons.notifications_rounded, route: '/notifications'),
+    ServiceItem(title: 'Owner account and sharing', icon: Icons.cloud_sync_rounded, route: '/owner-account'),
     ServiceItem(title: 'Budgets, goals and recurring bills', icon: Icons.event_repeat_rounded, route: '/plans'),
     ServiceItem(title: 'SIP and monthly savings', icon: Icons.trending_up_rounded, route: '/sip'),
   ]),
