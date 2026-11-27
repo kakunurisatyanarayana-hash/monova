@@ -179,7 +179,7 @@ class TermInput extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 120,
+            width: 150,
             child: DropdownButtonFormField<TermUnit>(
               key: ValueKey('unit-${unit.name}'),
               initialValue: unit,

@@ -225,6 +225,11 @@ class _AccountFormState extends State<_AccountForm> {
     });
   }
   late final _rate = TextEditingController(text: (widget.initial?.annualRatePercent ?? 24).toString());
+  String _rateHelp() {
+    final r = double.tryParse(_rate.text.trim());
+    if (r == null) return 'Charged every day on the amount owed, divided by 365.';
+    return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed. About Rs ${(r / 12).toStringAsFixed(2)} for every Rs 100 each month.';
+  }
   late bool _compound = widget.initial?.compound ?? false;
   String? _error;
 
@@ -268,8 +273,9 @@ class _AccountFormState extends State<_AccountForm> {
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _rate,
+          onChanged: (_) => setState(() {}),
           keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Interest per year (%)', helperText: 'Charged every day on the amount owed, divided by 365.'),
+          decoration: InputDecoration(labelText: 'Interest per year (%)', helperText: _rateHelp()),
         ),
         const SizedBox(height: 8),
         SwitchListTile(
