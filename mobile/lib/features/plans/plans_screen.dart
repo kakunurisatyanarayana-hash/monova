@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/entry_store.dart';
@@ -364,7 +365,7 @@ class _BudgetFormState extends State<_BudgetForm> {
       children: [
         TextField(controller: _category, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Category')),
         const SizedBox(height: 12),
-        TextField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Monthly limit', prefixText: '₹ ')),
+        TextField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Monthly limit', prefixText: '₹ ')),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
@@ -429,7 +430,7 @@ class _GoalFormState extends State<_GoalForm> {
       children: [
         TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Goal name')),
         const SizedBox(height: 12),
-        TextField(controller: _target, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Target amount', prefixText: '₹ ')),
+        TextField(controller: _target, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Target amount', prefixText: '₹ ')),
         const SizedBox(height: 12),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -485,7 +486,7 @@ class _AmountFormState extends State<_AmountForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(controller: _amount, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: widget.label, prefixText: '₹ ')),
+        TextField(controller: _amount, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: InputDecoration(labelText: widget.label, prefixText: '₹ ')),
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
@@ -568,7 +569,7 @@ class _RecurringFormState extends State<_RecurringForm> {
         const SizedBox(height: 12),
         TextField(controller: _category, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Category (for example Housing, Internet)')),
         const SizedBox(height: 12),
-        TextField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount each month', prefixText: '₹ ')),
+        TextField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount each month', prefixText: '₹ ')),
         const SizedBox(height: 12),
         DropdownButtonFormField<int>(
           initialValue: _day,

@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/attachments.dart';
@@ -321,15 +322,15 @@ class _PurchaseFormState extends State<_PurchaseForm> {
         const SizedBox(height: 12),
         TextField(controller: _retailer, textInputAction: TextInputAction.next, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Shop or website (optional)')),
         const SizedBox(height: 12),
-        TextField(controller: _amount, textInputAction: TextInputAction.next, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ ')),
+        TextField(controller: _amount, textInputAction: TextInputAction.next, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ ')),
         const SizedBox(height: 12),
         DateSelector(label: 'Purchase date', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _warranty, textInputAction: TextInputAction.next, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Warranty (months)', helperText: '0 for none'))),
+            Expanded(child: TextField(controller: _warranty, textInputAction: TextInputAction.next, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Warranty (months)', helperText: '0 for none'))),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _returnDays, textInputAction: TextInputAction.done, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Return within (days)', helperText: '0 for none'))),
+            Expanded(child: TextField(controller: _returnDays, textInputAction: TextInputAction.done, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Return within (days)', helperText: '0 for none'))),
           ],
         ),
         const SizedBox(height: 8),

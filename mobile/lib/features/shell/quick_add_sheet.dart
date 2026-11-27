@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -145,7 +146,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
           TextFormField(
             controller: _amount,
             autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
             decoration: const InputDecoration(prefixText: '₹ ', labelText: 'Amount'),
             validator: validateAmount,
@@ -233,7 +234,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _rate,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
               decoration: const InputDecoration(labelText: 'Annual interest % (0 for none)'),
             ),
           ],

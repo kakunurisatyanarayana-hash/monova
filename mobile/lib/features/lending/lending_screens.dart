@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -248,9 +249,9 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
         children: [
           TextFormField(controller: _who, decoration: const InputDecoration(labelText: 'Borrowed from'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
-          TextFormField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Annual interest % (0 if none)')),
+          TextFormField(controller: _rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Annual interest % (0 if none)')),
           const SizedBox(height: 12),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Money arrived in'),
           const SizedBox(height: 12),
@@ -316,7 +317,7 @@ class _RepayFormState extends ConsumerState<_RepayForm> {
           const SizedBox(height: 16),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Pay from'),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Repayment', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Repayment', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record repayment')),
         ],
@@ -375,7 +376,7 @@ class _ReceivableFormState extends ConsumerState<_ReceivableForm> {
         children: [
           TextFormField(controller: _who, decoration: const InputDecoration(labelText: 'Lent to'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Money left from'),
           const SizedBox(height: 12),
@@ -441,7 +442,7 @@ class _CollectFormState extends ConsumerState<_CollectForm> {
           const SizedBox(height: 16),
           _AccountPicker(value: _accountId, onChanged: (v) => setState(() => _accountId = v), label: 'Money arrives in'),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount received', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount received', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record collection')),
         ],
@@ -661,14 +662,14 @@ class _LoanFormState extends ConsumerState<_LoanForm> {
           const SizedBox(height: 12),
           TextFormField(controller: _lender, decoration: const InputDecoration(labelText: 'Lender'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: TextFormField(
                   controller: _rate,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
                   decoration: const InputDecoration(labelText: 'Interest % a year'),
                   validator: (v) {
                     final r = double.tryParse(v ?? '');
@@ -680,7 +681,7 @@ class _LoanFormState extends ConsumerState<_LoanForm> {
               Expanded(
                 child: TextFormField(
                   controller: _term,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters,
                   decoration: const InputDecoration(labelText: 'Months'),
                   validator: (v) {
                     final t = int.tryParse(v ?? '');

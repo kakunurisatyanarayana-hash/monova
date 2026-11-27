@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -509,7 +510,7 @@ class _LoanFormState extends State<_LoanForm> {
         const SizedBox(height: 12),
         TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: isEmi ? 'Lender *' : 'Borrowed from *')),
         const SizedBox(height: 12),
-        TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: isEmi ? 'Loan amount *' : 'Amount borrowed *', prefixText: '₹ ')),
+        TextField(controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: InputDecoration(labelText: isEmi ? 'Loan amount *' : 'Amount borrowed *', prefixText: '₹ ')),
         if (isEmi) ...[
           const SizedBox(height: 12),
           RateInput(
@@ -519,7 +520,7 @@ class _LoanFormState extends State<_LoanForm> {
             onChanged: () => setState(() {}),
           ),
           const SizedBox(height: 12),
-          TextField(controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Monthly instalments *')),
+          TextField(controller: _months, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Monthly instalments *')),
         ],
         const SizedBox(height: 12),
         DateSelector(label: isEmi ? 'Loan started on' : 'Borrowed on', value: _start, firstYear: DateTime.now().year - 30, lastYear: DateTime.now().year + 1, onChanged: (d) => setState(() => _start = d)),
@@ -575,7 +576,7 @@ class _PaymentFormState extends State<_PaymentForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(controller: _amount, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ ')),
+        TextField(controller: _amount, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ ')),
         const SizedBox(height: 12),
         DateSelector(label: 'Paid on', value: _date, firstYear: DateTime.now().year - 30, lastYear: DateTime.now().year + 1, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),

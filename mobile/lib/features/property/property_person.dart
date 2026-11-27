@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -149,7 +150,7 @@ class _PersonFormState extends State<PersonForm> {
         ],
         TextField(controller: _name, autofocus: widget.initial == null, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Full name *')),
         const SizedBox(height: 12),
-        TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Mobile number *')),
+        TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Mobile number *')),
         const SizedBox(height: 12),
         TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email (optional)')),
         const SizedBox(height: 12),
@@ -159,7 +160,7 @@ class _PersonFormState extends State<PersonForm> {
           children: [
             Expanded(child: TextField(controller: _emName, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Emergency contact name *'))),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _emPhone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Emergency number *'))),
+            Expanded(child: TextField(controller: _emPhone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Emergency number *'))),
           ],
         ),
         const SizedBox(height: 12),

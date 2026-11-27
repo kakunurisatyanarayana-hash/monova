@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -83,7 +84,7 @@ class _BillEditFormState extends State<BillEditForm> {
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _total,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Total amount', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),

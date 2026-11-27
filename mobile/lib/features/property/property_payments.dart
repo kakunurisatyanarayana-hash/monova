@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
@@ -127,7 +128,7 @@ class _PaymentFormState extends State<PaymentForm> {
         TextField(
           controller: _amount,
           autofocus: widget.initial == null,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),

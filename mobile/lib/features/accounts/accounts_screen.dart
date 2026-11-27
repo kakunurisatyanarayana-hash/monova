@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -160,7 +161,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _opening,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters,
             decoration: const InputDecoration(labelText: 'Opening balance', prefixText: '₹ '),
             validator: (v) => double.tryParse((v ?? '').replaceAll(',', '')) == null ? 'Enter a number' : null,
           ),
@@ -415,15 +416,15 @@ class _CardFormState extends ConsumerState<_CardForm> {
           const SizedBox(height: 12),
           TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Card name'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _last4, keyboardType: TextInputType.number, maxLength: 4, decoration: const InputDecoration(labelText: 'Last four digits', counterText: ''), validator: (v) => (v == null || v.length != 4 || int.tryParse(v) == null) ? 'Enter four digits' : null),
+          TextFormField(controller: _last4, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, maxLength: 4, decoration: const InputDecoration(labelText: 'Last four digits', counterText: ''), validator: (v) => (v == null || v.length != 4 || int.tryParse(v) == null) ? 'Enter four digits' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Credit limit', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _limit, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Credit limit', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: TextFormField(controller: _statement, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Statement day'), validator: _day)),
+              Expanded(child: TextFormField(controller: _statement, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Statement day'), validator: _day)),
               const SizedBox(width: 12),
-              Expanded(child: TextFormField(controller: _due, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Due day'), validator: _day)),
+              Expanded(child: TextFormField(controller: _due, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Due day'), validator: _day)),
             ],
           ),
           const SizedBox(height: 20),
@@ -499,7 +500,7 @@ class _PayCardFormState extends ConsumerState<_PayCardForm> {
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 20),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Pay')),
         ],

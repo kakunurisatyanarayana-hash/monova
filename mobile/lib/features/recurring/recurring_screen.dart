@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -167,7 +168,7 @@ class _RecurringFormState extends ConsumerState<_RecurringForm> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
             validator: validateAmount,
           ),

@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -252,7 +253,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           const SizedBox(height: 14),
           TextFormField(
             controller: _phone,
-            keyboardType: TextInputType.phone,
+            keyboardType: TextInputType.phone, inputFormatters: phoneFormatters,
             autofillHints: const [AutofillHints.telephoneNumber],
             decoration: const InputDecoration(labelText: 'Mobile number', prefixText: '+91 ', prefixIcon: Icon(Icons.phone_iphone_rounded)),
             validator: _validatePhone,
@@ -277,7 +278,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         const SizedBox(height: 14),
         TextField(
           controller: _code,
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters,
           maxLength: 6,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: 10),

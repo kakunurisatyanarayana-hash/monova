@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -343,7 +344,7 @@ class _EntryFormState extends State<_EntryForm> {
         TextField(
           controller: _amount,
           textInputAction: TextInputAction.next,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),

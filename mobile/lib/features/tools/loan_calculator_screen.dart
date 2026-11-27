@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
@@ -372,6 +373,7 @@ class _LoanCalculatorScreenState extends State<LoanCalculatorScreen> {
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.numberWithOptions(decimal: !integer),
+        inputFormatters: integer ? wholeNumberFormatters : amountFormatters,
         decoration: InputDecoration(labelText: label, prefixText: prefix),
         onChanged: (_) => onChanged?.call(),
       ),

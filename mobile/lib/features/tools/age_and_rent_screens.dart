@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/date_calc.dart';
@@ -69,7 +70,7 @@ class _AgeCalculatorScreenState extends State<AgeCalculatorScreen> {
                 child: TextFormField(
                   key: const ValueKey('utc-offset'),
                   initialValue: _utcOffset.toString(),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters,
                   decoration: const InputDecoration(labelText: 'UTC offset', helperText: 'India: 5.5'),
                   onChanged: (v) {
                     final parsed = double.tryParse(v.trim());
@@ -249,14 +250,14 @@ class _RentCalculatorScreenState extends State<RentCalculatorScreen> {
         children: [
           TextField(
             controller: _rent,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             decoration: const InputDecoration(labelText: 'Monthly rent', prefixText: '₹ '),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _increase,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             decoration: const InputDecoration(labelText: 'Increase every year (%)'),
             onChanged: (_) => setState(() {}),
           ),
@@ -277,7 +278,7 @@ class _RentCalculatorScreenState extends State<RentCalculatorScreen> {
           const SizedBox(height: 14),
           TextField(
             controller: _deposit,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             decoration: const InputDecoration(labelText: 'Security deposit (optional)', prefixText: '₹ '),
             onChanged: (_) => setState(() {}),
           ),

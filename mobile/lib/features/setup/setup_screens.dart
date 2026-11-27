@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -102,7 +103,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               const SizedBox(height: 12),
               TextField(textInputAction: TextInputAction.next, 
                 controller: _phone,
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.phone, inputFormatters: phoneFormatters,
                 decoration: const InputDecoration(labelText: 'Phone (optional)', prefixIcon: Icon(Icons.phone_outlined)),
               ),
               const SizedBox(height: 12),

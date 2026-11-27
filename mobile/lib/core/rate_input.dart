@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import 'rate_units.dart';
@@ -28,7 +29,7 @@ class RateInput extends StatelessWidget {
       children: [
         TextField(
           controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: InputDecoration(labelText: unit.fieldLabel),
           onChanged: (_) {
             onChanged?.call();

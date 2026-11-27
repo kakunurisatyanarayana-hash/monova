@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -97,7 +98,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         title: const Text('Record a refund'),
         content: TextField(
           controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: InputDecoration(labelText: 'Refund amount (up to ${money(t.amount - t.refundedTotal)})'),
         ),
         actions: [

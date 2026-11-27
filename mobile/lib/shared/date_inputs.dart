@@ -1,5 +1,6 @@
 ﻿import 'dart:math' as math;
 
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../core/date_calc.dart';
@@ -171,7 +172,7 @@ class TermInput extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters,
               decoration: InputDecoration(labelText: label),
               onChanged: (_) => onChanged(),
             ),

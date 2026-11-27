@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -750,7 +751,7 @@ class _ExpenseFormState extends State<_ExpenseForm> {
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),

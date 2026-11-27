@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -332,11 +333,11 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Loan amount', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           RateInput(controller: _rate, unit: _unit, onUnitChanged: (u) => setState(() => _unit = u), onChanged: _calculate),
           const SizedBox(height: 12),
-          TextField(textInputAction: TextInputAction.next, controller: _months, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Term (months)'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _months, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Term (months)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
           if (_error != null) Text(_error!, style: TextStyle(color: c.expense)),
           if (r != null)
@@ -440,11 +441,11 @@ class _InterestCalculatorScreenState extends State<InterestCalculatorScreen> {
             onSelectionChanged: (s) => setState(() => _compound = s.first),
           ),
           const SizedBox(height: 16),
-          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _principal, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Principal', prefixText: '₹ '), onChanged: (_) => _calculate()),
           const SizedBox(height: 12),
           RateInput(controller: _rate, unit: _unit, onUnitChanged: (u) => setState(() => _unit = u), onChanged: _calculate),
           const SizedBox(height: 12),
-          TextField(textInputAction: TextInputAction.next, controller: _years, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Time (years)'), onChanged: (_) => _calculate()),
+          TextField(textInputAction: TextInputAction.next, controller: _years, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Time (years)'), onChanged: (_) => _calculate()),
           const SizedBox(height: 20),
           if (_error != null) Text(_error!, style: TextStyle(color: c.expense)),
           if (_error == null)
@@ -762,7 +763,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
           const SizedBox(height: 12),
           TextField(controller: _billNotes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Who had what, anything to remember', alignLabelWithHint: true)),
           const SizedBox(height: 12),
-          TextField(textInputAction: TextInputAction.next, controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
+          TextField(textInputAction: TextInputAction.next, controller: _total, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Bill total', prefixText: '₹ ')),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _payer,
@@ -803,7 +804,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                       width: 100,
                       child: TextField(textInputAction: TextInputAction.next, 
                         controller: _values[i],
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
                         decoration: InputDecoration(isDense: true, labelText: _mode == 'percent' ? '%' : (_mode == 'shares' ? 'Shares' : 'Amount')),
                       ),
                     ),

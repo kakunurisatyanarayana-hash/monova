@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
@@ -1047,15 +1048,15 @@ class _CheckInFormState extends State<_CheckInForm> {
         const SizedBox(height: 12),
         TextField(
           controller: _rent,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: InputDecoration(labelText: 'Rent or tariff (${room.billing.toLowerCase()})', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _advance, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Advance paid', prefixText: '₹ '))),
+            Expanded(child: TextField(controller: _advance, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Advance paid', prefixText: '₹ '))),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _deposit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Deposit', prefixText: '₹ '))),
+            Expanded(child: TextField(controller: _deposit, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Deposit', prefixText: '₹ '))),
           ],
         ),
         const SizedBox(height: 12),
@@ -1129,7 +1130,7 @@ class _CheckOutFormState extends State<_CheckOutForm> {
         const SizedBox(height: 12),
         TextField(
           controller: _deduction,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Deduction from deposit', prefixText: '₹ '),
           onChanged: (_) => setState(() {}),
         ),
@@ -1237,7 +1238,7 @@ class _RoomFormState extends State<_RoomForm> {
       children: [
         TextField(controller: _number, autofocus: widget.initial == null, decoration: const InputDecoration(labelText: 'Room number or name', hintText: '101, Garden view')),
         const SizedBox(height: 12),
-        TextField(controller: _floor, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Floor', helperText: '0 for ground')),
+        TextField(controller: _floor, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Floor', helperText: '0 for ground')),
         const SizedBox(height: 14),
         Text('Sharing: how many people share this room', style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
@@ -1268,7 +1269,7 @@ class _RoomFormState extends State<_RoomForm> {
           const SizedBox(height: 10),
           TextField(
             controller: _moreCtrl,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters,
             decoration: const InputDecoration(labelText: 'Number of people (7 or more)'),
             onChanged: (v) => setState(() => _beds = int.tryParse(v.trim()) ?? _beds),
           ),
@@ -1289,7 +1290,7 @@ class _RoomFormState extends State<_RoomForm> {
             Expanded(
               child: TextField(
                 controller: _rent,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
                 decoration: const InputDecoration(labelText: 'Rent or tariff', prefixText: '₹ '),
               ),
             ),
@@ -1508,13 +1509,13 @@ class _PropertyFormState extends State<_PropertyForm> {
           ],
         ),
         const SizedBox(height: 12),
-        TextField(controller: _pin, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'PIN code', helperText: '6 digits')),
+        TextField(controller: _pin, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'PIN code', helperText: '6 digits')),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _lat, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), decoration: const InputDecoration(labelText: 'Latitude (optional)'))),
+            Expanded(child: TextField(controller: _lat, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters, decoration: const InputDecoration(labelText: 'Latitude (optional)'))),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _lng, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), decoration: const InputDecoration(labelText: 'Longitude (optional)'))),
+            Expanded(child: TextField(controller: _lng, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true), inputFormatters: signedDecimalFormatters, decoration: const InputDecoration(labelText: 'Longitude (optional)'))),
           ],
         ),
         SwitchListTile(
@@ -1527,15 +1528,15 @@ class _PropertyFormState extends State<_PropertyForm> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Property phone'))),
+            Expanded(child: TextField(controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Property phone'))),
             const SizedBox(width: 12),
-            Expanded(child: TextField(controller: _floors, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Total floors *'))),
+            Expanded(child: TextField(controller: _floors, keyboardType: TextInputType.number, inputFormatters: wholeNumberFormatters, decoration: const InputDecoration(labelText: 'Total floors *'))),
           ],
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _rent,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Default rent or tariff (optional)', prefixText: '₹ '),
         ),
         const SizedBox(height: 18),
@@ -1549,7 +1550,7 @@ class _PropertyFormState extends State<_PropertyForm> {
         const SizedBox(height: 10),
         TextField(controller: _ownerName, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Owner name *')),
         const SizedBox(height: 12),
-        TextField(controller: _ownerPhone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Owner mobile *')),
+        TextField(controller: _ownerPhone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Owner mobile *')),
         const SizedBox(height: 12),
         TextField(controller: _ownerEmail, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Owner email (optional)')),
         const SizedBox(height: 12),

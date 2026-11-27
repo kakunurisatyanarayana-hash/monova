@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -264,11 +265,11 @@ class _AccountFormState extends State<_AccountForm> {
 
         TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone (optional)')),
+        TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Phone (optional)')),
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _rate,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Interest per year (%)', helperText: 'Charged every day on the amount owed, divided by 365.'),
         ),
         const SizedBox(height: 8),
@@ -762,13 +763,13 @@ class _BillFormState extends State<_BillForm> {
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _final,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: '₹ '),
         ),
         if (_error != null) ...[
@@ -823,7 +824,7 @@ class _PaymentFormState extends State<_PaymentForm> {
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 
           controller: _amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
           decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ '),
         ),
         const SizedBox(height: 12),

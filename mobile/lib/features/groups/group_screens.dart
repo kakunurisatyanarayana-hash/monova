@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -462,7 +463,7 @@ class _SettleFormState extends ConsumerState<_SettleForm> {
             ),
           ),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 16),
           FilledButton(onPressed: _saving ? null : _save, child: const Text('Record settlement')),
         ],
@@ -577,7 +578,7 @@ class _GroupExpenseFormState extends ConsumerState<_GroupExpenseForm> {
         children: [
           TextFormField(controller: _description, decoration: const InputDecoration(labelText: 'What was it for?'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
           const SizedBox(height: 12),
-          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Total amount', prefixText: '₹ '), validator: validateAmount),
+          TextFormField(controller: _amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters, decoration: const InputDecoration(labelText: 'Total amount', prefixText: '₹ '), validator: validateAmount),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _payerId,
@@ -635,7 +636,7 @@ class _GroupExpenseFormState extends ConsumerState<_GroupExpenseForm> {
                     child: TextField(
                       controller: _values[m.id],
                       enabled: _included.contains(m.id),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
                       decoration: InputDecoration(isDense: true, labelText: _mode == 'Percent' ? '%' : (_mode == 'Shares' ? 'Shares' : 'Amount')),
                     ),
                   ),

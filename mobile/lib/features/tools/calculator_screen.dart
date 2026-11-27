@@ -1,3 +1,4 @@
+import 'package:monova_app/core/input_rules.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/calculator_engine.dart';
@@ -391,7 +392,7 @@ class _GstCalculatorScreenState extends State<GstCalculatorScreen> {
           const SizedBox(height: 14),
           TextField(
             controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
             decoration: InputDecoration(labelText: _addGst ? 'Price before GST' : 'Price including GST', prefixText: '₹ '),
             onChanged: (_) => setState(() {}),
           ),
