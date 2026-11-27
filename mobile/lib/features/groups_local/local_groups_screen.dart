@@ -239,7 +239,7 @@ class _GroupFormState extends State<_GroupForm> {
     }
     final stamp = DateTime.now().microsecondsSinceEpoch;
     final members = [for (var i = 0; i < names.length; i++) GroupMember(id: '${stamp}_$i', name: names[i])];
-    Navigator.of(context).pop(LocalGroup(id: '$stamp', name: name, members: members, expenses: const []));
+    Navigator.of(context).pop(LocalGroup(id: '$stamp', name: name, members: members, expenses: const [], meId: members.first.id));
   }
 
   @override
@@ -324,6 +324,20 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
     setState(() => _group = updated);
     final all = await GroupStore.load();
     await GroupStore.save([for (final g in all) g.id == updated.id ? updated : g]);
+  }
+
+  /// Sends a reminder to someone who owes you, through the phone's share sheet. Nothing is sent automatically.
+  Future<void> _remind(LocalGroup group, ({String from, String to, int cents}) s) async {
+    final text = 'Hi ${group.nameOf(s.from)}, you owe ${money(s.cents / 100)} for ${group.name}. Please pay when you can. Thank you.';
+    await shareText(text, subject: group.name);
+  }
+
+  /// One line for the group: what other people owe you, and what you owe them.
+  String _owedSummary(LocalGroup g) {
+    final me = g.myId;
+    final owedToMe = g.settlements.where((s) => s.to == me).fold<int>(0, (t, s) => t + s.cents);
+    final iOwe = g.settlements.where((s) => s.from == me).fold<int>(0, (t, s) => t + s.cents);
+    return 'Owed to you: ${money(owedToMe / 100)} · You owe: ${money(iOwe / 100)}';
   }
 
   Future<void> _addExpense() async {
@@ -522,6 +536,7 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Who pays whom', style: Theme.of(context).textTheme.titleMedium),
+                          Text(_owedSummary(group), style: TextStyle(color: c.muted, fontSize: 12)),
                           const SizedBox(height: 10),
                           if (group.settlements.isEmpty)
                             Text(group.expenses.isEmpty ? 'Nothing to settle yet.' : 'Everyone is settled.', style: TextStyle(color: c.muted))
@@ -532,7 +547,8 @@ class _LocalGroupDetailScreenState extends State<LocalGroupDetailScreen> {
                                 child: Row(
                                   children: [
                                     Expanded(child: Text('${group.nameOf(s.from)} pays ${group.nameOf(s.to)} ${money(s.cents / 100)}')),
-                                    TextButton(onPressed: () => _recordSettlement(s), child: const Text('Mark paid')),
+                                    if (s.to == group.myId) TextButton(onPressed: () => _remind(group, s), child: const Text('Remind')),
+                                    TextButton(onPressed: () => _recordSettlement(s), child: Text(s.from == group.myId ? 'I paid' : 'They paid')),
                                   ],
                                 ),
                               ),

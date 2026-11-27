@@ -1,4 +1,5 @@
-﻿import 'local_store.dart';
+import 'entry_store.dart';
+import 'local_store.dart';
 
 const ledgerKey = 'monova.ledger';
 
@@ -204,6 +205,7 @@ class LedgerStatement {
     required this.lines,
     required this.days,
     required this.interestByMonth,
+    this.interestPaidByPayment = const {},
     required this.totalBilledCents,
     required this.totalPaidCents,
   });
@@ -224,6 +226,9 @@ class LedgerStatement {
 
   /// Interest per calendar month (key "yyyy-mm"), in cents.
   final Map<String, int> interestByMonth;
+
+  /// The part of each payment (by payment id) that cleared interest.
+  final Map<String, int> interestPaidByPayment;
   final int totalBilledCents;
   final int totalPaidCents;
 
@@ -262,6 +267,7 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   final lines = <StatementLine>[];
   final days = <DayRow>[];
   final byMonth = <String, double>{};
+  final interestPaid = <String, int>{};
   DateTime? lastRowDay;
 
   var day = start;
@@ -294,6 +300,7 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
       for (final e in todaysPayments) {
         var left = e.cents.toDouble();
         final toInterest = left < interest ? left : interest;
+        interestPaid[e.id] = toInterest.round();
         interest -= toInterest;
         left -= toInterest;
         principal -= left;
@@ -370,6 +377,7 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
     lines: withBalance,
     days: days,
     interestByMonth: monthTotals,
+    interestPaidByPayment: interestPaid,
     totalBilledCents: billed,
     totalPaidCents: paid,
   );
@@ -390,5 +398,36 @@ class CreditLedgerStore {
   static Future<void> save(List<CreditAccount> accounts) async {
     final store = await LocalStore.open();
     await store.writeList(ledgerKey, [for (final a in accounts) a.toJson()]);
+    await syncCreditInterest(accounts);
   }
+}
+
+/// Interest received from customers, as income on the day it is paid. Each payment clears the interest owed first,
+/// so the part that cleared interest is the interest received. The rest of a payment is the customer paying back what they owed, not income.
+List<MoneyEntry> creditInterestEntries(List<CreditAccount> accounts) {
+  final out = <MoneyEntry>[];
+  for (final a in accounts) {
+    final statement = computeStatement(a, DateTime.now());
+    for (final p in a.payments) {
+      final cents = statement.interestPaidByPayment[p.id] ?? 0;
+      if (cents <= 0) continue;
+      out.add(MoneyEntry(
+        id: 'cint-${a.id}-${p.id}',
+        income: true,
+        title: 'Interest from ${a.name}',
+        category: 'Interest received',
+        cents: cents,
+        date: p.date,
+        notes: 'Part of a payment that cleared interest',
+      ));
+    }
+  }
+  return out;
+}
+
+/// Keeps the credit interest entries in Monova Finance in step with the accounts.
+Future<void> syncCreditInterest(List<CreditAccount> accounts) async {
+  final entries = await EntryStore.loadEntries();
+  final kept = [for (final e in entries) if (!e.id.startsWith('cint-')) e];
+  await EntryStore.saveEntries([...kept, ...creditInterestEntries(accounts)]);
 }

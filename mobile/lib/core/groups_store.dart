@@ -1,3 +1,5 @@
+import 'entry_store.dart';
+
 import 'finance_calc.dart';
 import 'local_store.dart';
 
@@ -73,7 +75,7 @@ class GroupPayment {
 }
 
 class LocalGroup {
-  const LocalGroup({required this.id, required this.name, required this.members, required this.expenses, this.payments = const []});
+  const LocalGroup({required this.id, required this.name, required this.members, required this.expenses, this.payments = const [], this.meId = ''});
 
   final String id;
   final String name;
@@ -81,13 +83,19 @@ class LocalGroup {
   final List<GroupExpense> expenses;
   final List<GroupPayment> payments;
 
-  LocalGroup copyWith({String? name, List<GroupMember>? members, List<GroupExpense>? expenses, List<GroupPayment>? payments}) => LocalGroup(
+  /// The member id of the person using this phone (the one whose share is spending). Empty means the first member.
+  final String meId;
+
+  LocalGroup copyWith({String? name, List<GroupMember>? members, List<GroupExpense>? expenses, List<GroupPayment>? payments, String? meId}) => LocalGroup(
         id: id,
         name: name ?? this.name,
         members: members ?? this.members,
         expenses: expenses ?? this.expenses,
         payments: payments ?? this.payments,
+        meId: meId ?? this.meId,
       );
+
+  String get myId => meId.isNotEmpty ? meId : (members.isEmpty ? '' : members.first.id);
 
   String nameOf(String memberId) {
     for (final m in members) {
@@ -121,6 +129,7 @@ class LocalGroup {
         'members': members.map((m) => m.toJson()).toList(),
         'expenses': expenses.map((e) => e.toJson()).toList(),
         'payments': payments.map((p) => p.toJson()).toList(),
+        'meId': meId,
       };
 
   factory LocalGroup.fromJson(Map<String, dynamic> j) => LocalGroup(
@@ -129,6 +138,7 @@ class LocalGroup {
         members: [for (final m in (j['members'] as List<dynamic>? ?? const [])) GroupMember.fromJson(Map<String, dynamic>.from(m as Map))],
         expenses: [for (final e in (j['expenses'] as List<dynamic>? ?? const [])) GroupExpense.fromJson(Map<String, dynamic>.from(e as Map))],
         payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) GroupPayment.fromJson(Map<String, dynamic>.from(p as Map))],
+        meId: '${j['meId'] ?? ''}',
       );
 }
 
@@ -151,5 +161,37 @@ class GroupStore {
   static Future<void> save(List<LocalGroup> groups) async {
     final store = await LocalStore.open();
     await store.writeList(groupsKey, [for (final g in groups) g.toJson()]);
+    await syncGroupShares(groups);
   }
+}
+
+/// Your share of each group expense is spending in Monova Finance. Money other people owe you is not spending:
+/// it stays a balance until they pay, and payments between people are transfers, so nothing is counted twice.
+List<MoneyEntry> groupShareEntries(List<LocalGroup> groups) {
+  final out = <MoneyEntry>[];
+  for (final g in groups) {
+    final me = g.myId;
+    if (me.isEmpty) continue;
+    for (final e in g.expenses) {
+      final mine = e.shares[me];
+      if (mine == null || mine <= 0) continue;
+      out.add(MoneyEntry(
+        id: 'share-${e.id}',
+        income: false,
+        title: 'Your share: ${e.title}',
+        category: 'Shared expenses',
+        cents: mine,
+        date: e.createdAt,
+        notes: 'In ${g.name}',
+      ));
+    }
+  }
+  return out;
+}
+
+/// Keeps the share entries in Monova Finance in step with the groups.
+Future<void> syncGroupShares(List<LocalGroup> groups) async {
+  final entries = await EntryStore.loadEntries();
+  final kept = [for (final e in entries) if (!e.id.startsWith('share-')) e];
+  await EntryStore.saveEntries([...kept, ...groupShareEntries(groups)]);
 }

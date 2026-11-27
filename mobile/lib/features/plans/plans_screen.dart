@@ -565,7 +565,7 @@ class _RecurringFormState extends State<_RecurringForm> {
           onSelectionChanged: (s) => setState(() => _income = s.first),
         ),
         const SizedBox(height: 12),
-        TextField(controller: _title, autofocus: widget.initial == null, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Name *')),
+        TextField(controller: _title, autofocus: widget.initial == null, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Name *', helperText: 'Loan EMIs are recorded from Loans and Borrowing. Do not add them here as well.')),
         const SizedBox(height: 12),
         TextField(controller: _category, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Category (for example Housing, Internet)')),
         const SizedBox(height: 12),
