@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'all_features.dart';
 import 'attention_card.dart';
 
 import '../../core/api_client.dart';
@@ -541,6 +542,8 @@ class _GuestHome extends StatelessWidget {
           const RecentActivityCard(),
           const SizedBox(height: 14),
           const BillBalanceCard(),
+          const SizedBox(height: 22),
+          const AllFeaturesCard(),
           const SizedBox(height: 22),
           SectionTitle('Free tools', action: 'All services', onAction: () => context.push('/services')),
           const SizedBox(height: 10),

@@ -223,3 +223,5 @@ class _ServiceTile extends StatelessWidget {
     );
   }
 }
+/// The full list of sections, for Home's everything-in-one-place card.
+List<ServiceSection> get allServiceSections => _sections;

@@ -58,6 +58,7 @@ class _VaultScreenState extends State<VaultScreen> {
       _entries.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     });
     await _persist();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Entry saved")));
   }
 
   Future<void> _edit(VaultEntry entry) async {
@@ -72,6 +73,7 @@ class _VaultScreenState extends State<VaultScreen> {
       _entries.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     });
     await _persist();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Entry updated")));
   }
 
   Future<void> _delete(VaultEntry entry) async {
@@ -93,11 +95,13 @@ class _VaultScreenState extends State<VaultScreen> {
     if (ok != true) return;
     setState(() => _entries = _entries.where((e) => e.id != entry.id).toList());
     await _persist();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Entry deleted")));
   }
 
   Future<void> _copy(String text, String what) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$what copied')));
   }
 
@@ -501,7 +505,7 @@ class _EntryEditorState extends State<_EntryEditor> {
         SegmentedButton<VaultKind>(
           segments: const [
             ButtonSegment(value: VaultKind.password, label: Text('Password'), icon: Icon(Icons.key_rounded)),
-            ButtonSegment(value: VaultKind.note, label: Text('Note'), icon: Icon(Icons.sticky_note_2_rounded)),
+            ButtonSegment(value: VaultKind.note, label: Text('Notes'), icon: Icon(Icons.sticky_note_2_rounded)),
           ],
           selected: {_kind},
           onSelectionChanged: (s) => setState(() => _kind = s.first),
@@ -559,7 +563,7 @@ class _EntryEditorState extends State<_EntryEditor> {
           maxLines: 8,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            labelText: isPassword ? 'Extra details (optional)' : 'Note',
+            labelText: isPassword ? 'Extra details (optional)' : 'Notes',
             alignLabelWithHint: true,
             hintText: isPassword ? 'Security questions, recovery codes, anything else' : 'Write anything you want to remember',
           ),

@@ -260,11 +260,10 @@ class _AccountFormState extends State<_AccountForm> {
       children: [
         OutlinedButton.icon(onPressed: _pickContact, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick from contacts')),
 
+        const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
         const SizedBox(height: 12),
 
-        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
-        const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Phone (optional)')),
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, 

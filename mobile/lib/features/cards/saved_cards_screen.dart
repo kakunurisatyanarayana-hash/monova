@@ -66,6 +66,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
     if (created == null) return;
     setState(() => _sortAndSet([created, ..._cards]));
     await _persist(_cards);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Card saved")));
   }
 
   Future<void> _edit(CardRecord card) async {
@@ -73,6 +74,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
     if (updated == null) return;
     setState(() => _sortAndSet([for (final c in _cards) c.id == card.id ? updated : c]));
     await _persist(_cards);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Card updated")));
   }
 
   Future<void> _delete(CardRecord card) async {
@@ -94,6 +96,7 @@ class _SavedCardsScreenState extends State<SavedCardsScreen> {
     if (ok != true) return;
     setState(() => _cards = _cards.where((c) => c.id != card.id).toList());
     await _persist(_cards);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Card deleted")));
   }
 
   void _openDetail(CardRecord card) {
@@ -336,6 +339,7 @@ class _Line extends StatelessWidget {
             icon: Icon(Icons.copy_rounded, size: 18, color: c.accentStart),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copied')));
             },
           ),
