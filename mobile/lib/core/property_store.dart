@@ -399,6 +399,7 @@ class Tenancy {
   bool isBookedAfter(DateTime day) => checkIn.isAfter(day) && actualCheckout == null;
 
   Tenancy copyWith({
+    int? bed,
     DateTime? actualCheckout,
     bool? vacatingSoon,
     int? deductionCents,
@@ -410,7 +411,7 @@ class Tenancy {
         id: id,
         propertyId: propertyId,
         roomId: roomId,
-        bed: bed,
+        bed: bed ?? this.bed,
         personId: personId,
         name: name ?? this.name,
         phone: phone ?? this.phone,
@@ -680,6 +681,27 @@ PropertyBook deletePerson(PropertyBook book, String personId) => book.copyWith(
   ];
   final removed = (book.tenancies.length - keptTenancies.length) + (book.persons.length - keptPersons.length);
   return (book.copyWith(tenancies: keptTenancies, persons: keptPersons), removed);
+}
+
+/// When a room changes from whole-room rental to per-bed, the people holding the whole room move to the first free beds.
+/// Returns the updated book, or a problem when there are more people than beds (nothing is changed then).
+(PropertyBook, String?) moveWholeRoomStays(PropertyBook book, Room room) {
+  if (room.wholeRoomRental) return (book, null);
+  final wholeStays = [for (final t in book.tenancies) if (t.roomId == room.id && t.wholeRoom && !t.vacated) t];
+  if (wholeStays.isEmpty) return (book, null);
+  final taken = {for (final t in book.tenancies) if (t.roomId == room.id && !t.wholeRoom && !t.vacated) t.bed};
+  final free = [for (var b = 1; b <= room.beds; b++) if (!taken.contains(b)) b];
+  if (free.length < wholeStays.length) {
+    return (book, 'There are ${wholeStays.length} people in this room, but only ${free.length} free beds. Make the room bigger or move someone first.');
+  }
+  final bedFor = {for (var i = 0; i < wholeStays.length; i++) wholeStays[i].id: free[i]};
+  return (
+    book.copyWith(tenancies: [
+      for (final t in book.tenancies)
+        if (bedFor.containsKey(t.id)) t.copyWith(bed: bedFor[t.id]) else t,
+    ]),
+    null,
+  );
 }
 
 /// Everything the property module stores on this device.

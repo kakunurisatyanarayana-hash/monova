@@ -668,7 +668,13 @@ class _RoomDetailState extends State<_RoomDetail> {
       child: _RoomForm(propertyId: room.propertyId, existingNumbers: others, initial: room),
     );
     if (updated == null) return;
-    _set(_book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? updated : r]));
+    final withRoom = _book.copyWith(rooms: [for (final r in _book.rooms) r.id == room.id ? updated : r]);
+    final (moved, problem) = moveWholeRoomStays(withRoom, updated);
+    if (problem != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+      return;
+    }
+    _set(moved);
   }
 
   Future<void> _deleteRoom(Room room) async {
@@ -1169,7 +1175,11 @@ class _RoomFormState extends State<_RoomForm> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Rent the whole room'),
-          subtitle: const Text('Off means each bed is rented to a different person.'),
+          subtitle: Text(
+            _whole
+                ? 'The whole room is rented to one party. Turn this off for a hostel or PG, where each bed is rented separately.'
+                : 'Each bed is rented to a different person. Turn on only if one party takes the whole room.',
+          ),
           value: _whole,
           onChanged: (v) => setState(() => _whole = v),
         ),
