@@ -175,6 +175,7 @@ class _AddChooser extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final options = [
+      (icon: Icons.notifications_active_rounded, title: 'Reminder', subtitle: 'A bill date, warranty end, rent day or renewal', route: '/reminders'),
       (icon: Icons.south_west_rounded, title: 'Income or spending', subtitle: 'Money in or out, with a category', route: '/entries'),
       (icon: Icons.receipt_long_rounded, title: 'Purchase or warranty', subtitle: 'What you bought, and when its warranty ends', route: '/purchases'),
       (icon: Icons.apartment_rounded, title: 'Property payment or expense', subtitle: 'Rent received, deposits, electricity and repairs', route: '/property'),

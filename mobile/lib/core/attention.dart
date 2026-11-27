@@ -1,6 +1,7 @@
 import 'entry_store.dart';
 import 'format.dart';
 import 'property_store.dart';
+import 'reminders.dart';
 
 /// One thing on the Home screen that needs the user's attention, with the page that deals with it.
 class AttentionItem {
@@ -70,4 +71,17 @@ List<AttentionItem> attentionItems({
     return a.title.compareTo(b.title);
   });
   return items;
+}
+
+/// Attention items for reminders that are overdue, due today, or due in the next few days.
+List<AttentionItem> reminderAttentionItems(List<Reminder> reminders, DateTime now) {
+  return [
+    for (final r in remindersNeedingAttention(reminders, now))
+      AttentionItem(
+        title: r.title,
+        detail: r.isOverdue(now) ? 'Overdue, was due ${dayShort(r.dueAt)}' : 'Due ${dayShort(r.dueAt)}',
+        route: r.route.isEmpty ? '/reminders' : r.route,
+        urgent: r.isDueToday(now),
+      ),
+  ];
 }

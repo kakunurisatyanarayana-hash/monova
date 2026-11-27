@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/attention.dart';
 import '../../core/entry_store.dart';
+import '../../core/notify.dart';
+import '../../core/reminders.dart';
 import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -29,7 +31,18 @@ class _AttentionCardState extends State<AttentionCard> {
     try {
       final purchases = await EntryStore.loadPurchases();
       final (book, _) = await PropertyStore.loadWithRetention(DateTime.now());
-      final items = attentionItems(purchases: purchases, book: book, today: DateTime.now());
+      final now = DateTime.now();
+      final reminders = await ReminderStore.load();
+      // Keep phone alerts in step with the saved reminders each time Home opens. Safe to repeat.
+      if (reminderAlertsSupported) {
+        for (final r in reminders) {
+          await scheduleReminderAlert(r);
+        }
+      }
+      final items = [
+        ...attentionItems(purchases: purchases, book: book, today: now),
+        ...reminderAttentionItems(reminders, now),
+      ];
       if (mounted) setState(() {
         _items = items;
         _loaded = true;
