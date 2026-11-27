@@ -28,7 +28,8 @@ class MainShell extends ConsumerWidget {
         builder: (_, revision, __) => KeyedSubtree(key: ValueKey('page-$revision'), child: child),
       );
 
-  static const _tabs = ['/home', '/money', '/services', '/settings'];
+  // The third tab opens the market rates directly. All services stays reachable from Home and Money.
+  static const _tabs = ['/home', '/money', '/market', '/settings'];
   static const _wideBreakpoint = 900.0;
   static const _sidebarWidth = 248.0;
 
@@ -47,6 +48,9 @@ class MainShell extends ConsumerWidget {
       _SidebarItem(tr('nav_recurring'), Icons.repeat_rounded, '/recurring'),
       _SidebarItem(tr('nav_groups'), Icons.groups_rounded, '/groups'),
       _SidebarItem('Property and rooms', Icons.apartment_rounded, '/property'),
+    ]),
+    _SidebarSection('Market', [
+      _SidebarItem('Gold, silver and mandi rates', Icons.show_chart_rounded, '/market'),
     ]),
     _SidebarSection(tr('section_tools'), [
       _SidebarItem(tr('nav_all_services'), Icons.grid_view_rounded, '/services'),
@@ -156,7 +160,7 @@ class MainShell extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _NavItem(icon: Icons.explore_rounded, label: tr('nav_explore'), selected: index == 2, onTap: () => context.go('/services')),
+                _NavItem(icon: Icons.show_chart_rounded, label: 'Rates', selected: index == 2, onTap: () => context.go('/market')),
                 _NavItem(icon: Icons.person_rounded, label: tr('nav_profile'), selected: index == 3, onTap: () => context.go('/settings')),
               ],
             ),

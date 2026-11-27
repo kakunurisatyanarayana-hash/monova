@@ -50,6 +50,49 @@ class MonovaCard extends StatelessWidget {
   }
 }
 
+/// A grid where every tile has exactly the same width and height. The column count follows the width,
+/// and a short last row keeps empty slots so no tile grows to fill the gap.
+class EqualTileGrid extends StatelessWidget {
+  const EqualTileGrid({super.key, required this.children, this.minTileWidth = 150, this.tileHeight = 120, this.gap = 12});
+
+  final List<Widget> children;
+  final double minTileWidth;
+  final double tileHeight;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth;
+        var cols = ((available + gap) / (minTileWidth + gap)).floor();
+        if (cols < 1) cols = 1;
+        final rows = <Widget>[];
+        for (var start = 0; start < children.length; start += cols) {
+          final end = start + cols < children.length ? start + cols : children.length;
+          rows.add(Padding(
+            padding: EdgeInsets.only(bottom: gap),
+            child: Row(
+              children: [
+                for (var i = 0; i < cols; i++) ...[
+                  if (i > 0) SizedBox(width: gap),
+                  Expanded(
+                    child: SizedBox(
+                      height: tileHeight,
+                      child: i < end - start ? children[start + i] : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ));
+        }
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows);
+      },
+    );
+  }
+}
+
 class SectionTitle extends StatelessWidget {
   const SectionTitle(this.title, {super.key, this.action, this.onAction});
 

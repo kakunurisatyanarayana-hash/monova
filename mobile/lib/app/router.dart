@@ -36,6 +36,7 @@ import '../features/settings/settings_screen.dart';
 import '../features/shell/main_shell.dart';
 import '../features/tools/age_and_rent_screens.dart';
 import '../features/tools/calculator_screen.dart';
+import '../features/market/live_market_screen.dart';
 import '../features/tools/income_tax_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
@@ -121,6 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/tools/interest', builder: (_, __) => _form(const InterestCalculatorScreen())),
           GoRoute(path: '/tools/gst', builder: (_, __) => _form(const GstCalculatorScreen())),
           GoRoute(path: '/tools/tax', builder: (_, __) => _form(const IncomeTaxScreen())),
+          GoRoute(path: '/market', builder: (_, __) => _form(const LiveMarketScreen())),
           GoRoute(path: '/tools/calculator', builder: (_, __) => _form(const CalculatorScreen())),
           GoRoute(path: '/tools/split', builder: (_, __) => _form(const SplitCalculatorScreen())),
           GoRoute(path: '/tools/age', builder: (_, __) => _form(const AgeCalculatorScreen())),

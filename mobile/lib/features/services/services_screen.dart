@@ -44,6 +44,9 @@ const _sections = [
     ServiceItem(title: 'Age', icon: Icons.cake_rounded, route: '/tools/age'),
     ServiceItem(title: 'Rent', icon: Icons.house_rounded, route: '/tools/rent'),
   ]),
+  ServiceSection('Market rates', subtitle: 'Gold and silver rates by weight, with month-by-month history, and mandi prices. Other categories wait for verified sources.', [
+    ServiceItem(title: 'Gold, silver and mandi rates', icon: Icons.show_chart_rounded, route: '/market'),
+  ]),
   ServiceSection('Split and groups', subtitle: 'Share costs with other people and see who pays whom.', [
     ServiceItem(title: 'Split a bill', icon: Icons.call_split_rounded, route: '/tools/split'),
     ServiceItem(title: 'Groups and shared expenses', icon: Icons.groups_rounded, route: '/groups'),
@@ -158,22 +161,14 @@ class _TileGrid extends StatelessWidget {
 
   final List<Widget> children;
 
-  static const _tileWidth = 200.0;
+  // Every tile has exactly this size, so none is stretched or squeezed by the screen width.
+  static const _tileWidth = 180.0;
   static const _tileHeight = 128.0;
   static const _gap = 12.0;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.extent(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      maxCrossAxisExtent: _tileWidth,
-      mainAxisExtent: _tileHeight,
-      crossAxisSpacing: _gap,
-      mainAxisSpacing: _gap,
-      padding: EdgeInsets.zero,
-      children: children,
-    );
+    return EqualTileGrid(minTileWidth: _tileWidth, tileHeight: _tileHeight, gap: _gap, children: children);
   }
 }
 

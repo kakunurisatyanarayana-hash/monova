@@ -661,23 +661,12 @@ class _FreeToolsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const gap = 12.0;
-        final cols = constraints.maxWidth >= 600 ? 4 : 3;
-        final tileWidth = (constraints.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final t in _tools)
-              SizedBox(
-                width: tileWidth,
-                child: _ToolCard(icon: t.icon, label: t.label, onTap: () => context.push(t.route)),
-              ),
-          ],
-        );
-      },
+    return EqualTileGrid(
+      minTileWidth: 120,
+      tileHeight: 96,
+      children: [
+        for (final t in _tools) _ToolCard(icon: t.icon, label: t.label, onTap: () => context.push(t.route)),
+      ],
     );
   }
 }
