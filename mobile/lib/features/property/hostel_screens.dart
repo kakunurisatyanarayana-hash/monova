@@ -6,7 +6,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/complaint_store.dart';
+import '../../core/cloud.dart';
 import '../../core/cloud_sync.dart';
+import '../../core/hostel_publish.dart';
+import '../../core/public_complaints.dart';
 import '../../core/complaints.dart';
 import '../../core/notification_store.dart';
 import '../../core/notifications.dart';
@@ -58,7 +61,21 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
   }
 
   /// Lists the rooms, sorted by floor, and opens the QR code for the one chosen.
+  /// Turns on QR complaints for this hostel. Needs a verified owner account, so the form can route complaints to it.
+  Future<void> _publishQr(Property property) async {
+    try {
+      final code = await HostelPublish.publish(propertyId: property.id, name: property.name);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('QR complaints are on for this hostel. Print the room codes now.')));
+      }
+      debugPrint('Hostel code published: $code');
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
   Future<void> _pickRoomQr(Property property, List<Room> rooms) async {
+    final code = await HostelPublish.codeFor(property.id);
     final sorted = [...rooms]..sort((a, b) => a.floor != b.floor ? a.floor.compareTo(b.floor) : a.number.compareTo(b.number));
     if (sorted.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add a room first.')));
@@ -80,7 +97,7 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
               onTap: () => FormSheet.show<void>(
                 context,
                 title: 'Room ${r.number} code',
-                child: RoomQrSheet(property: property, room: r),
+                child: RoomQrSheet(property: property, room: r, hostelCode: code),
               ),
             ),
         ],
@@ -145,6 +162,7 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
               _Action(icon: Icons.report_problem_outlined, label: ht('Complaints'), onTap: () => context.push('/property/${property.id}/complaints')),
               _Action(icon: Icons.rate_review_outlined, label: ht('Reviews and suggestions'), onTap: () => context.push('/property/${property.id}/feedback')),
               _Action(icon: Icons.qr_code_2_rounded, label: ht('Room QR codes'), onTap: () => _pickRoomQr(property, rooms)),
+              _Action(icon: Icons.qr_code_scanner_rounded, label: 'Turn on QR complaints', onTap: () => _publishQr(property)),
             ],
           ),
           const SizedBox(height: 16),
@@ -310,6 +328,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   }
 
   Future<void> _load() async {
+    // Sync in the background when the list opens. The list updates by itself once new complaints arrive.
+    AutoSync.run();
     final book = await PropertyStore.load();
     final all = await ComplaintStore.loadComplaints();
     if (!mounted) return;
@@ -1082,10 +1102,13 @@ class _ReplyFormState extends State<_ReplyForm> {
 /// A QR code for one room. Scanning it with any phone's camera opens WhatsApp to the hostel number,
 /// with the room already filled in. The resident does not need Monova.
 class RoomQrSheet extends StatelessWidget {
-  const RoomQrSheet({super.key, required this.property, required this.room});
+  const RoomQrSheet({super.key, required this.property, required this.room, this.hostelCode});
 
   final Property property;
   final Room room;
+
+  /// Set once QR complaints are turned on. The code then opens the complaint form instead of WhatsApp.
+  final String? hostelCode;
 
   @override
   Widget build(BuildContext context) {
@@ -1097,7 +1120,9 @@ class RoomQrSheet extends StatelessWidget {
       category: 'Other',
       description: 'Please describe the problem',
     );
-    final link = whatsappLink(property.phone, message);
+    final code = hostelCode;
+    final formLink = code == null ? null : complaintFormLink(CloudConfig.hostingBase, code: code, room: room.number, floor: room.floor);
+    final link = formLink ?? whatsappLink(property.phone, message);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -1107,7 +1132,9 @@ class RoomQrSheet extends StatelessWidget {
         Text(
           link == null
               ? 'Add the hostel\'s WhatsApp number on the property first, then this code can open WhatsApp.'
-              : 'Print this and put it in the room. A resident scans it with any phone camera; WhatsApp opens with the room filled in, and they only type the problem.',
+              : formLink != null
+                  ? 'Print this and put it in the room. A resident scans it with any phone camera and fills in a short form. No app or WhatsApp needed.'
+                  : 'Print this and put it in the room. A resident scans it with any phone camera; WhatsApp opens with the room filled in, and they only type the problem.',
           style: TextStyle(color: c.muted, height: 1.45),
         ),
         const SizedBox(height: 14),

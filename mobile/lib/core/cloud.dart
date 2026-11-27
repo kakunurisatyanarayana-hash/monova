@@ -18,6 +18,9 @@ class CloudConfig {
 
   static String get appId => kIsWeb ? webAppId : androidAppId;
 
+  /// Where the web app (and so the complaint form) is published. Defaults to the Firebase Hosting address.
+  static const hostingBase = String.fromEnvironment('PUBLIC_BASE_URL', defaultValue: 'https://monova-7516a.web.app');
+
   static bool get isSet => projectId.isNotEmpty && senderId.isNotEmpty && apiKey.isNotEmpty && appId.isNotEmpty;
 }
 

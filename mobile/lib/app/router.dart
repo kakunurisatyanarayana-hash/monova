@@ -40,6 +40,8 @@ import '../features/market/live_market_screen.dart';
 import '../features/property/hostel_screens.dart';
 import '../features/notifications/notification_screen.dart';
 import '../features/cloud/owner_account_screen.dart';
+import '../features/public/public_complaint_screens.dart';
+import '../core/public_complaints.dart';
 import '../features/tools/income_tax_screen.dart';
 import '../features/tools/loan_calculator_screen.dart';
 import '../features/tools/tools_screens.dart';
@@ -59,6 +61,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final loc = state.matchedLocation;
+      // Public pages opened from a QR code or a status link: no app setup, no sign-in.
+      if (loc == complaintFormRoute || loc == trackRoute) return null;
       // Deep links (for example a reload on /groups in the browser) keep their page while the session restores.
       if (ApiConfig.offline && loc == '/auth') return '/tools';
       // First open with no profile yet: ask for the name before anything else.
@@ -71,6 +75,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (_, __) => const _Splash()),
       GoRoute(path: '/auth', builder: (_, __) => const AuthScreen()),
       GoRoute(path: '/setup', builder: (_, __) => const SetupScreen()),
+      GoRoute(
+        path: complaintFormRoute,
+        builder: (_, s) {
+          final q = readFormQuery(s.uri.queryParameters);
+          if (q == null) {
+            return const Scaffold(body: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('This QR code link is incomplete. Please ask the hostel for a new code.'))));
+          }
+          return ComplaintFormPage(code: q.code, room: q.room, floor: q.floor);
+        },
+      ),
+      GoRoute(
+        path: trackRoute,
+        builder: (_, s) => ComplaintStatusPage(token: s.uri.queryParameters['t'] ?? ''),
+      ),
       // Everything below sits inside the app frame, so the menu and top bar stay visible on web and desktop.
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),

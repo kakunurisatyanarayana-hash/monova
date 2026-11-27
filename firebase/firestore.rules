@@ -1,8 +1,7 @@
 rules_version = '2';
 
-// MONOVA shared store: complaints and reviews only. Resident names, phone numbers, emails and financial records are
-// never stored here (see mobile/lib/core/cloud_docs.dart). Each record belongs to the owner who created it,
-// so one owner's hostels cannot be read or changed by another owner.
+// MONOVA shared store. Resident names, phone numbers, emails and financial records are never stored here
+// (see mobile/lib/core/cloud_docs.dart and public_complaints.dart).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -10,21 +9,61 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email_verified == true;
     }
 
-    // Complaints: the owner who created one can read and update it. Nothing is publicly readable.
-    match /complaints/{ticket} {
+    // A hostel is published by its owner. Its code is random; the record holds only the name and owner.
+    match /hostels/{code} {
+      allow get: if true;
+      allow create: if verifiedOwner()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 120;
+      allow update, delete, list: if false;
+    }
+
+    // Complaints. Owner-made complaints have short references as IDs; complaints from the QR form have a long
+    // random token as the ID, which is also the resident's status link.
+    match /complaints/{id} {
+
+      // Anyone who has the long token can read that one complaint. Short IDs are never public.
+      allow get: if id.size() >= 20;
+
+      // Owners see only their own complaints.
+      allow list: if verifiedOwner();
+
+      // Owners create complaints for their own hostels.
       allow create: if verifiedOwner()
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(['hostel', 'ticket', 'room', 'floor', 'category', 'description', 'status', 'createdAt', 'updatedAt', 'resolution', 'ownerUid'])
-        && request.resource.data.ticket == ticket;
-      allow read: if verifiedOwner() && resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ticket == id;
+
+      // Residents using the QR form: no sign-in, a long random ID, and strict limits on every field.
+      allow create: if request.auth == null
+        && id.size() >= 20
+        && request.resource.data.keys().hasOnly(['hostel', 'ticket', 'room', 'floor', 'category', 'description', 'status', 'createdAt', 'updatedAt', 'resolution', 'ownerUid'])
+        && request.resource.data.hostel is string && request.resource.data.hostel.size() == 8
+        && request.resource.data.ticket is string && request.resource.data.ticket.size() <= 12
+        && request.resource.data.room is string && request.resource.data.room.size() >= 1 && request.resource.data.room.size() <= 12
+        && request.resource.data.floor is int && request.resource.data.floor >= -5 && request.resource.data.floor <= 200
+        && request.resource.data.category is string && request.resource.data.category.size() <= 20
+        && request.resource.data.description is string && request.resource.data.description.size() >= 5 && request.resource.data.description.size() <= 1000
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt is string && request.resource.data.updatedAt is string
+        && request.resource.data.resolution == ''
+        && request.resource.data.ownerUid is string
+        && exists(/databases/$(database)/documents/hostels/$(request.resource.data.hostel))
+        && get(/databases/$(database)/documents/hostels/$(request.resource.data.hostel)).data.ownerUid == request.resource.data.ownerUid;
+
+      // Only the owner who owns the complaint can change it, and the owner cannot hand it to someone else.
       allow update: if verifiedOwner()
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(['hostel', 'ticket', 'room', 'floor', 'category', 'description', 'status', 'createdAt', 'updatedAt', 'resolution', 'ownerUid']);
+
       allow delete: if false;
     }
 
-    // Reviews and feedback: same rule. An owner cannot change a resident's review; updates are refused.
+    // Reviews and feedback: an owner writes; nobody else reads. Residents' words are kept as written.
     match /feedback/{id} {
       allow create: if verifiedOwner()
         && request.resource.data.ownerUid == request.auth.uid

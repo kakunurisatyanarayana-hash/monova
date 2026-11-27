@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'cloud.dart';
 import 'cloud_docs.dart';
 import 'cloud_merge.dart';
+import 'hostel_publish.dart';
 import 'complaint_store.dart';
 import 'complaints.dart';
 import 'local_store.dart';
@@ -46,6 +47,8 @@ class CloudSync {
       return 0;
     }
     final user = FirebaseAuth.instance.currentUser!;
+    // Refresh the sign-in token first, so the store sees the current verified-email status.
+    await user.getIdToken(true);
     final store = await LocalStore.open();
     final pending = store.readList(_pendingKey).map((m) => '${m['ticket']}').toList();
     if (pending.isEmpty) return 0;
@@ -87,8 +90,14 @@ class CloudSync {
     }
     final user = FirebaseAuth.instance.currentUser!;
     try {
+      await user.getIdToken(true);
       final snap = await FirebaseFirestore.instance.collection('complaints').where('ownerUid', isEqualTo: user.uid).get();
-      final remote = [for (final d in snap.docs) d.data()];
+      // Complaints from the QR form carry the hostel code. Match them to the property on this phone when it is known.
+      final byCode = await HostelPublish.propertyByCode();
+      final remote = [
+        for (final d in snap.docs)
+          {...d.data(), 'hostel': byCode[d.data()['hostel']] ?? d.data()['hostel']},
+      ];
       final local = await ComplaintStore.loadComplaints();
       final merged = mergeSharedComplaints(local, remote);
       await ComplaintStore.saveComplaints(merged.complaints);
@@ -111,6 +120,39 @@ class CloudSync {
       'permission-denied' => 'The shared store refused this account. Check that the owner account is verified and set up for this hostel.',
       _ => 'Sharing did not finish (${e.code}). Complaints stay on this phone and will be retried.',
     };
+  }
+}
+
+/// Runs sync by itself: at app start, when the app returns to the foreground, and when the Complaints screen opens.
+/// It uploads what is waiting, then downloads the owner's complaints. It runs at most every five minutes,
+/// never twice at once, and does nothing when the owner is not signed in and verified. Problems stay silent here;
+/// the Owner account screen shows them when it is open.
+class AutoSync {
+  AutoSync._();
+
+  static const interval = Duration(minutes: 5);
+  static DateTime? _lastRun;
+  static bool _running = false;
+
+  static Future<void> run({bool force = false}) async {
+    if (CloudSync.blockedReason() != null || _running) return;
+    final now = DateTime.now();
+    if (!force && _lastRun != null && now.difference(_lastRun!) < interval) return;
+    _running = true;
+    try {
+      await CloudSync.pushPending(report: (_) {});
+      await CloudSync.pullOwnerComplaints(report: (_) {});
+      _lastRun = DateTime.now();
+    } finally {
+      _running = false;
+    }
+  }
+
+  /// Waits until Firebase has restored the signed-in account, then syncs once.
+  static Future<void> atStart() async {
+    if (!cloudReady) return;
+    await FirebaseAuth.instance.authStateChanges().first;
+    await run();
   }
 }
 
@@ -166,6 +208,8 @@ class OwnerAccount {
     final u = user;
     if (u == null) return 'Sign in first.';
     await u.reload();
+    // The verified flag reaches the store only through a fresh sign-in token.
+    await FirebaseAuth.instance.currentUser?.getIdToken(true);
     return FirebaseAuth.instance.currentUser!.emailVerified ? 'Email verified. Complaints can now be shared.' : 'Not verified yet. Open the link in your email, then try again.';
   }
 
