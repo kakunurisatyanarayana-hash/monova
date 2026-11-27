@@ -107,6 +107,7 @@ class HomeScreen extends ConsumerWidget {
                   ActionChip(label: const Text('Lending & borrowing'), onPressed: () => context.push('/lending')),
                   ActionChip(label: const Text('Loans & EMI'), onPressed: () => context.push('/loans')),
                   ActionChip(label: const Text('Savings goals'), onPressed: () => context.push('/planning')),
+                  ActionChip(label: const Text('Property and rooms'), onPressed: () => context.push('/property')),
                   ActionChip(label: const Text('Calculators & bill split'), onPressed: () => context.push('/tools')),
                   ActionChip(label: const Text('All services'), onPressed: () => context.push('/services')),
                 ],
@@ -606,6 +607,7 @@ class _QuickActions extends StatelessWidget {
         _ActionCircle(icon: Icons.menu_book_rounded, label: 'Credit book', onTap: () => context.push('/ledger')),
         _ActionCircle(icon: Icons.credit_card_rounded, label: 'Cards', onTap: () => context.push('/saved-cards')),
         _ActionCircle(icon: Icons.lock_rounded, label: 'Notes', onTap: () => context.push('/vault')),
+        _ActionCircle(icon: Icons.apartment_rounded, label: 'Rooms', onTap: () => context.push('/property')),
       ],
     );
   }

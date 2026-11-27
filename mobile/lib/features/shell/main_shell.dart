@@ -37,6 +37,7 @@ class MainShell extends ConsumerWidget {
       _SidebarItem(tr('nav_budgets'), Icons.savings_rounded, '/planning'),
       _SidebarItem(tr('nav_recurring'), Icons.repeat_rounded, '/recurring'),
       _SidebarItem(tr('nav_groups'), Icons.groups_rounded, '/groups'),
+      _SidebarItem('Property and rooms', Icons.apartment_rounded, '/property'),
     ]),
     _SidebarSection(tr('section_tools'), [
       _SidebarItem(tr('nav_all_services'), Icons.grid_view_rounded, '/services'),
