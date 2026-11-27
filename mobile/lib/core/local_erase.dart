@@ -5,6 +5,8 @@ import 'card_store.dart';
 import 'credit_ledger.dart';
 import 'groups_store.dart';
 import 'local_store.dart';
+import 'entry_store.dart';
+import 'property_money.dart';
 import 'property_store.dart';
 import 'vault_store.dart';
 
@@ -23,4 +25,7 @@ Future<void> eraseLocalData() async {
   await store.writeList(roomsKey, []);
   await store.writeList(tenanciesKey, []);
   await store.writeList(personsKey, []);
+  await store.writeList(paymentsKey, []);
+  final entries = await EntryStore.loadEntries();
+  await EntryStore.saveEntries([for (final e in entries) if (!e.id.startsWith('prop-')) e]);
 }

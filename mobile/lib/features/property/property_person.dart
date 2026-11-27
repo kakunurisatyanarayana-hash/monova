@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/contacts_picker.dart';
 import '../../core/format.dart';
+import '../../core/property_money.dart';
 import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../tools/contact_picker_sheet.dart';
+import 'property_payments.dart';
 
 bool _validPhone(String s) => s.replaceAll(RegExp(r'\D'), '').length >= 10;
 
@@ -360,6 +362,7 @@ class _PersonScreenState extends State<PersonScreen> {
     setState(() => _book = next);
     try {
       await PropertyStore.save(next);
+      await syncFinance(next);
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The change could not be saved. Please try again.')));
     }
@@ -569,6 +572,16 @@ class _PersonScreenState extends State<PersonScreen> {
               ),
               const SizedBox(height: 8),
             ],
+          const SizedBox(height: 16),
+          PaymentsSection(
+            book: _book,
+            payments: paymentsOfPerson(_book, p.id),
+            onChanged: _apply,
+            propertyId: stays.isNotEmpty ? stays.first.propertyId : p.propertyId,
+            personId: p.id,
+            roomId: stays.isNotEmpty ? stays.first.roomId : '',
+            tenancyId: stays.isNotEmpty ? stays.first.id : '',
+          ),
           if (property?.retainsGuestData == true) ...[
             const SizedBox(height: 16),
             MonovaCard(

@@ -648,6 +648,7 @@ PropertyBook deleteProperty(PropertyBook book, String propertyId) {
     rooms: [for (final r in book.rooms) if (r.propertyId != propertyId) r],
     tenancies: [for (final t in book.tenancies) if (t.propertyId != propertyId && !roomIds.contains(t.roomId)) t],
     persons: [for (final p in book.persons) if (p.propertyId != propertyId) p],
+    payments: [for (final pay in book.payments) if (pay.propertyId != propertyId) pay],
   );
 }
 
@@ -680,7 +681,9 @@ PropertyBook deletePerson(PropertyBook book, String personId) => book.copyWith(
         p,
   ];
   final removed = (book.tenancies.length - keptTenancies.length) + (book.persons.length - keptPersons.length);
-  return (book.copyWith(tenancies: keptTenancies, persons: keptPersons), removed);
+  final erasedIds = {for (final p in book.persons) if (!keptPersons.contains(p)) p.id};
+  final payments = [for (final pay in book.payments) if (erasedIds.contains(pay.personId)) pay.withoutPerson() else pay];
+  return (book.copyWith(tenancies: keptTenancies, persons: keptPersons, payments: payments), removed);
 }
 
 /// When a room changes from whole-room rental to per-bed, the people holding the whole room move to the first free beds.
@@ -716,21 +719,106 @@ PropertyBook normalizeRooms(PropertyBook book) {
   return result;
 }
 
+const paymentsKey = 'monova.payments';
+const paymentKinds = <String>['rent', 'advance', 'deposit', 'refund', 'expense'];
+const paymentMethods = <String>['Cash', 'UPI', 'Bank transfer', 'Other'];
+const expenseCategories = <String>['Electricity', 'Water', 'Maintenance', 'Repairs', 'Cleaning', 'Food', 'Wi-Fi', 'Other'];
+
+/// Money received or paid for a property: rent and advances (income), deposits and refunds (kept separately),
+/// and expenses such as electricity or repairs.
+class Payment {
+  const Payment({
+    required this.id,
+    required this.propertyId,
+    required this.kind,
+    required this.amountCents,
+    required this.date,
+    this.roomId = '',
+    this.tenancyId = '',
+    this.personId = '',
+    this.method = 'Cash',
+    this.periodLabel = '',
+    this.reference = '',
+    this.note = '',
+    this.category = '',
+  });
+
+  final String id;
+  final String propertyId;
+
+  /// One of [paymentKinds].
+  final String kind;
+  final int amountCents;
+  final DateTime date;
+  final String roomId;
+  final String tenancyId;
+  final String personId;
+  final String method;
+
+  /// For rent, the period it covers, for example "Dec 2026".
+  final String periodLabel;
+  final String reference;
+  final String note;
+
+  /// For expenses, one of [expenseCategories].
+  final String category;
+
+  bool get isIncome => kind == 'rent' || kind == 'advance';
+
+  /// The same payment with the guest's identity removed. Used when hotel guest data is erased; the amount stays for the accounts.
+  Payment withoutPerson() => Payment(id: id, propertyId: propertyId, kind: kind, amountCents: amountCents, date: date, roomId: roomId, tenancyId: '', personId: '', method: method, periodLabel: periodLabel, reference: reference, note: note, category: category);
+  bool get isExpense => kind == 'expense';
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'propertyId': propertyId,
+        'kind': kind,
+        'amountCents': amountCents,
+        'date': _writeDay(date),
+        'roomId': roomId,
+        'tenancyId': tenancyId,
+        'personId': personId,
+        'method': method,
+        'periodLabel': periodLabel,
+        'reference': reference,
+        'note': note,
+        'category': category,
+      };
+
+  factory Payment.fromJson(Map<String, dynamic> j) => Payment(
+        id: '${j['id']}',
+        propertyId: '${j['propertyId']}',
+        kind: '${j['kind'] ?? 'rent'}',
+        amountCents: (j['amountCents'] as num?)?.toInt() ?? 0,
+        date: _readDay(j['date']) ?? dayOnly(DateTime.now()),
+        roomId: '${j['roomId'] ?? ''}',
+        tenancyId: '${j['tenancyId'] ?? ''}',
+        personId: '${j['personId'] ?? ''}',
+        method: '${j['method'] ?? 'Cash'}',
+        periodLabel: '${j['periodLabel'] ?? ''}',
+        reference: '${j['reference'] ?? ''}',
+        note: '${j['note'] ?? ''}',
+        category: '${j['category'] ?? ''}',
+      );
+}
+
 /// Everything the property module stores on this device.
 class PropertyBook {
-  const PropertyBook({this.properties = const [], this.rooms = const [], this.tenancies = const [], this.persons = const []});
+  const PropertyBook({this.properties = const [], this.rooms = const [], this.tenancies = const [], this.persons = const [], this.payments = const []});
 
   final List<Property> properties;
   final List<Room> rooms;
   final List<Tenancy> tenancies;
   final List<Person> persons;
+  final List<Payment> payments;
 
-  PropertyBook copyWith({List<Property>? properties, List<Room>? rooms, List<Tenancy>? tenancies, List<Person>? persons}) =>
+  PropertyBook copyWith({List<Property>? properties, List<Room>? rooms, List<Tenancy>? tenancies, List<Person>? persons, List<Payment>? payments}) =>
       PropertyBook(
         properties: properties ?? this.properties,
         rooms: rooms ?? this.rooms,
         tenancies: tenancies ?? this.tenancies,
         persons: persons ?? this.persons,
+        payments: payments ?? this.payments,
       );
 
   /// The rooms of a property that have not been deleted.
@@ -776,6 +864,7 @@ class PropertyStore {
       rooms: [for (final m in store.readList(roomsKey)) Room.fromJson(m)],
       tenancies: [for (final m in store.readList(tenanciesKey)) Tenancy.fromJson(m)],
       persons: [for (final m in store.readList(personsKey)) Person.fromJson(m)],
+      payments: [for (final m in store.readList(paymentsKey)) Payment.fromJson(m)],
     );
   }
 
@@ -794,6 +883,7 @@ class PropertyStore {
     await store.writeList(roomsKey, [for (final r in book.rooms) r.toJson()]);
     await store.writeList(tenanciesKey, [for (final t in book.tenancies) t.toJson()]);
     await store.writeList(personsKey, [for (final p in book.persons) p.toJson()]);
+    await store.writeList(paymentsKey, [for (final p in book.payments) p.toJson()]);
   }
 
   static String newId() => _id();

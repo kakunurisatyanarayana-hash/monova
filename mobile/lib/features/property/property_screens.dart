@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/property_money.dart';
 import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
+import 'property_payments.dart';
 import 'property_person.dart';
 
 int _cents(String text) {
@@ -29,7 +31,11 @@ Color _statusColor(MonovaColors c, RoomStatus s) => switch (s) {
     };
 
 /// Loads the book, erasing hotel guest data past the retention period first.
-Future<(PropertyBook, int)> _loadBook() => PropertyStore.loadWithRetention(DateTime.now());
+Future<(PropertyBook, int)> _loadBook() async {
+  final result = await PropertyStore.loadWithRetention(DateTime.now());
+  if (result.$2 > 0) await syncFinance(result.$1);
+  return result;
+}
 
 /// The list of properties under this owner's account.
 class PropertiesScreen extends StatefulWidget {
@@ -210,6 +216,7 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
     setState(() => _book = next);
     try {
       await PropertyStore.save(next);
+      await syncFinance(next);
     } catch (_) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The change could not be saved. Please try again.')));
     }
@@ -363,6 +370,16 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
               ),
             ),
           ],
+          const SizedBox(height: 18),
+          MoneyThisMonth(book: _book, propertyId: property.id),
+          const SizedBox(height: 14),
+          PaymentsSection(
+            book: _book,
+            payments: [for (final p in paymentsOf(_book, property.id)) if (p.isExpense) p],
+            onChanged: _apply,
+            propertyId: property.id,
+            expenseOnly: true,
+          ),
           const SizedBox(height: 18),
           const SectionTitle('Room Availability'),
           const SizedBox(height: 8),
