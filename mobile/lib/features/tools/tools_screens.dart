@@ -792,7 +792,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
               child: Row(
                 children: [
                   Checkbox(value: _included[i], onChanged: (v) => setState(() => _included[i] = v ?? false)),
-                  Expanded(child: TextField(textInputAction: TextInputAction.next, controller: _names[i], decoration: const InputDecoration(isDense: true, labelText: 'Name'), onChanged: (_) => setState(() {}))),
+                  Expanded(child: TextField(textInputAction: TextInputAction.next, controller: _names[i], decoration: const InputDecoration(labelText: 'Name'), onChanged: (_) => setState(() {}))),
                   IconButton(
                     tooltip: 'Remove this person',
                     icon: const Icon(Icons.person_remove_alt_1_rounded),
@@ -805,7 +805,7 @@ class _SplitCalculatorScreenState extends State<SplitCalculatorScreen> {
                       child: TextField(textInputAction: TextInputAction.next, 
                         controller: _values[i],
                         keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-                        decoration: InputDecoration(isDense: true, labelText: _mode == 'percent' ? '%' : (_mode == 'shares' ? 'Shares' : 'Amount')),
+                        decoration: InputDecoration(labelText: _mode == 'percent' ? '%' : (_mode == 'shares' ? 'Shares' : 'Amount')),
                       ),
                     ),
                   ],

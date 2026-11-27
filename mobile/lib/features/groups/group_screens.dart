@@ -637,7 +637,7 @@ class _GroupExpenseFormState extends ConsumerState<_GroupExpenseForm> {
                       controller: _values[m.id],
                       enabled: _included.contains(m.id),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-                      decoration: InputDecoration(isDense: true, labelText: _mode == 'Percent' ? '%' : (_mode == 'Shares' ? 'Shares' : 'Amount')),
+                      decoration: InputDecoration(labelText: _mode == 'Percent' ? '%' : (_mode == 'Shares' ? 'Shares' : 'Amount')),
                     ),
                   ),
               ],

@@ -527,7 +527,7 @@ class _CardEditorState extends State<_CardEditor> {
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
-                isDense: true,
+                
                 key: ValueKey('month-$_month'),
                 initialValue: _month,
                 decoration: const InputDecoration(labelText: 'Expiry month'),
@@ -539,7 +539,7 @@ class _CardEditorState extends State<_CardEditor> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<int>(
-                isDense: true,
+                
                 key: ValueKey('year-$_year'),
                 initialValue: _years.contains(_year) ? _year : _years.first,
                 decoration: const InputDecoration(labelText: 'Expiry year'),

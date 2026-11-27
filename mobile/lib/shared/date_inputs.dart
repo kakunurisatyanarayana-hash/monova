@@ -89,7 +89,7 @@ class _DateSelectorState extends State<DateSelector> {
                 initialValue: _day,
                 isExpanded: true,
                 // Narrow fields keep little inner padding, so a two-digit day is not cut to its first digit.
-                decoration: const InputDecoration(labelText: 'Day', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                decoration: const InputDecoration(labelText: 'Day', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16)),
                 menuMaxHeight: 260,
                 items: [for (var d = 1; d <= maxDay; d++) DropdownMenuItem(value: d, child: Text('$d'))],
                 onChanged: (v) {
@@ -105,7 +105,7 @@ class _DateSelectorState extends State<DateSelector> {
                 key: ValueKey('month-$_month'),
                 initialValue: _month,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Month', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
+                decoration: const InputDecoration(labelText: 'Month', contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16)),
                 menuMaxHeight: 260,
                 items: [
                   for (var m = 1; m <= 12; m++) DropdownMenuItem(value: m, child: Text(_monthNames[m - 1])),

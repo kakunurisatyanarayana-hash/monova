@@ -159,7 +159,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           onSubmitted: (_) => _runSearch(),
                           decoration: const InputDecoration(
                             labelText: 'Search village, town, locality or PIN',
-                            isDense: true,
+                            
                           ),
                         ),
                       ),
