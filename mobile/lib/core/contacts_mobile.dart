@@ -17,6 +17,9 @@ Future<List<PickedContact>> loadContacts() async {
           phone: c.phones.isEmpty ? '' : c.phones.first.number,
         ),
   ];
+  if (picked.isEmpty) {
+    throw const ContactsException('No contacts were found on this phone, or MONOVA cannot read them. Check that Contacts permission is on in phone settings, then try again.');
+  }
   picked.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   return picked;
 }

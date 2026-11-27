@@ -1,3 +1,5 @@
+import 'groups_store.dart';
+
 import 'local_store.dart';
 
 const billsKey = 'monova.bills';
@@ -105,4 +107,29 @@ class BillStore {
     final store = await LocalStore.open();
     await store.writeList(billsKey, [for (final b in bills) b.toJson()]);
   }
+}
+
+/// Each other person's balance with you, from the "who pays whom" settlements of every saved bill and group.
+/// Positive means that person owes you; negative means you owe them.
+Map<String, int> youBalances({required List<SavedBill> bills, required List<LocalGroup> groups, required String me}) {
+  final out = <String, int>{};
+  void add(String person, int cents) {
+    if (person == me || person.isEmpty) return;
+    out[person] = (out[person] ?? 0) + cents;
+  }
+  for (final b in bills) {
+    for (final s in b.settlements) {
+      if (s.to == me) add(s.from, s.cents);
+      if (s.from == me) add(s.to, -s.cents);
+    }
+  }
+  for (final g in groups) {
+    final myId = g.myId;
+    for (final s in g.settlements) {
+      if (s.to == myId) add(g.nameOf(s.from), s.cents);
+      if (s.from == myId) add(g.nameOf(s.to), -s.cents);
+    }
+  }
+  out.removeWhere((_, v) => v == 0);
+  return out;
 }
