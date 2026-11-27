@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/entry_store.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../core/money_plans.dart';
 import '../../core/widgets.dart';
 
 /// Money in one place: this month's totals, then each money record with one tap to open it.
@@ -24,6 +25,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
   }
 
   Future<void> _load() async {
+    await PlansStore.runRecurring(DateTime.now());
     try {
       final entries = await EntryStore.loadEntries();
       final now = DateTime.now();
@@ -69,6 +71,7 @@ class _MoneyHubScreenState extends State<MoneyHubScreen> {
           const SizedBox(height: 8),
           _MoneyTile(icon: Icons.swap_vert_rounded, title: 'Income and spending', subtitle: 'Add what came in or went out, and see the month', route: '/entries'),
           _MoneyTile(icon: Icons.receipt_long_rounded, title: 'Purchases and warranties', subtitle: 'What you bought, its warranty and return date', route: '/purchases'),
+          _MoneyTile(icon: Icons.event_repeat_rounded, title: 'Budgets, goals and recurring', subtitle: 'Monthly limits, savings targets, and rent or salary every month', route: '/plans'),
           _MoneyTile(icon: Icons.menu_book_rounded, title: 'Credit book', subtitle: 'Money you gave on credit, with daily interest', route: '/ledger'),
           _MoneyTile(icon: Icons.call_split_rounded, title: 'Split bills and groups', subtitle: 'Share costs and see who pays whom', route: '/tools/split'),
           _MoneyTile(icon: Icons.apartment_rounded, title: 'Property rent and expenses', subtitle: 'Rent received, deposits and running costs', route: '/property'),
