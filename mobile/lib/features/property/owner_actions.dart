@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/cloud.dart';
@@ -135,10 +136,60 @@ class OwnerActions extends StatelessWidget {
               ),
             ],
           ],
+          if (room != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _showQr(context, property, room),
+              icon: const Icon(Icons.qr_code_2_rounded),
+              label: const Text('Show complaint QR'),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
             'WhatsApp opens with the message ready. Monova cannot confirm it was sent; tap Send in WhatsApp.',
             style: TextStyle(color: c.muted, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The complaint link for this room. It carries the hostel code once direct complaints are on.
+  Future<String> _complaintLink(Property? property, Room room) async {
+    final code = property == null
+        ? null
+        : await HostelPublish.codeFor(property.id);
+    return complaintFormLink(
+      CloudConfig.hostingBase,
+      code: code ?? '',
+      room: room.number,
+      floor: room.floor,
+      phone: property?.phone ?? '',
+      hostelName: property?.name ?? '',
+    );
+  }
+
+  /// Shows the complaint link as a QR code, so it can be scanned in person without sending anything.
+  Future<void> _showQr(BuildContext context, Property? property, Room room) async {
+    final link = await _complaintLink(property, room);
+    if (!context.mounted) return;
+    await FormSheet.show<void>(
+      context,
+      title: 'Complaint QR for Room ${room.number}',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          QrImageView(
+            data: link,
+            size: 220,
+            errorCorrectionLevel: QrErrorCorrectLevel.M,
+            backgroundColor: Colors.white,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Scan to open the complaint form for this room. No message is sent.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.monova.muted, fontSize: 12),
           ),
         ],
       ),
@@ -151,17 +202,7 @@ class OwnerActions extends StatelessWidget {
     Room room,
   ) async {
     final hostelName = property?.name ?? '';
-    final code = property == null
-        ? null
-        : await HostelPublish.codeFor(property.id);
-    final link = complaintFormLink(
-      CloudConfig.hostingBase,
-      code: code ?? '',
-      room: room.number,
-      floor: room.floor,
-      phone: property?.phone ?? '',
-      hostelName: hostelName,
-    );
+    final link = await _complaintLink(property, room);
     if (!context.mounted) return;
     await openWhatsAppDraft(
       context,
