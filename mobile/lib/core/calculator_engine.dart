@@ -9,18 +9,7 @@ class CalculatorEngine {
   bool degrees;
 
   static const _functions = {
-    'sin',
-    'cos',
-    'tan',
-    'asin',
-    'acos',
-    'atan',
-    'log',
-    'ln',
-    'sqrt',
-    'cbrt',
-    'abs',
-    'exp',
+    'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'log', 'ln', 'sqrt', 'cbrt', 'abs', 'exp',
   };
 
   double evaluate(String expression) {
@@ -31,10 +20,8 @@ class CalculatorEngine {
 
   /// Trims float noise (for example 0.1 + 0.2) so results read like a real calculator.
   static String format(double value) {
-    if (value.isNaN || value.isInfinite)
-      throw const FormatException('Result is undefined');
-    if (value == value.roundToDouble() && value.abs() < 1e15)
-      return value.toStringAsFixed(0);
+    if (value.isNaN || value.isInfinite) throw const FormatException('Result is undefined');
+    if (value == value.roundToDouble() && value.abs() < 1e15) return value.toStringAsFixed(0);
     final text = double.parse(value.toStringAsPrecision(12)).toString();
     return text.contains('e') ? value.toStringAsExponential(8) : text;
   }
@@ -42,11 +29,7 @@ class CalculatorEngine {
   // ---- tokenizer ----
 
   List<_Tok> _tokenize(String input) {
-    final s = input
-        .replaceAll('×', '*')
-        .replaceAll('÷', '/')
-        .replaceAll('−', '-')
-        .replaceAll(' ', '');
+    final s = input.replaceAll('×', '*').replaceAll('÷', '/').replaceAll('−', '-').replaceAll(' ', '');
     final out = <_Tok>[];
     var i = 0;
     while (i < s.length) {
@@ -57,17 +40,8 @@ class CalculatorEngine {
           i++;
         }
         final text = s.substring(start, i);
-        if ('.'.allMatches(text).length > 1)
-          throw const FormatException('Invalid number');
-        out.add(
-          _Tok(
-            _T.num,
-            text,
-            value:
-                double.tryParse(text) ??
-                (throw const FormatException('Invalid number')),
-          ),
-        );
+        if ('.'.allMatches(text).length > 1) throw const FormatException('Invalid number');
+        out.add(_Tok(_T.num, text, value: double.tryParse(text) ?? (throw const FormatException('Invalid number'))));
       } else if (RegExp(r'[a-z]').hasMatch(ch)) {
         final start = i;
         while (i < s.length && RegExp(r'[a-z]').hasMatch(s[i])) {
@@ -105,13 +79,8 @@ class CalculatorEngine {
     for (var i = 0; i < tokens.length; i++) {
       final t = tokens[i];
       final prev = i == 0 ? null : tokens[i - 1];
-      final isSign =
-          t.type == _T.op &&
-          t.text == '-' &&
-          (prev == null ||
-              prev.type == _T.op ||
-              prev.type == _T.lparen ||
-              prev.type == _T.func);
+      final isSign = t.type == _T.op && t.text == '-' &&
+          (prev == null || prev.type == _T.op || prev.type == _T.lparen || prev.type == _T.func);
       out.add(isSign ? _Tok(_T.op, 'neg') : t);
     }
     return out;
@@ -120,13 +89,13 @@ class CalculatorEngine {
   // ---- shunting-yard ----
 
   static int _prec(String op) => switch (op) {
-    '+' || '-' => 1,
-    '*' || '/' => 2,
-    'neg' => 3,
-    '^' => 4,
-    '%' || '!' => 5,
-    _ => 0,
-  };
+        '+' || '-' => 1,
+        '*' || '/' => 2,
+        'neg' => 3,
+        '^' => 4,
+        '%' || '!' => 5,
+        _ => 0,
+      };
 
   static bool _rightAssoc(String op) => op == '^' || op == 'neg';
 
@@ -152,9 +121,7 @@ class CalculatorEngine {
           }
           while (stack.isNotEmpty && stack.last.type == _T.op) {
             final top = stack.last.text;
-            final higher =
-                _prec(top) > _prec(t.text) ||
-                (_prec(top) == _prec(t.text) && !_rightAssoc(t.text));
+            final higher = _prec(top) > _prec(t.text) || (_prec(top) == _prec(t.text) && !_rightAssoc(t.text));
             if (!higher) break;
             output.add(stack.removeLast());
           }
@@ -167,8 +134,7 @@ class CalculatorEngine {
           }
           if (stack.isEmpty) throw const FormatException('Unmatched )');
           stack.removeLast();
-          if (stack.isNotEmpty && stack.last.type == _T.func)
-            output.add(stack.removeLast());
+          if (stack.isNotEmpty && stack.last.type == _T.func) output.add(stack.removeLast());
       }
     }
     while (stack.isNotEmpty) {
@@ -208,10 +174,7 @@ class CalculatorEngine {
               '+' => a + b,
               '-' => a - b,
               '*' => a * b,
-              '/' =>
-                b == 0
-                    ? throw const FormatException('Cannot divide by zero')
-                    : a / b,
+              '/' => b == 0 ? throw const FormatException('Cannot divide by zero') : a / b,
               '^' => math.pow(a, b).toDouble(),
               _ => throw FormatException('Unknown operator ${t.text}'),
             });
@@ -235,8 +198,7 @@ class CalculatorEngine {
       'log' => math.log(x) / math.ln10,
       'ln' => math.log(x),
       'sqrt' => math.sqrt(x),
-      'cbrt' =>
-        x < 0 ? -math.pow(-x, 1 / 3).toDouble() : math.pow(x, 1 / 3).toDouble(),
+      'cbrt' => x < 0 ? -math.pow(-x, 1 / 3).toDouble() : math.pow(x, 1 / 3).toDouble(),
       'abs' => x.abs(),
       'exp' => math.exp(x),
       _ => throw FormatException('Unknown function $name'),
@@ -244,10 +206,7 @@ class CalculatorEngine {
   }
 
   double _factorial(double x) {
-    if (x < 0 || x != x.roundToDouble() || x > 170)
-      throw const FormatException(
-        'Factorial needs a whole number from 0 to 170',
-      );
+    if (x < 0 || x != x.roundToDouble() || x > 170) throw const FormatException('Factorial needs a whole number from 0 to 170');
     var r = 1.0;
     for (var i = 2; i <= x; i++) {
       r *= i;

@@ -1,5 +1,4 @@
 import 'record_backup.dart';
-
 import 'dart:convert';
 import 'dart:math';
 
@@ -40,23 +39,21 @@ class BackupContents {
   final Map<String, List<Map<String, dynamic>>> records;
 
   Map<String, dynamic> toJson() => {
-    'format': 'monova-backup',
-    'version': 3,
-    'createdAt': DateTime.now().toUtc().toIso8601String(),
-    'vault': vault.map((e) => e.toJson()).toList(),
-    'loanScenarios': loanScenarios,
-    'calcHistory': calcHistory,
-    'cards': cards.map((c) => c.toJsonWithoutPhoto()).toList(),
-    'records': records,
-  };
+        'format': 'monova-backup',
+        'version': 3,
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
+        'vault': vault.map((e) => e.toJson()).toList(),
+        'loanScenarios': loanScenarios,
+        'calcHistory': calcHistory,
+        'cards': cards.map((c) => c.toJsonWithoutPhoto()).toList(),
+        'records': records,
+      };
 
   factory BackupContents.fromJson(Map<String, dynamic> j) {
-    if (j['format'] != 'monova-backup')
-      throw const BackupException('This is not a MONOVA backup.');
-    List<Map<String, dynamic>> maps(String key) =>
-        ((j[key] as List<dynamic>?) ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+    if (j['format'] != 'monova-backup') throw const BackupException('This is not a MONOVA backup.');
+    List<Map<String, dynamic>> maps(String key) => ((j[key] as List<dynamic>?) ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
     return BackupContents(
       vault: maps('vault').map(VaultEntry.fromJson).toList(),
       loanScenarios: maps('loanScenarios'),
@@ -64,10 +61,7 @@ class BackupContents {
       cards: maps('cards').map(CardRecord.fromJson).toList(),
       records: {
         for (final e in ((j['records'] as Map?) ?? const {}).entries)
-          '${e.key}': [
-            for (final m in (e.value as List<dynamic>))
-              Map<String, dynamic>.from(m as Map),
-          ],
+          '${e.key}': [for (final m in (e.value as List<dynamic>)) Map<String, dynamic>.from(m as Map)],
       },
     );
   }
@@ -106,12 +100,7 @@ MergeResult mergeBackups(BackupContents current, BackupContents incoming) {
     }
   }
 
-  List<Map<String, dynamic>> addMissing(
-    List<Map<String, dynamic>> base,
-    List<Map<String, dynamic>> extra,
-    List<int> counter,
-    int slot,
-  ) {
+  List<Map<String, dynamic>> addMissing(List<Map<String, dynamic>> base, List<Map<String, dynamic>> extra, List<int> counter, int slot) {
     final keys = base.map(jsonEncode).toSet();
     final out = [...base];
     for (final item in extra) {
@@ -124,18 +113,8 @@ MergeResult mergeBackups(BackupContents current, BackupContents incoming) {
   }
 
   final counts = [0, 0];
-  final scenarios = addMissing(
-    current.loanScenarios,
-    incoming.loanScenarios,
-    counts,
-    0,
-  );
-  final history = addMissing(
-    current.calcHistory,
-    incoming.calcHistory,
-    counts,
-    1,
-  );
+  final scenarios = addMissing(current.loanScenarios, incoming.loanScenarios, counts, 0);
+  final history = addMissing(current.calcHistory, incoming.calcHistory, counts, 1);
 
   // Cards: same rule as the vault. A newer backup copy replaces the device copy, but keeps the device's photo,
   // because backups do not carry photos.
@@ -147,31 +126,15 @@ MergeResult mergeBackups(BackupContents current, BackupContents incoming) {
       cardById[c.id] = c;
       cardsAdded++;
     } else if (c.updatedAt.isAfter(existing.updatedAt)) {
-      cardById[c.id] = c.hasPhoto
-          ? c
-          : c.copyWith(
-              photoBase64: existing.photoBase64,
-              photoType: existing.photoType,
-            );
+      cardById[c.id] = c.hasPhoto ? c : c.copyWith(photoBase64: existing.photoBase64, photoType: existing.photoType);
     }
   }
-  final cards = cardById.values.toList()
-    ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  final cards = cardById.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
-  final (records, recordsAdded) = mergeRecordLists(
-    current.records,
-    incoming.records,
-  );
-  final vault = byId.values.toList()
-    ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  final (records, recordsAdded) = mergeRecordLists(current.records, incoming.records);
+  final vault = byId.values.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   return MergeResult(
-    merged: BackupContents(
-      vault: vault,
-      loanScenarios: scenarios,
-      calcHistory: history,
-      cards: cards,
-      records: records,
-    ),
+    merged: BackupContents(vault: vault, loanScenarios: scenarios, calcHistory: history, cards: cards, records: records),
     vaultAdded: vaultAdded,
     scenariosAdded: counts[0],
     historyAdded: counts[1],
@@ -186,25 +149,14 @@ class BackupCodec {
   static const _iterations = 120000;
   static final _random = Random.secure();
 
-  static List<int> _bytes(int n) =>
-      List<int>.generate(n, (_) => _random.nextInt(256));
+  static List<int> _bytes(int n) => List<int>.generate(n, (_) => _random.nextInt(256));
 
-  static Future<SecretKey> _deriveKey(
-    String passphrase,
-    List<int> salt,
-    int iterations,
-  ) {
-    return Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: iterations,
-      bits: 256,
-    ).deriveKeyFromPassword(password: passphrase, nonce: salt);
+  static Future<SecretKey> _deriveKey(String passphrase, List<int> salt, int iterations) {
+    return Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: iterations, bits: 256)
+        .deriveKeyFromPassword(password: passphrase, nonce: salt);
   }
 
-  static Future<String> encrypt(
-    BackupContents contents,
-    String passphrase,
-  ) async {
+  static Future<String> encrypt(BackupContents contents, String passphrase) async {
     final salt = _bytes(16);
     final nonce = _bytes(12);
     final key = await _deriveKey(passphrase, salt, _iterations);
@@ -225,19 +177,10 @@ class BackupCodec {
 
   static Future<BackupContents> decrypt(String text, String passphrase) async {
     final trimmed = text.trim();
-    if (!trimmed.startsWith(_backupPrefix))
-      throw const BackupException(
-        'This is not a MONOVA backup. Copy the whole text from the backup screen.',
-      );
+    if (!trimmed.startsWith(_backupPrefix)) throw const BackupException('This is not a MONOVA backup. Copy the whole text from the backup screen.');
     try {
-      final env = jsonDecode(
-        utf8.decode(base64Decode(trimmed.substring(_backupPrefix.length))),
-      ) as Map<String, dynamic>;
-      final key = await _deriveKey(
-        passphrase,
-        base64Decode(env['salt'] as String),
-        env['iterations'] as int,
-      );
+      final env = jsonDecode(utf8.decode(base64Decode(trimmed.substring(_backupPrefix.length)))) as Map<String, dynamic>;
+      final key = await _deriveKey(passphrase, base64Decode(env['salt'] as String), env['iterations'] as int);
       final clear = await AesGcm.with256bits().decrypt(
         SecretBox(
           base64Decode(env['data'] as String),
@@ -246,16 +189,12 @@ class BackupCodec {
         ),
         secretKey: key,
       );
-      return BackupContents.fromJson(
-        jsonDecode(utf8.decode(clear)) as Map<String, dynamic>,
-      );
+      return BackupContents.fromJson(jsonDecode(utf8.decode(clear)) as Map<String, dynamic>);
     } on BackupException {
       rethrow;
     } catch (_) {
       // Wrong passphrase and damaged text look the same from outside, so the message covers both.
-      throw const BackupException(
-        'Wrong passphrase, or the backup text was changed or cut short.',
-      );
+      throw const BackupException('Wrong passphrase, or the backup text was changed or cut short.');
     }
   }
 }

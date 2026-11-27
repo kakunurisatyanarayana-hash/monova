@@ -41,23 +41,23 @@ class JewellerQuote {
 
   /// The full final cost for [grams], with GST at 3% on gold and making.
   JewelleryEstimate costFor(double grams) => estimateJewellery(
-    perGram: perGram,
-    grams: grams,
-    makingPercent: makingPercent,
-    otherCharges: otherCharges,
-  );
+        perGram: perGram,
+        grams: grams,
+        makingPercent: makingPercent,
+        otherCharges: otherCharges,
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'shop': shop,
-    'city': city,
-    'product': productId,
-    'perGram': perGram,
-    'making': makingPercent,
-    'other': otherCharges,
-    'quotedOn': _dayText(quotedOn),
-    'note': note,
-  };
+        'id': id,
+        'shop': shop,
+        'city': city,
+        'product': productId,
+        'perGram': perGram,
+        'making': makingPercent,
+        'other': otherCharges,
+        'quotedOn': _dayText(quotedOn),
+        'note': note,
+      };
 
   /// Null for a damaged entry, which is then ignored rather than shown.
   static JewellerQuote? fromJson(Map<String, dynamic> j) {
@@ -65,8 +65,7 @@ class JewellerQuote {
     final rate = j['perGram'];
     final making = j['making'];
     final other = j['other'];
-    if (day == null || rate is! num || making is! num || other is! num)
-      return null;
+    if (day == null || rate is! num || making is! num || other is! num) return null;
     return JewellerQuote(
       id: '${j['id']}',
       shop: '${j['shop']}',
@@ -82,11 +81,7 @@ class JewellerQuote {
 }
 
 /// The quotes for one city and product, newest first.
-List<JewellerQuote> quotesFor(
-  List<JewellerQuote> all,
-  String city,
-  String productId,
-) {
+List<JewellerQuote> quotesFor(List<JewellerQuote> all, String city, String productId) {
   final out = [
     for (final q in all)
       if (q.city == city && q.productId == productId) q,
@@ -99,13 +94,9 @@ List<JewellerQuote> quotesFor(
 double? changeFromPreviousQuote(List<JewellerQuote> all, JewellerQuote q) {
   JewellerQuote? previous;
   for (final other in all) {
-    if (other.shop != q.shop ||
-        other.city != q.city ||
-        other.productId != q.productId)
-      continue;
+    if (other.shop != q.shop || other.city != q.city || other.productId != q.productId) continue;
     if (!other.quotedOn.isBefore(q.quotedOn) || other.id == q.id) continue;
-    if (previous == null || other.quotedOn.isAfter(previous.quotedOn))
-      previous = other;
+    if (previous == null || other.quotedOn.isAfter(previous.quotedOn)) previous = other;
   }
   return previous == null ? null : q.perGram - previous.perGram;
 }
@@ -114,15 +105,11 @@ double? changeFromPreviousQuote(List<JewellerQuote> all, JewellerQuote q) {
 double? nationalOn(List<StoredPrice> prices, String productId, DateTime day) {
   final product = bullionProducts.firstWhere((p) => p.id == productId);
   for (final p in prices) {
-    if (p.productId == productId &&
-        p.date.year == day.year &&
-        p.date.month == day.month &&
-        p.date.day == day.day) {
+    if (p.productId == productId && p.date.year == day.year && p.date.month == day.month && p.date.day == day.day) {
       return perGram(p.value, product.unit);
     }
   }
   return null;
 }
 
-String _dayText(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _dayText(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

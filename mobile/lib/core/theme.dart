@@ -77,22 +77,19 @@ class MonovaColors {
   );
 
   /// The accent as a flat colour. Used for icon badges, buttons and small marks, so the app keeps one calm accent.
-  LinearGradient get aurora =>
-      LinearGradient(colors: [accentStart, accentStart]);
+  LinearGradient get aurora => LinearGradient(colors: [accentStart, accentStart]);
 
   /// The full two-colour gradient. Used only for hero cards at the top of a page.
   LinearGradient get hero => LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [accentStart, accentEnd],
-  );
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [accentStart, accentEnd],
+      );
 }
 
 class MonovaTheme {
   static ThemeData build(Brightness brightness) {
-    final c = brightness == Brightness.dark
-        ? MonovaColors.dark
-        : MonovaColors.light;
+    final c = brightness == Brightness.dark ? MonovaColors.dark : MonovaColors.light;
     final scheme = ColorScheme(
       brightness: brightness,
       primary: c.accentStart,
@@ -120,11 +117,7 @@ class MonovaTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: c.ink,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
+        titleTextStyle: TextStyle(color: c.ink, fontSize: 20, fontWeight: FontWeight.w700),
       ),
       cardTheme: CardThemeData(
         color: c.raised,
@@ -139,15 +132,9 @@ class MonovaTheme {
         filled: true,
         fillColor: c.base,
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 16,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         labelStyle: TextStyle(color: c.muted, fontWeight: FontWeight.w500),
-        floatingLabelStyle: TextStyle(
-          color: c.accentStart,
-          fontWeight: FontWeight.w700,
-        ),
+        floatingLabelStyle: TextStyle(color: c.accentStart, fontWeight: FontWeight.w700),
         hintStyle: TextStyle(color: c.muted.withValues(alpha: 0.7)),
         prefixIconColor: c.muted,
         suffixIconColor: c.muted,
@@ -179,9 +166,7 @@ class MonovaTheme {
           elevation: 0,
           minimumSize: const Size(48, 52),
           padding: const EdgeInsets.symmetric(horizontal: 22),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
@@ -190,9 +175,7 @@ class MonovaTheme {
           foregroundColor: c.ink,
           side: BorderSide(color: c.border, width: 1.2),
           minimumSize: const Size(48, 52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
@@ -200,9 +183,7 @@ class MonovaTheme {
         style: TextButton.styleFrom(
           foregroundColor: c.accentStart,
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
@@ -223,11 +204,7 @@ class MonovaTheme {
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(color: c.border),
         ),
-        titleTextStyle: TextStyle(
-          color: c.ink,
-          fontSize: 19,
-          fontWeight: FontWeight.w800,
-        ),
+        titleTextStyle: TextStyle(color: c.ink, fontSize: 19, fontWeight: FontWeight.w800),
         contentTextStyle: TextStyle(color: c.muted, fontSize: 14, height: 1.45),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -239,9 +216,7 @@ class MonovaTheme {
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: c.raised,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: c.raised,
@@ -250,40 +225,19 @@ class MonovaTheme {
         shape: const StadiumBorder(),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? c.onAccent : c.muted,
-        ),
-        trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? c.accentStart : c.border,
-        ),
+        thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.onAccent : c.muted),
+        trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? c.accentStart : c.border),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 1),
       // Hindi and Telugu text falls back to the Noto fonts bundled in assets/fonts, so those letters show instead of boxes.
       textTheme: TextTheme(
-        headlineMedium: TextStyle(
-          color: c.ink,
-          fontSize: 28,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-        ),
-        titleLarge: TextStyle(
-          color: c.ink,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
-        titleMedium: TextStyle(
-          color: c.ink,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),
+        headlineMedium: TextStyle(color: c.ink, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        titleLarge: TextStyle(color: c.ink, fontSize: 20, fontWeight: FontWeight.w700),
+        titleMedium: TextStyle(color: c.ink, fontSize: 16, fontWeight: FontWeight.w700),
         bodyMedium: TextStyle(color: c.ink, fontSize: 14),
         bodySmall: TextStyle(color: c.muted, fontSize: 12),
-        labelLarge: TextStyle(
-          color: c.ink,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        labelLarge: TextStyle(color: c.ink, fontSize: 14, fontWeight: FontWeight.w600),
       ).apply(fontFamilyFallback: indicFontFallback),
       extensions: [MonovaThemeExtension(c)],
     );
@@ -297,17 +251,12 @@ class MonovaThemeExtension extends ThemeExtension<MonovaThemeExtension> {
   final MonovaColors colors;
 
   @override
-  MonovaThemeExtension copyWith({MonovaColors? colors}) =>
-      MonovaThemeExtension(colors ?? this.colors);
+  MonovaThemeExtension copyWith({MonovaColors? colors}) => MonovaThemeExtension(colors ?? this.colors);
 
   @override
-  MonovaThemeExtension lerp(
-    ThemeExtension<MonovaThemeExtension>? other,
-    double t,
-  ) => this;
+  MonovaThemeExtension lerp(ThemeExtension<MonovaThemeExtension>? other, double t) => this;
 }
 
 extension MonovaContext on BuildContext {
-  MonovaColors get monova =>
-      Theme.of(this).extension<MonovaThemeExtension>()!.colors;
+  MonovaColors get monova => Theme.of(this).extension<MonovaThemeExtension>()!.colors;
 }

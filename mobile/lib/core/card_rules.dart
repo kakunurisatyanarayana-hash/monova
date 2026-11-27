@@ -1,12 +1,11 @@
-/// Rules for saved cards. Pure functions, so they can be tested without a device.
+﻿/// Rules for saved cards. Pure functions, so they can be tested without a device.
 library;
 
 /// Keeps digits only, so "4111 1111 1111 1111" and "4111111111111111" are the same.
 String digitsOnly(String text) => text.replaceAll(RegExp(r'\D'), '');
 
 /// The only part of a card number that is ever stored.
-String lastFour(String digits) =>
-    digits.length <= 4 ? digits : digits.substring(digits.length - 4);
+String lastFour(String digits) => digits.length <= 4 ? digits : digits.substring(digits.length - 4);
 
 /// Length 12 to 19 digits and a passing Luhn check. Catches most typing mistakes before saving.
 bool isValidCardNumber(String digits) {
@@ -47,12 +46,7 @@ String detectNetwork(String digits) {
       final four = int.tryParse(digits.substring(0, 4)) ?? 0;
       if (four >= 2221 && four <= 2720) return 'Mastercard';
     }
-    if (two == 60 ||
-        two == 65 ||
-        two == 81 ||
-        two == 82 ||
-        digits.startsWith('508'))
-      return 'RuPay';
+    if (two == 60 || two == 65 || two == 81 || two == 82 || digits.startsWith('508')) return 'RuPay';
   }
   return 'Card';
 }
@@ -61,16 +55,13 @@ String detectNetwork(String digits) {
 String? expiryError(int month, int year, DateTime now) {
   if (month < 1 || month > 12) return 'Pick the month shown on the card.';
   if (year < now.year) return 'This card has already expired.';
-  if (year == now.year && month < now.month)
-    return 'This card has already expired.';
+  if (year == now.year && month < now.month) return 'This card has already expired.';
   return null;
 }
 
 /// Null when the photo is acceptable: PNG or JPEG, and at most 1.5 MB after resizing.
 String? photoError(String mimeType, int byteCount) {
-  if (mimeType != 'image/png' && mimeType != 'image/jpeg')
-    return 'Only PNG or JPEG pictures can be saved.';
-  if (byteCount > 1500 * 1024)
-    return 'This picture is over 1.5 MB, which is too big to store. Choose a smaller picture, or take the photo again with a lower camera resolution.';
+  if (mimeType != 'image/png' && mimeType != 'image/jpeg') return 'Only PNG or JPEG pictures can be saved.';
+  if (byteCount > 1500 * 1024) return 'This picture is over 1.5 MB, which is too big to store. Choose a smaller picture, or take the photo again with a lower camera resolution.';
   return null;
 }

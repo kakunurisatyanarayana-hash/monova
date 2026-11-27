@@ -33,13 +33,11 @@ class ThemeController extends Notifier<ThemeMode> {
   }
 }
 
-final themeModeProvider = NotifierProvider<ThemeController, ThemeMode>(
-  ThemeController.new,
-);
+final themeModeProvider = NotifierProvider<ThemeController, ThemeMode>(ThemeController.new);
 
 /// Short label for each theme choice, shown in menus.
 String themeLabel(ThemeMode mode) => switch (mode) {
-  ThemeMode.light => 'Light',
-  ThemeMode.dark => 'Dark',
-  ThemeMode.system => 'Device',
-};
+      ThemeMode.light => 'Light',
+      ThemeMode.dark => 'Dark',
+      ThemeMode.system => 'Device',
+    };

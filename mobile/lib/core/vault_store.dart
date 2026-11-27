@@ -1,5 +1,4 @@
 import 'data_revision.dart';
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -10,9 +9,9 @@ enum VaultKind { password, note }
 
 extension VaultKindLabel on VaultKind {
   String get label => switch (this) {
-    VaultKind.password => 'Password',
-    VaultKind.note => 'Note',
-  };
+        VaultKind.password => 'Password',
+        VaultKind.note => 'Note',
+      };
 }
 
 /// One saved item: a login (username, password, website) or a free note.
@@ -68,33 +67,25 @@ class VaultEntry {
   bool matches(String query) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return true;
-    return [
-      title,
-      username,
-      url,
-      notes,
-    ].any((field) => field.toLowerCase().contains(q));
+    return [title, username, url, notes].any((field) => field.toLowerCase().contains(q));
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'kind': kind.name,
-    'title': title,
-    'username': username,
-    'password': password,
-    'url': url,
-    'notes': notes,
-    'updatedAt': updatedAt.toIso8601String(),
-  };
+        'id': id,
+        'kind': kind.name,
+        'title': title,
+        'username': username,
+        'password': password,
+        'url': url,
+        'notes': notes,
+        'updatedAt': updatedAt.toIso8601String(),
+      };
 
   factory VaultEntry.fromJson(Map<String, dynamic> j) {
     final kindName = j['kind'] as String?;
     return VaultEntry(
       id: '${j['id']}',
-      kind: VaultKind.values.firstWhere(
-        (k) => k.name == kindName,
-        orElse: () => VaultKind.note,
-      ),
+      kind: VaultKind.values.firstWhere((k) => k.name == kindName, orElse: () => VaultKind.note),
       title: '${j['title'] ?? ''}',
       username: '${j['username'] ?? ''}',
       password: '${j['password'] ?? ''}',
@@ -124,9 +115,7 @@ class VaultStore {
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = jsonDecode(raw) as List<dynamic>;
-      final entries = list
-          .map((e) => VaultEntry.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
+      final entries = list.map((e) => VaultEntry.fromJson(Map<String, dynamic>.from(e as Map))).toList();
       entries.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       return entries;
     } catch (_) {

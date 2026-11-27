@@ -24,31 +24,17 @@ class AllFeaturesCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Everything in MONOVA',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Everything in MONOVA', style: Theme.of(context).textTheme.titleMedium),
           for (final section in sections) ...[
             const SizedBox(height: 16),
-            Text(
-              section.title,
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(section.title, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             EqualTileGrid(
               minTileWidth: 150,
               tileHeight: 96,
               children: [
                 for (final item in section.items)
-                  if (item.available(offline))
-                    _FeatureTile(
-                      item: item,
-                      onTap: () => context.push(item.route!),
-                    ),
+                  if (item.available(offline)) _FeatureTile(item: item, onTap: () => context.push(item.route!)),
               ],
             ),
           ],
@@ -69,10 +55,7 @@ class _FeatureTile extends StatelessWidget {
     final c = context.monova;
     return Material(
       color: c.raised,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: c.border),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: c.border)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         hoverColor: c.accentStart.withValues(alpha: 0.08),
@@ -87,11 +70,7 @@ class _FeatureTile extends StatelessWidget {
               Text(
                 item.title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.25,
-                ),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.25),
               ),
             ],
           ),

@@ -62,19 +62,17 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
       final notes = await VaultStore.load();
 
       if (mounted) {
-        setState(
-          () => _totals = _Totals(
-            creditDue: creditDue,
-            creditCustomers: accounts.length,
-            groupsToSettle: groupsToSettle,
-            groupPayments: groupPayments,
-            billsToSettle: billsToSettle,
-            billPayments: billPayments,
-            billsSaved: bills.length,
-            cards: cards.length,
-            notes: notes.length,
-          ),
-        );
+        setState(() => _totals = _Totals(
+              creditDue: creditDue,
+              creditCustomers: accounts.length,
+              groupsToSettle: groupsToSettle,
+              groupPayments: groupPayments,
+              billsToSettle: billsToSettle,
+              billPayments: billPayments,
+              billsSaved: bills.length,
+              cards: cards.length,
+              notes: notes.length,
+            ));
       }
     } catch (e) {
       debugPrint('Money overview failed: $e');
@@ -91,58 +89,38 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Money overview',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Money overview', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 2),
-          Text(
-            'Read from this device only',
-            style: TextStyle(color: c.muted, fontSize: 12),
-          ),
+          Text('Read from this device only', style: TextStyle(color: c.muted, fontSize: 12)),
           const SizedBox(height: 14),
           if (_error != null)
-            Text(
-              'The overview could not be read. Your data has not changed.',
-              style: TextStyle(color: c.expense),
-            )
+            Text('The overview could not be read. Your data has not changed.', style: TextStyle(color: c.expense))
           else if (t == null)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
           else
             GridView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                mainAxisExtent: 104,
-              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, mainAxisExtent: 104),
               children: [
                 _Tile(
                   label: 'Credit book due',
                   value: money(t.creditDue / 100),
-                  note:
-                      '${t.creditCustomers} ${t.creditCustomers == 1 ? 'customer' : 'customers'}',
+                  note: '${t.creditCustomers} ${t.creditCustomers == 1 ? 'customer' : 'customers'}',
                   color: t.creditDue > 0 ? c.expense : c.income,
                   onTap: () => context.push('/ledger'),
                 ),
                 _Tile(
                   label: 'Groups to settle',
                   value: money(t.groupsToSettle / 100),
-                  note:
-                      '${t.groupPayments} ${t.groupPayments == 1 ? 'payment' : 'payments'}',
+                  note: '${t.groupPayments} ${t.groupPayments == 1 ? 'payment' : 'payments'}',
                   color: t.groupsToSettle > 0 ? c.warning : c.income,
                   onTap: () => context.push('/groups'),
                 ),
                 _Tile(
                   label: 'Split bills to settle',
                   value: money(t.billsToSettle / 100),
-                  note:
-                      '${t.billsSaved} saved, ${t.billPayments} ${t.billPayments == 1 ? 'payment' : 'payments'}',
+                  note: '${t.billsSaved} saved, ${t.billPayments} ${t.billPayments == 1 ? 'payment' : 'payments'}',
                   color: t.billsToSettle > 0 ? c.warning : c.income,
                   onTap: () => context.push('/tools/split'),
                 ),
@@ -186,13 +164,7 @@ class _Totals {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({
-    required this.label,
-    required this.value,
-    required this.note,
-    required this.color,
-    required this.onTap,
-  });
+  const _Tile({required this.label, required this.value, required this.note, required this.color, required this.onTap});
 
   final String label;
   final String value;
@@ -217,34 +189,13 @@ class _Tile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 12, fontWeight: FontWeight.w600)),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              child: Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w800)),
             ),
-            Text(
-              note,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: c.muted, fontSize: 11),
-            ),
+            Text(note, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 11)),
           ],
         ),
       ),

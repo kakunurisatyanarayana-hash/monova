@@ -15,10 +15,10 @@ class Settlement {
   Map<String, dynamic> toJson() => {'from': from, 'to': to, 'cents': cents};
 
   factory Settlement.fromJson(Map<String, dynamic> j) => Settlement(
-    from: '${j['from']}',
-    to: '${j['to']}',
-    cents: (j['cents'] as num).toInt(),
-  );
+        from: '${j['from']}',
+        to: '${j['to']}',
+        cents: (j['cents'] as num).toInt(),
+      );
 }
 
 /// A bill that was split and saved on this device, with who paid and who pays whom.
@@ -40,18 +40,7 @@ class SavedBill {
 
   final String notes;
 
-  SavedBill copyWith({String? title, String? notes, String? groupId}) =>
-      SavedBill(
-        id: id,
-        title: title ?? this.title,
-        createdAt: createdAt,
-        totalCents: totalCents,
-        payer: payer,
-        people: people,
-        settlements: settlements,
-        notes: notes ?? this.notes,
-        groupId: groupId ?? this.groupId,
-      );
+  SavedBill copyWith({String? title, String? notes, String? groupId}) => SavedBill(id: id, title: title ?? this.title, createdAt: createdAt, totalCents: totalCents, payer: payer, people: people, settlements: settlements, notes: notes ?? this.notes, groupId: groupId ?? this.groupId);
 
   final String id;
   final String title;
@@ -62,31 +51,31 @@ class SavedBill {
   final List<Settlement> settlements;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'createdAt': createdAt.toIso8601String(),
-    'totalCents': totalCents,
-    'payer': payer,
-    'people': people,
-    'settlements': settlements.map((s) => s.toJson()).toList(),
-    'notes': notes,
-    'groupId': groupId,
-  };
+        'id': id,
+        'title': title,
+        'createdAt': createdAt.toIso8601String(),
+        'totalCents': totalCents,
+        'payer': payer,
+        'people': people,
+        'settlements': settlements.map((s) => s.toJson()).toList(),
+        'notes': notes,
+        'groupId': groupId,
+      };
 
   factory SavedBill.fromJson(Map<String, dynamic> j) => SavedBill(
-    id: '${j['id']}',
-    title: '${j['title'] ?? ''}',
-    createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
-    notes: '${j['notes'] ?? ''}',
-    groupId: '${j['groupId'] ?? ''}',
-    totalCents: (j['totalCents'] as num?)?.toInt() ?? 0,
-    payer: '${j['payer'] ?? ''}',
-    people: [for (final p in (j['people'] as List<dynamic>? ?? const [])) '$p'],
-    settlements: [
-      for (final s in (j['settlements'] as List<dynamic>? ?? const []))
-        Settlement.fromJson(Map<String, dynamic>.from(s as Map)),
-    ],
-  );
+        id: '${j['id']}',
+        title: '${j['title'] ?? ''}',
+        createdAt: DateTime.tryParse('${j['createdAt']}') ?? DateTime.now(),
+        notes: '${j['notes'] ?? ''}',
+        groupId: '${j['groupId'] ?? ''}',
+        totalCents: (j['totalCents'] as num?)?.toInt() ?? 0,
+        payer: '${j['payer'] ?? ''}',
+        people: [for (final p in (j['people'] as List<dynamic>? ?? const [])) '$p'],
+        settlements: [
+          for (final s in (j['settlements'] as List<dynamic>? ?? const []))
+            Settlement.fromJson(Map<String, dynamic>.from(s as Map)),
+        ],
+      );
 }
 
 /// Net position per person across all bills, in cents.
@@ -109,9 +98,7 @@ class BillStore {
 
   static Future<List<SavedBill>> load() async {
     final store = await LocalStore.open();
-    final bills = [
-      for (final m in store.readList(billsKey)) SavedBill.fromJson(m),
-    ];
+    final bills = [for (final m in store.readList(billsKey)) SavedBill.fromJson(m)];
     bills.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return bills;
   }
@@ -124,17 +111,12 @@ class BillStore {
 
 /// Each other person's balance with you, from the "who pays whom" settlements of every saved bill and group.
 /// Positive means that person owes you; negative means you owe them.
-Map<String, int> youBalances({
-  required List<SavedBill> bills,
-  required List<LocalGroup> groups,
-  required String me,
-}) {
+Map<String, int> youBalances({required List<SavedBill> bills, required List<LocalGroup> groups, required String me}) {
   final out = <String, int>{};
   void add(String person, int cents) {
     if (person == me || person.isEmpty) return;
     out[person] = (out[person] ?? 0) + cents;
   }
-
   for (final b in bills) {
     for (final s in b.settlements) {
       if (s.to == me) add(s.from, s.cents);

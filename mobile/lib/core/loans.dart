@@ -17,35 +17,24 @@ const loanPayPrefix = 'loanpay-';
 const loanKinds = <String>['emi', 'open'];
 
 class LoanPayment {
-  const LoanPayment({
-    required this.id,
-    required this.date,
-    required this.cents,
-    this.note = '',
-  });
+  const LoanPayment({required this.id, required this.date, required this.cents, this.note = ''});
 
   final String id;
   final DateTime date;
   final int cents;
   final String note;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'date': _day(date),
-    'cents': cents,
-    'note': note,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'date': _day(date), 'cents': cents, 'note': note};
 
   factory LoanPayment.fromJson(Map<String, dynamic> j) => LoanPayment(
-    id: '${j['id']}',
-    date: DateTime.tryParse('${j['date']}') ?? DateTime.now(),
-    cents: (j['cents'] as num?)?.toInt() ?? 0,
-    note: '${j['note'] ?? ''}',
-  );
+        id: '${j['id']}',
+        date: DateTime.tryParse('${j['date']}') ?? DateTime.now(),
+        cents: (j['cents'] as num?)?.toInt() ?? 0,
+        note: '${j['note'] ?? ''}',
+      );
 }
 
-String _day(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _day(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 class Loan {
   const Loan({
@@ -81,11 +70,7 @@ class Loan {
   /// The monthly instalment, in paise, for an EMI loan. Zero for open loans.
   int get emiCents {
     if (!isEmi || months <= 0) return 0;
-    final emi = FinanceCalc.emi(
-      principal: principalCents / 100,
-      annualRatePercent: annualRatePercent,
-      months: months,
-    ).emi;
+    final emi = FinanceCalc.emi(principal: principalCents / 100, annualRatePercent: annualRatePercent, months: months).emi;
     return (emi * 100).round();
   }
 
@@ -125,9 +110,7 @@ class Loan {
     final r = annualRatePercent / 12 / 100;
     final p = principalCents / 100;
     final emi = emiCents / 100;
-    final balance = r == 0
-        ? p - emi * k
-        : p * _pow(1 + r, k) - emi * (_pow(1 + r, k) - 1) / r;
+    final balance = r == 0 ? p - emi * k : p * _pow(1 + r, k) - emi * (_pow(1 + r, k) - 1) / r;
     final cents = (balance * 100).round();
     return cents < 0 ? 0 : cents;
   }
@@ -135,8 +118,7 @@ class Loan {
   /// Share repaid, from 0 to 1.
   double get progress {
     if (principalCents <= 0) return 0;
-    if (isEmi)
-      return (payments.length / (months <= 0 ? 1 : months)).clamp(0.0, 1.0);
+    if (isEmi) return (payments.length / (months <= 0 ? 1 : months)).clamp(0.0, 1.0);
     return (paidCents / principalCents).clamp(0.0, 1.0);
   }
 
@@ -144,75 +126,46 @@ class Loan {
 
   Loan withPayment(LoanPayment p) => _copy(payments: [...payments, p]);
 
-  Loan withoutPayment(String paymentId) => _copy(
-    payments: [
-      for (final p in payments)
-        if (p.id != paymentId) p,
-    ],
-  );
+  Loan withoutPayment(String paymentId) => _copy(payments: [for (final p in payments) if (p.id != paymentId) p]);
 
-  Loan _copy({
-    List<LoanPayment>? payments,
-    String? name,
-    int? principalCents,
-    DateTime? startDate,
-    double? annualRatePercent,
-    int? months,
-    String? notes,
-  }) => Loan(
-    id: id,
-    name: name ?? this.name,
-    kind: kind,
-    principalCents: principalCents ?? this.principalCents,
-    startDate: startDate ?? this.startDate,
-    annualRatePercent: annualRatePercent ?? this.annualRatePercent,
-    months: months ?? this.months,
-    payments: payments ?? this.payments,
-    notes: notes ?? this.notes,
-  );
+  Loan _copy({List<LoanPayment>? payments, String? name, int? principalCents, DateTime? startDate, double? annualRatePercent, int? months, String? notes}) => Loan(
+        id: id,
+        name: name ?? this.name,
+        kind: kind,
+        principalCents: principalCents ?? this.principalCents,
+        startDate: startDate ?? this.startDate,
+        annualRatePercent: annualRatePercent ?? this.annualRatePercent,
+        months: months ?? this.months,
+        payments: payments ?? this.payments,
+        notes: notes ?? this.notes,
+      );
 
-  Loan edited({
-    String? name,
-    int? principalCents,
-    DateTime? startDate,
-    double? annualRatePercent,
-    int? months,
-    String? notes,
-  }) => _copy(
-    name: name,
-    principalCents: principalCents,
-    startDate: startDate,
-    annualRatePercent: annualRatePercent,
-    months: months,
-    notes: notes,
-  );
+  Loan edited({String? name, int? principalCents, DateTime? startDate, double? annualRatePercent, int? months, String? notes}) =>
+      _copy(name: name, principalCents: principalCents, startDate: startDate, annualRatePercent: annualRatePercent, months: months, notes: notes);
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'kind': kind,
-    'principalCents': principalCents,
-    'startDate': _day(startDate),
-    'annualRatePercent': annualRatePercent,
-    'months': months,
-    'payments': [for (final p in payments) p.toJson()],
-    'notes': notes,
-  };
+        'id': id,
+        'name': name,
+        'kind': kind,
+        'principalCents': principalCents,
+        'startDate': _day(startDate),
+        'annualRatePercent': annualRatePercent,
+        'months': months,
+        'payments': [for (final p in payments) p.toJson()],
+        'notes': notes,
+      };
 
   factory Loan.fromJson(Map<String, dynamic> j) => Loan(
-    id: '${j['id']}',
-    name: '${j['name'] ?? ''}',
-    kind: loanKinds.contains(j['kind']) ? '${j['kind']}' : 'open',
-    principalCents: (j['principalCents'] as num?)?.toInt() ?? 0,
-    startDate: DateTime.tryParse('${j['startDate']}') ?? DateTime.now(),
-    annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
-    months: (j['months'] as num?)?.toInt() ?? 0,
-    payments: [
-      for (final p in (j['payments'] as List<dynamic>? ?? const []))
-        LoanPayment.fromJson(Map<String, dynamic>.from(p as Map)),
-    ],
-    notes: '${j['notes'] ?? ''}',
-  );
+        id: '${j['id']}',
+        name: '${j['name'] ?? ''}',
+        kind: loanKinds.contains(j['kind']) ? '${j['kind']}' : 'open',
+        principalCents: (j['principalCents'] as num?)?.toInt() ?? 0,
+        startDate: DateTime.tryParse('${j['startDate']}') ?? DateTime.now(),
+        annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
+        months: (j['months'] as num?)?.toInt() ?? 0,
+        payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) LoanPayment.fromJson(Map<String, dynamic>.from(p as Map))],
+        notes: '${j['notes'] ?? ''}',
+      );
 }
 
 double _pow(double base, int exp) {
@@ -227,29 +180,25 @@ double _pow(double base, int exp) {
 List<MoneyEntry> loanFinanceEntries(List<Loan> loans) {
   final out = <MoneyEntry>[];
   for (final l in loans) {
-    out.add(
-      MoneyEntry(
-        id: '$loanInPrefix${l.id}',
-        income: true,
-        title: 'Borrowed from ${l.name}',
-        category: 'Loan received',
-        cents: l.principalCents,
-        date: l.startDate,
-        notes: l.isEmi ? '${l.months} monthly instalments' : '',
-      ),
-    );
+    out.add(MoneyEntry(
+      id: '$loanInPrefix${l.id}',
+      income: true,
+      title: 'Borrowed from ${l.name}',
+      category: 'Loan received',
+      cents: l.principalCents,
+      date: l.startDate,
+      notes: l.isEmi ? '${l.months} monthly instalments' : '',
+    ));
     for (final p in l.payments) {
-      out.add(
-        MoneyEntry(
-          id: '$loanPayPrefix${p.id}',
-          income: false,
-          title: 'Repaid ${l.name}',
-          category: 'Loan repayment',
-          cents: p.cents,
-          date: p.date,
-          notes: p.note,
-        ),
-      );
+      out.add(MoneyEntry(
+        id: '$loanPayPrefix${p.id}',
+        income: false,
+        title: 'Repaid ${l.name}',
+        category: 'Loan repayment',
+        cents: p.cents,
+        date: p.date,
+        notes: p.note,
+      ));
     }
   }
   return out;
@@ -261,17 +210,10 @@ List<MoneyEntry> mergeLoanEntries(List<MoneyEntry> entries, List<Loan> loans) {
   final wanted = {for (final e in loanFinanceEntries(loans)) e.id: e};
   final kept = <MoneyEntry>[
     for (final e in entries)
-      if (!(e.id.startsWith(loanInPrefix) || e.id.startsWith(loanPayPrefix)))
-        e
-      else if (wanted.containsKey(e.id))
-        wanted[e.id]!,
+      if (!(e.id.startsWith(loanInPrefix) || e.id.startsWith(loanPayPrefix))) e else if (wanted.containsKey(e.id)) wanted[e.id]!,
   ];
   final existing = {for (final e in entries) e.id};
-  return [
-    ...kept,
-    for (final e in wanted.values)
-      if (!existing.contains(e.id)) e,
-  ];
+  return [...kept, for (final e in wanted.values) if (!existing.contains(e.id)) e];
 }
 
 class LoanStore {
@@ -289,14 +231,10 @@ class LoanStore {
     final entries = await EntryStore.loadEntries();
     await EntryStore.saveEntries(mergeLoanEntries(entries, loans));
     final reminders = await ReminderStore.load();
-    final kept = [
-      for (final r in reminders)
-        if (!r.id.startsWith(loanReminderPrefix)) r,
-    ];
+    final kept = [for (final r in reminders) if (!r.id.startsWith(loanReminderPrefix)) r];
     await ReminderStore.save([
       ...kept,
-      for (final l in loans)
-        if (loanReminderFor(l) case final r?) r,
+      for (final l in loans) if (loanReminderFor(l) case final r?) r,
     ]);
   }
 

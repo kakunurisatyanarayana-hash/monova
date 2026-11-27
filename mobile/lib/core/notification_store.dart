@@ -14,9 +14,7 @@ class NotificationStore {
 
   static Future<void> save(List<AppNotification> list) async {
     final store = await LocalStore.open();
-    await store.writeList(_key, [
-      for (final n in trimNotifications(list)) n.toJson(),
-    ]);
+    await store.writeList(_key, [for (final n in trimNotifications(list)) n.toJson()]);
   }
 
   /// Adds one notification, keeping existing ones, and returns the updated list.

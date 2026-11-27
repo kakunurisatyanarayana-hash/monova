@@ -24,24 +24,24 @@ class MoneyEntry {
   final String notes;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'income': income,
-    'title': title,
-    'category': category,
-    'cents': cents,
-    'date': _iso(date),
-    'notes': notes,
-  };
+        'id': id,
+        'income': income,
+        'title': title,
+        'category': category,
+        'cents': cents,
+        'date': _iso(date),
+        'notes': notes,
+      };
 
   factory MoneyEntry.fromJson(Map<String, dynamic> j) => MoneyEntry(
-    id: '${j['id']}',
-    income: j['income'] == true,
-    title: '${j['title'] ?? ''}',
-    category: '${j['category'] ?? 'Other'}',
-    cents: (j['cents'] as num).toInt(),
-    date: DateTime.parse('${j['date']}'),
-    notes: '${j['notes'] ?? ''}',
-  );
+        id: '${j['id']}',
+        income: j['income'] == true,
+        title: '${j['title'] ?? ''}',
+        category: '${j['category'] ?? 'Other'}',
+        cents: (j['cents'] as num).toInt(),
+        date: DateTime.parse('${j['date']}'),
+        notes: '${j['notes'] ?? ''}',
+      );
 }
 
 /// A purchase with its warranty and return dates, so the user can see what is still covered.
@@ -73,37 +73,34 @@ class Purchase {
   final bool remindWarranty;
 
   /// Warranty end date, or null if there is no warranty.
-  DateTime? get warrantyUntil => warrantyMonths <= 0
-      ? null
-      : DateTime(date.year, date.month + warrantyMonths, date.day);
+  DateTime? get warrantyUntil => warrantyMonths <= 0 ? null : DateTime(date.year, date.month + warrantyMonths, date.day);
 
   /// Last day to return the item, or null if no return period was recorded.
-  DateTime? get returnBy =>
-      returnDays <= 0 ? null : date.add(Duration(days: returnDays));
+  DateTime? get returnBy => returnDays <= 0 ? null : date.add(Duration(days: returnDays));
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'retailer': retailer,
-    'cents': cents,
-    'date': _iso(date),
-    'warrantyMonths': warrantyMonths,
-    'returnDays': returnDays,
-    'recordSpend': recordSpend,
-    'remindWarranty': remindWarranty,
-  };
+        'id': id,
+        'name': name,
+        'retailer': retailer,
+        'cents': cents,
+        'date': _iso(date),
+        'warrantyMonths': warrantyMonths,
+        'returnDays': returnDays,
+        'recordSpend': recordSpend,
+        'remindWarranty': remindWarranty,
+      };
 
   factory Purchase.fromJson(Map<String, dynamic> j) => Purchase(
-    id: '${j['id']}',
-    name: '${j['name'] ?? ''}',
-    retailer: '${j['retailer'] ?? ''}',
-    cents: (j['cents'] as num).toInt(),
-    date: DateTime.parse('${j['date']}'),
-    warrantyMonths: (j['warrantyMonths'] as num?)?.toInt() ?? 0,
-    returnDays: (j['returnDays'] as num?)?.toInt() ?? 0,
-    recordSpend: j['recordSpend'] != false,
-    remindWarranty: j['remindWarranty'] != false,
-  );
+        id: '${j['id']}',
+        name: '${j['name'] ?? ''}',
+        retailer: '${j['retailer'] ?? ''}',
+        cents: (j['cents'] as num).toInt(),
+        date: DateTime.parse('${j['date']}'),
+        warrantyMonths: (j['warrantyMonths'] as num?)?.toInt() ?? 0,
+        returnDays: (j['returnDays'] as num?)?.toInt() ?? 0,
+        recordSpend: j['recordSpend'] != false,
+        remindWarranty: j['remindWarranty'] != false,
+      );
 }
 
 /// Totals for one calendar month.
@@ -132,11 +129,7 @@ MonthSummary monthSummary(List<MoneyEntry> entries, int year, int month) {
 }
 
 /// Spending per category for one month, largest first.
-List<MapEntry<String, int>> spendingByCategory(
-  List<MoneyEntry> entries,
-  int year,
-  int month,
-) {
+List<MapEntry<String, int>> spendingByCategory(List<MoneyEntry> entries, int year, int month) {
   final totals = <String, int>{};
   for (final e in entries) {
     if (e.income || e.date.year != year || e.date.month != month) continue;
@@ -150,16 +143,14 @@ String entriesToCsv(List<MoneyEntry> entries) {
   final b = StringBuffer('date,type,category,title,amount,notes\n');
   final sorted = [...entries]..sort((a, c) => a.date.compareTo(c.date));
   for (final e in sorted) {
-    b.write(
-      [
-        _iso(e.date),
-        e.income ? 'income' : 'expense',
-        e.category,
-        e.title,
-        (e.cents / 100).toStringAsFixed(2),
-        e.notes,
-      ].map(_csvField).join(','),
-    );
+    b.write([
+      _iso(e.date),
+      e.income ? 'income' : 'expense',
+      e.category,
+      e.title,
+      (e.cents / 100).toStringAsFixed(2),
+      e.notes,
+    ].map(_csvField).join(','));
     b.write('\n');
   }
   return b.toString();
@@ -183,17 +174,14 @@ List<Purchase> openWarranties(List<Purchase> purchases, DateTime today) {
   return open;
 }
 
-String _iso(DateTime d) =>
-    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _iso(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 class EntryStore {
   EntryStore._();
 
   static Future<List<MoneyEntry>> loadEntries() async {
     final store = await LocalStore.open();
-    final list = [
-      for (final m in store.readList(entriesKey)) MoneyEntry.fromJson(m),
-    ];
+    final list = [for (final m in store.readList(entriesKey)) MoneyEntry.fromJson(m)];
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
@@ -205,17 +193,13 @@ class EntryStore {
 
   static Future<List<Purchase>> loadPurchases() async {
     final store = await LocalStore.open();
-    final list = [
-      for (final m in store.readList(purchasesKey)) Purchase.fromJson(m),
-    ];
+    final list = [for (final m in store.readList(purchasesKey)) Purchase.fromJson(m)];
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   static Future<void> savePurchases(List<Purchase> purchases) async {
     final store = await LocalStore.open();
-    await store.writeList(purchasesKey, [
-      for (final p in purchases) p.toJson(),
-    ]);
+    await store.writeList(purchasesKey, [for (final p in purchases) p.toJson()]);
   }
 }

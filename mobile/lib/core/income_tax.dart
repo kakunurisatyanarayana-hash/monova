@@ -183,9 +183,7 @@ TaxBreakdown computeTax({required int taxable, required bool newRegime}) {
     // Marginal relief: just above the limit, tax cannot be more than the income above it.
     afterRebate = _least(tax, taxable - rebateLimit);
   }
-  final surcharge =
-      (afterRebate * surchargePercent(taxable, newRegime: newRegime) / 100)
-          .round();
+  final surcharge = (afterRebate * surchargePercent(taxable, newRegime: newRegime) / 100).round();
   final cess = ((afterRebate + surcharge) * 4 / 100).round();
   return TaxBreakdown(
     taxableIncome: taxable,
@@ -199,12 +197,7 @@ TaxBreakdown computeTax({required int taxable, required bool newRegime}) {
 
 /// HRA exemption under section 10(13A): the least of HRA received, rent paid above 10% of basic,
 /// and 50% (metro) or 40% (other cities) of basic. Zero when any of the figures is missing.
-int hraExemption({
-  required int basic,
-  required int hraReceived,
-  required int rentPaid,
-  required bool metroCity,
-}) {
+int hraExemption({required int basic, required int hraReceived, required int rentPaid, required bool metroCity}) {
   if (basic <= 0 || hraReceived <= 0 || rentPaid <= 0) return 0;
   final rentAboveTenPercent = _floorZero(rentPaid - basic ~/ 10);
   final cityLimit = basic * (metroCity ? 50 : 40) ~/ 100;
@@ -212,14 +205,9 @@ int hraExemption({
 }
 
 /// Employer NPS deduction limit: 14% of basic in the new regime, 10% in the old.
-int _employerNpsLimit(int basic, {required bool newRegime}) =>
-    basic * (newRegime ? 14 : 10) ~/ 100;
+int _employerNpsLimit(int basic, {required bool newRegime}) => basic * (newRegime ? 14 : 10) ~/ 100;
 
-RegimeResult _finish({
-  required bool isNew,
-  required int income,
-  required List<LineItem> items,
-}) {
+RegimeResult _finish({required bool isNew, required int income, required List<LineItem> items}) {
   var taken = 0;
   for (final item in items) {
     taken += item.amount;
@@ -239,10 +227,7 @@ RegimeResult newRegimeResult(TaxInputs i) {
   final items = <LineItem>[
     if (i.salary > 0) const LineItem('Standard deduction', 75000),
   ];
-  final nps = _least(
-    i.employerNps,
-    _employerNpsLimit(i.basic, newRegime: true),
-  );
+  final nps = _least(i.employerNps, _employerNpsLimit(i.basic, newRegime: true));
   if (nps > 0) items.add(LineItem('Employer NPS, 80CCD(2)', nps));
   return _finish(isNew: true, income: i.salary + i.otherIncome, items: items);
 }
@@ -251,12 +236,7 @@ RegimeResult newRegimeResult(TaxInputs i) {
 RegimeResult oldRegimeResult(TaxInputs i) {
   final items = <LineItem>[];
   if (i.salary > 0) items.add(const LineItem('Standard deduction', 50000));
-  final hra = hraExemption(
-    basic: i.basic,
-    hraReceived: i.hraReceived,
-    rentPaid: i.rentPaid,
-    metroCity: i.metroCity,
-  );
+  final hra = hraExemption(basic: i.basic, hraReceived: i.hraReceived, rentPaid: i.rentPaid, metroCity: i.metroCity);
   if (hra > 0) items.add(LineItem('HRA exemption', hra));
   final tax = _least(i.professionalTax, 2500);
   if (tax > 0) items.add(LineItem('Professional tax', tax));
@@ -268,12 +248,8 @@ RegimeResult oldRegimeResult(TaxInputs i) {
   if (homeLoan > 0) items.add(LineItem('24(b): home loan interest', homeLoan));
   final npsSelf = _least(i.npsSelf, 50000);
   if (npsSelf > 0) items.add(LineItem('80CCD(1B): your NPS', npsSelf));
-  final npsEmployer = _least(
-    i.employerNps,
-    _employerNpsLimit(i.basic, newRegime: false),
-  );
-  if (npsEmployer > 0)
-    items.add(LineItem('80CCD(2): employer NPS', npsEmployer));
+  final npsEmployer = _least(i.employerNps, _employerNpsLimit(i.basic, newRegime: false));
+  if (npsEmployer > 0) items.add(LineItem('80CCD(2): employer NPS', npsEmployer));
   final savings = _least(i.savingsInterest, 10000);
   if (savings > 0) items.add(LineItem('80TTA: savings interest', savings));
   return _finish(isNew: false, income: i.salary + i.otherIncome, items: items);

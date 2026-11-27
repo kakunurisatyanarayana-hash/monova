@@ -6,14 +6,9 @@ import 'contacts_picker.dart';
 Future<List<PickedContact>> loadContacts() async {
   final granted = await FlutterContacts.requestPermission(readonly: true);
   if (!granted) {
-    throw const ContactsException(
-      'Contacts access is off for MONOVA. Turn it on in phone Settings, then Apps, then MONOVA, then Permissions, then Contacts. Then try again.',
-    );
+    throw const ContactsException('Contacts access is off for MONOVA. Turn it on in phone Settings, then Apps, then MONOVA, then Permissions, then Contacts. Then try again.');
   }
-  final contacts = await FlutterContacts.getContacts(
-    withProperties: true,
-    withPhoto: false,
-  );
+  final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
   final picked = [
     for (final c in contacts)
       if ((c.displayName ?? '').trim().isNotEmpty)
@@ -23,9 +18,7 @@ Future<List<PickedContact>> loadContacts() async {
         ),
   ];
   if (picked.isEmpty) {
-    throw const ContactsException(
-      'No contacts were found on this phone, or MONOVA cannot read them. Check that Contacts permission is on in phone settings, then try again.',
-    );
+    throw const ContactsException('No contacts were found on this phone, or MONOVA cannot read them. Check that Contacts permission is on in phone settings, then try again.');
   }
   picked.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   return picked;

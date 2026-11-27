@@ -30,9 +30,7 @@ class GeoPlace {
 
   /// Reads one result from Nominatim (OpenStreetMap's search service). Missing parts are left empty.
   factory GeoPlace.fromNominatim(Map<String, dynamic> j) {
-    final a =
-        (j['address'] as Map?)?.cast<String, dynamic>() ??
-        const <String, dynamic>{};
+    final a = (j['address'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
     String pick(List<String> keys) {
       for (final k in keys) {
         final v = a[k];
