@@ -22,4 +22,5 @@ Future<void> eraseLocalData() async {
   await store.writeList(propertiesKey, []);
   await store.writeList(roomsKey, []);
   await store.writeList(tenanciesKey, []);
+  await store.writeList(personsKey, []);
 }
