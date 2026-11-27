@@ -20,6 +20,9 @@ import '../features/home/home_screen.dart';
 import '../features/money/money_hub.dart';
 import '../features/documents/documents_screen.dart';
 import '../features/loans/loans_screen.dart';
+import '../features/qr/guest_screens.dart';
+import '../features/qr/invitation_screens.dart';
+import '../features/qr/qr_tools.dart';
 import '../features/plans/plans_screen.dart';
 import '../features/report/report_screen.dart';
 import '../features/reminders/reminders_screen.dart';
@@ -91,6 +94,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/plans', builder: (_, __) => const PlansScreen()),
           GoRoute(path: '/report', builder: (_, __) => const ReportScreen()),
           GoRoute(path: '/documents', builder: (_, __) => const DocumentsScreen()),
+          GoRoute(path: '/qr', builder: (_, __) => const QrHubScreen()),
+          GoRoute(path: '/qr/invites', builder: (_, __) => const InvitationListScreen()),
+          GoRoute(path: '/qr/invites/:id', builder: (_, s) => InvitationDetailScreen(id: s.pathParameters['id']!)),
+          GoRoute(path: '/qr/guests/:id', builder: (_, s) => GuestListScreen(eventId: s.pathParameters['id']!)),
+          GoRoute(path: '/qr/scan', builder: (_, __) => const ScanScreen()),
+          GoRoute(path: '/qr/scan/:id', builder: (_, s) => ScanScreen(eventId: s.pathParameters['id']!)),
+          GoRoute(path: '/qr/location', builder: (_, __) => const LocationQrScreen()),
+          GoRoute(path: '/qr/make', builder: (_, __) => const MakeQrScreen()),
           GoRoute(path: '/loans', builder: (_, __) => const LoanTrackerScreen()),
           GoRoute(path: '/loans/:id', builder: (_, s) => LoanDetailScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),

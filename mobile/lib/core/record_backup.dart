@@ -4,6 +4,7 @@ import 'entry_store.dart';
 import 'groups_store.dart';
 import 'local_store.dart';
 import 'property_store.dart';
+import 'qr_store.dart';
 import 'reminders.dart';
 
 /// Every record kept in plain local storage that a backup must include: finance, purchases, groups, split bills,
@@ -20,6 +21,8 @@ const recordKeys = <String>[
   personsKey,
   paymentsKey,
   remindersKey,
+  invitationsKey,
+  guestsKey,
 ];
 
 /// A record's identity: its id when it has one, otherwise its full content.
