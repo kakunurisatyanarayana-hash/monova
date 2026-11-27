@@ -17,6 +17,7 @@ import '../features/ledger/ledger_screens.dart';
 import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/money/money_hub.dart';
 import '../features/insights/insights_screen.dart';
 import '../features/lending/lending_screens.dart';
 import '../features/planning/planning_screen.dart';
@@ -81,6 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/ledger/:id', builder: (_, s) => LedgerAccountScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/entries', builder: (_, __) => const EntriesScreen()),
           GoRoute(path: '/purchases', builder: (_, __) => const PurchasesScreen()),
+          GoRoute(path: '/money', builder: (_, __) => const MoneyHubScreen()),
           GoRoute(path: '/property', builder: (_, __) => const PropertiesScreen()),
           GoRoute(path: '/property/:id', builder: (_, s) => PropertyDashboardScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/person/:id', builder: (_, s) => PersonScreen(id: s.pathParameters['id']!)),

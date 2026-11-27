@@ -28,7 +28,7 @@ class MainShell extends ConsumerWidget {
         builder: (_, revision, __) => KeyedSubtree(key: ValueKey('page-$revision'), child: child),
       );
 
-  static const _tabs = ['/home', '/activity', '/groups', '/insights'];
+  static const _tabs = ['/home', '/money', '/services', '/settings'];
   static const _wideBreakpoint = 900.0;
   static const _sidebarWidth = 248.0;
 
@@ -138,7 +138,7 @@ class MainShell extends ConsumerWidget {
             child: Row(
               children: [
                 _NavItem(icon: Icons.home_rounded, label: tr('nav_home'), selected: index == 0, onTap: () => context.go('/home')),
-                _NavItem(icon: Icons.swap_vert_rounded, label: tr('nav_activity'), selected: index == 1, onTap: () => context.go('/activity')),
+                _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Money', selected: index == 1, onTap: () => context.go('/money')),
                 Expanded(
                   child: Center(
                     child: GestureDetector(
@@ -156,8 +156,8 @@ class MainShell extends ConsumerWidget {
                     ),
                   ),
                 ),
-                _NavItem(icon: Icons.groups_rounded, label: tr('nav_groups'), selected: index == 2, onTap: () => context.go('/groups')),
-                _NavItem(icon: Icons.insights_rounded, label: tr('nav_insights'), selected: index == 3, onTap: () => context.go('/insights')),
+                _NavItem(icon: Icons.explore_rounded, label: 'Explore', selected: index == 2, onTap: () => context.go('/services')),
+                _NavItem(icon: Icons.person_rounded, label: 'Profile', selected: index == 3, onTap: () => context.go('/settings')),
               ],
             ),
           ),
@@ -175,8 +175,13 @@ class _AddChooser extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final options = [
-      (icon: Icons.lock_rounded, title: 'Password or note', subtitle: 'Logins, PINs and anything you want to remember', route: '/vault'),
+      (icon: Icons.south_west_rounded, title: 'Income or spending', subtitle: 'Money in or out, with a category', route: '/entries'),
+      (icon: Icons.receipt_long_rounded, title: 'Purchase or warranty', subtitle: 'What you bought, and when its warranty ends', route: '/purchases'),
+      (icon: Icons.apartment_rounded, title: 'Property payment or expense', subtitle: 'Rent received, deposits, electricity and repairs', route: '/property'),
+      (icon: Icons.call_split_rounded, title: 'Shared expense', subtitle: 'Split a bill with friends or a group', route: '/tools/split'),
+      (icon: Icons.menu_book_rounded, title: 'Credit book entry', subtitle: 'A bill or payment for someone who owes you', route: '/ledger'),
       (icon: Icons.credit_card_rounded, title: 'Card', subtitle: 'Card name, bank, last four digits and a photo', route: '/saved-cards'),
+      (icon: Icons.lock_rounded, title: 'Password or note', subtitle: 'Logins, PINs and anything you want to remember', route: '/vault'),
       (icon: Icons.backup_rounded, title: 'Backup', subtitle: 'Make an encrypted copy to restore on another device', route: '/backup'),
     ];
     return Column(

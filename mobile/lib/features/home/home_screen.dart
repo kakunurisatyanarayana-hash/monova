@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'attention_card.dart';
+
 import '../../core/api_client.dart';
 import '../../core/format.dart';
 import '../../core/profile_store.dart';
@@ -530,6 +532,8 @@ class _GuestHome extends StatelessWidget {
         children: [
           const _HomeHero(),
           const SizedBox(height: 16),
+          const AttentionCard(),
+          const SizedBox(height: 14),
           const _QuickActions(),
           const SizedBox(height: 20),
           const MoneyOverviewCard(),
