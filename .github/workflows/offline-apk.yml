@@ -37,13 +37,17 @@ jobs:
       - name: Run unit tests
         run: flutter test
 
-      - name: Restore the release signing key
+      - name: Restore the permanent release signing key
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          if [ -z "$KEYSTORE_B64" ]; then
-            echo "No release key in the repository secrets: this APK is signed with the debug key and cannot update an installed copy."
-            exit 0
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "ERROR: Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD and ANDROID_KEY_ALIAS in GitHub Actions secrets."
+            echo "A fresh GitHub runner has a different debug key each time, so a debug-signed APK cannot reliably update the previous build."
+            exit 1
           fi
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/monova-release.jks"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/monova-release.jks" >> "$GITHUB_ENV"
