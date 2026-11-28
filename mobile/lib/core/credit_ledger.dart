@@ -431,3 +431,83 @@ Future<void> syncCreditInterest(List<CreditAccount> accounts) async {
   final kept = [for (final e in entries) if (!e.id.startsWith('cint-')) e];
   await EntryStore.saveEntries([...kept, ...creditInterestEntries(accounts)]);
 }
+
+/// One bill's own history: when it was added, how long it has been open, what is still unpaid, and the simple
+/// interest it has earned so far. Each bill earns interest from its own date, on what is still open.
+class BillBreakdown {
+  const BillBreakdown({
+    required this.bill,
+    required this.daysOpen,
+    required this.openCents,
+    required this.paidCents,
+    required this.interestCents,
+    required this.closedOn,
+  });
+
+  final CreditBill bill;
+  final int daysOpen;
+
+  /// Unpaid amount of this bill as of the date shown.
+  final int openCents;
+
+  /// Amount of this bill paid off so far (not counting interest).
+  final int paidCents;
+
+  /// Simple interest this bill has earned so far.
+  final int interestCents;
+
+  /// The date the bill was fully paid off, or null while it is still open.
+  final DateTime? closedOn;
+}
+
+/// Works out each bill's own interest. Payments clear the account's accrued interest first (as in [computeStatement]),
+/// and the rest pays off the oldest open bill first. Totals match the statement, because the same money is outstanding each day.
+List<BillBreakdown> billBreakdowns(CreditAccount account, DateTime asOf, LedgerStatement statement) {
+  final end = dateOnly(asOf);
+  final dailyRate = account.annualRatePercent / 100 / 365;
+  final bills = [...account.bills]..sort((a, b) => a.date.compareTo(b.date));
+  final payments = [...account.payments]..sort((a, b) => a.date.compareTo(b.date));
+  final open = <String, double>{for (final b in bills) b.id: b.finalCents.toDouble()};
+  final interest = <String, double>{for (final b in bills) b.id: 0};
+  final closedOn = <String, DateTime>{};
+
+  if (bills.isNotEmpty) {
+    var day = dateOnly(bills.first.date);
+    var pi = 0;
+    while (!day.isAfter(end)) {
+      // Payments on this day pay the oldest open bill that already exists today.
+      while (pi < payments.length && dateOnly(payments[pi].date) == day) {
+        final p = payments[pi++];
+        var left = p.cents.toDouble() - (statement.interestPaidByPayment[p.id] ?? 0);
+        for (final b in bills) {
+          if (left <= 0) break;
+          if (dateOnly(b.date).isAfter(day) || open[b.id]! <= 0) continue;
+          final take = left < open[b.id]! ? left : open[b.id]!;
+          open[b.id] = open[b.id]! - take;
+          left -= take;
+          if (open[b.id]! <= 0.0001 && !closedOn.containsKey(b.id)) closedOn[b.id] = day;
+        }
+      }
+      // One day of simple interest on what each open bill still owes.
+      if (day.isBefore(end)) {
+        for (final b in bills) {
+          if (dateOnly(b.date).isAfter(day) || open[b.id]! <= 0) continue;
+          interest[b.id] = interest[b.id]! + open[b.id]! * dailyRate;
+        }
+      }
+      day = DateTime(day.year, day.month, day.day + 1);
+    }
+  }
+
+  return [
+    for (final b in bills)
+      BillBreakdown(
+        bill: b,
+        daysOpen: (closedOn[b.id] ?? end).difference(dateOnly(b.date)).inDays,
+        openCents: open[b.id]!.round(),
+        paidCents: (b.finalCents - open[b.id]!).round(),
+        interestCents: interest[b.id]!.round(),
+        closedOn: closedOn[b.id],
+      ),
+  ];
+}
