@@ -49,7 +49,7 @@ class _AttentionCardState extends State<AttentionCard> {
       final complaints = await ComplaintStore.loadComplaints();
       final items = [
         ...complaintAttentionItems(complaints, book),
-        ...rentAttentionItems(book, now),
+        ...rentSummaryItems(book, now),
         ...attentionItems(purchases: purchases, book: book, today: now),
         ...reminderAttentionItems(reminders, now),
         ...sipAttention(await SipStore.load(), now),

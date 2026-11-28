@@ -96,3 +96,73 @@ List<AttentionItem> rentAttentionItems(
   }
   return items;
 }
+
+enum RentDueKind { overdue, today, soon }
+
+/// One tenant whose rent needs attention, with the room it is in.
+class RentDueRow {
+  const RentDueRow({
+    required this.tenancy,
+    required this.room,
+    required this.status,
+    required this.kind,
+  });
+
+  final Tenancy tenancy;
+  final Room? room;
+  final RentStatus status;
+  final RentDueKind kind;
+}
+
+/// Every tenant whose rent is overdue, due today, or due within [windowDays] days.
+List<RentDueRow> rentDueRows(
+  PropertyBook book,
+  DateTime today, {
+  int windowDays = 3,
+}) {
+  final day = DateTime(today.year, today.month, today.day);
+  final rows = <RentDueRow>[];
+  for (final t in book.tenancies) {
+    final s = rentStatusFor(book, t, today);
+    if (s == null || s.isPaidUpOn(today, windowDays: windowDays)) continue;
+    final kind = s.isOverdue(today)
+        ? RentDueKind.overdue
+        : (s.dueOn == day ? RentDueKind.today : RentDueKind.soon);
+    rows.add(
+      RentDueRow(
+        tenancy: t,
+        room: book.roomById(t.roomId),
+        status: s,
+        kind: kind,
+      ),
+    );
+  }
+  return rows;
+}
+
+/// Home summary: one line per status (overdue, due today, due soon), each opening the rent list.
+List<AttentionItem> rentSummaryItems(
+  PropertyBook book,
+  DateTime today, {
+  int windowDays = 3,
+}) {
+  final rows = rentDueRows(book, today, windowDays: windowDays);
+  final items = <AttentionItem>[];
+  void add(RentDueKind kind, String what, bool urgent) {
+    final n = rows.where((r) => r.kind == kind).length;
+    if (n == 0) return;
+    items.add(
+      AttentionItem(
+        title: '$n ${n == 1 ? 'rent' : 'rents'} $what',
+        detail: 'Tap to see them by property, floor and room',
+        route: '/rent-due',
+        urgent: urgent,
+      ),
+    );
+  }
+
+  add(RentDueKind.overdue, 'overdue', true);
+  add(RentDueKind.today, 'due today', true);
+  add(RentDueKind.soon, 'due in the next $windowDays days', false);
+  return items;
+}
