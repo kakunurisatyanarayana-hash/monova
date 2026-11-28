@@ -1,3 +1,4 @@
+import 'app_events.dart';
 import 'local_store.dart';
 import 'profile_store.dart';
 
@@ -63,7 +64,10 @@ class LedgerActivityStore {
   /// Newest first.
   static Future<List<LedgerActivity>> load() async {
     final store = await LocalStore.open();
-    final list = [for (final m in store.readList(ledgerActivityKey)) LedgerActivity.fromJson(m)];
+    final list = [
+      for (final m in store.readList(ledgerActivityKey))
+        LedgerActivity.fromJson(m),
+    ];
     list.sort((a, b) => b.at.compareTo(a.at));
     return list;
   }
@@ -73,7 +77,20 @@ class LedgerActivityStore {
     final existing = store.readList(ledgerActivityKey);
     final next = [entry.toJson(), ...existing];
     // Keep the most recent 5000 entries, so the phone storage stays small.
-    await store.writeList(ledgerActivityKey, next.length > 5000 ? next.sublist(0, 5000) : next);
+    await store.writeList(
+      ledgerActivityKey,
+      next.length > 5000 ? next.sublist(0, 5000) : next,
+    );
+    // Every customer action is also queued as a safe event: type, kind and date only.
+    final now = DateTime.now();
+    final day =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    await AppEvents.add('ledger.${entry.action}', {
+      'kind': entry.kind,
+      'date': day,
+      'module': 'customers',
+      'count': 1,
+    });
   }
 
   /// The owner's name for the record, or "This phone" when the profile has no name.

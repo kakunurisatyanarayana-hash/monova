@@ -8,6 +8,7 @@ import '../../core/cloud_sync.dart';
 import '../../core/build_info.dart';
 import '../../core/i18n.dart';
 import '../../core/profile_store.dart';
+import '../../core/app_events.dart';
 import '../../core/test_backend.dart';
 import '../../core/theme_mode.dart';
 import '../../core/theme.dart';
@@ -95,6 +96,21 @@ class SettingsScreen extends ConsumerWidget {
               },
               icon: const Icon(Icons.send_outlined),
               label: const Text('Send a test event'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              onPressed: () async {
+                final msg = await AppEvents.flush();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(msg)));
+                }
+              },
+              icon: const Icon(Icons.upload_outlined),
+              label: const Text('Send queued events now'),
             ),
           ],
           // Works in every build: lock the app with its PIN, and sign out of the owner account when signed in.
