@@ -251,26 +251,9 @@ class _HostelHubScreenState extends State<HostelHubScreen> {
           const SizedBox(height: 16),
           SectionTitle(ht('Complaints')),
           const SizedBox(height: 8),
-          MonovaCard(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _CountRow(label: ht('New (open)'), value: counts.open, c: c),
-                _CountRow(
-                  label: ht('Acknowledged'),
-                  value: counts.acknowledged,
-                  c: c,
-                ),
-                _CountRow(
-                  label: ht('In progress'),
-                  value: counts.inProgress,
-                  c: c,
-                ),
-                _CountRow(label: ht('Resolved'), value: counts.resolved, c: c),
-                _CountRow(label: ht('Closed'), value: counts.closed, c: c),
-              ],
-            ),
+          ComplaintStatusTiles(
+            complaints: mine,
+            onPick: (_) => context.push('/property/${property.id}/complaints'),
           ),
           const SizedBox(height: 16),
           SectionTitle(ht('Recent reviews and suggestions')),
@@ -430,69 +413,54 @@ class _VacancyPanelState extends State<_VacancyPanel> {
   Widget build(BuildContext context) {
     final c = context.monova;
     // Room numbers only, grouped by floor. Tapping a number opens the room on the property page.
-    final floors = {for (final s in widget.rooms) s.room.floor}.toList()
-      ..sort();
-    return MonovaCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final f in floors) ...[
-            Text(
-              floorLabel(f),
-              style: TextStyle(
-                color: c.muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final s in widget.rooms)
-                  if (s.room.floor == f)
-                    InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () =>
-                          context.push('/property/${widget.propertyId}'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              (((widget.openByRoom[s.room.number] ?? 0) > 0)
-                                      ? c.expense
-                                      : (s.availableBeds > 0
-                                            ? c.income
-                                            : c.muted))
-                                  .withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          s.room.number,
-                          style: TextStyle(
-                            color: (widget.openByRoom[s.room.number] ?? 0) > 0
+    final rooms = [...widget.rooms]
+      ..sort((a, b) => a.room.floor != b.room.floor
+          ? a.room.floor.compareTo(b.room.floor)
+          : a.room.number.compareTo(b.room.number));
+    // One compact tile per room, in floor and room order. Tapping a tile opens the property page.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final s in rooms)
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => context.push('/property/${widget.propertyId}'),
+                child: Container(
+                  width: 64,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color:
+                        (((widget.openByRoom[s.room.number] ?? 0) > 0)
                                 ? c.expense
-                                : (s.availableBeds > 0 ? c.income : c.muted),
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                                : (s.availableBeds > 0 ? c.income : c.muted))
+                            .withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    s.room.number,
+                    style: TextStyle(
+                      color: (widget.openByRoom[s.room.number] ?? 0) > 0
+                          ? c.expense
+                          : (s.availableBeds > 0 ? c.income : c.muted),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
                     ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                  ),
+                ),
+              ),
           ],
-          Text(
-            ht('Green: has a free bed. Grey: full. Red: open complaint.'),
-            style: TextStyle(color: c.muted, fontSize: 11),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          ht('Green: has a free bed. Grey: full. Red: open complaint.'),
+          style: TextStyle(color: c.muted, fontSize: 11),
+        ),
+      ],
     );
   }
 }
