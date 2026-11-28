@@ -16,6 +16,7 @@ import '../features/property/property_screens.dart';
 import '../features/property/rent_due_screen.dart';
 import '../features/ledger/ledger_screens.dart';
 import '../features/credit/personal_credit_screen.dart';
+import '../features/ledger/ledger_activity_screen.dart';
 import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
@@ -190,6 +191,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
+          GoRoute(
+            path: '/ledger-activity',
+            builder: (_, __) => const LedgerActivityScreen(),
+          ),
           GoRoute(
             path: '/credit-manager',
             builder: (_, __) => const PersonalCreditScreen(),

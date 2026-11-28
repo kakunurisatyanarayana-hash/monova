@@ -11,6 +11,8 @@ import '../../core/format.dart';
 import '../../core/rate_input.dart';
 import '../../core/rate_units.dart';
 import '../../core/share_text.dart';
+import '../../core/ledger_activity.dart';
+import '../../core/ledger_activity.dart';
 import '../../core/rate_presets.dart';
 import 'ledger_extras.dart';
 import '../../core/theme.dart';
@@ -105,6 +107,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
       appBar: AppBar(
         title: const Text('Customers'),
         actions: [
+          IconButton(
+            tooltip: 'Activity log',
+            icon: const Icon(Icons.history_rounded),
+            onPressed: () => context.push('/ledger-activity'),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton.icon(
@@ -589,6 +596,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
     if (bill == null) return;
     await _save(account.copyWith(bills: [...account.bills, bill]));
+    await LedgerActivityStore.add(
+      LedgerActivity(
+        at: DateTime.now(),
+        who: await LedgerActivityStore.whoNow(),
+        action: 'added',
+        kind: 'bill',
+        customer: account.name,
+        label: _billLabel(bill),
+        reason: '',
+      ),
+    );
   }
 
   Future<void> _addPayment() async {
@@ -603,6 +621,18 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
     if (payment == null) return;
     await _save(account.copyWith(payments: [...account.payments, payment]));
+    await LedgerActivityStore.add(
+      LedgerActivity(
+        at: DateTime.now(),
+        who: await LedgerActivityStore.whoNow(),
+        action: 'added',
+        kind: 'payment',
+        customer: account.name,
+        label:
+            'Payment ${money(payment.cents / 100)} on ${dayLabel(payment.date)}',
+        reason: '',
+      ),
+    );
   }
 
   Future<void> _editTerms() async {
@@ -897,6 +927,49 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   Icon(Icons.chevron_right_rounded, color: c.muted),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+        ],
+        if (account.payments.isNotEmpty) ...[
+          Text('Payments', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final p in ([
+            ...account.payments,
+          ]..sort((x, y) => y.date.compareTo(x.date)))) ...[
+            MonovaCard(
+              padding: const EdgeInsets.all(12),
+              onTap: () => _editPayment(account, p),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${dayLabel(p.date)} · ${p.note.isEmpty ? 'Payment' : p.note}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          '${p.billId.isEmpty ? 'Against the oldest open bill' : 'Against: ${account.bills.where((b) => b.id == p.billId).map((b) => b.billerName.isEmpty ? b.description : b.billerName).firstOrNull ?? 'a bill'}'}'
+                          '${p.edits.isEmpty ? '' : ' · edited ${p.edits.length} ${p.edits.length == 1 ? 'time' : 'times'}'}',
+                          style: TextStyle(color: c.muted, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    money(p.cents / 100),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete payment',
+                    icon: Icon(Icons.delete_outline_rounded, color: c.muted),
+                    onPressed: () => _deletePayment(account, p),
+                  ),
                 ],
               ),
             ),
@@ -1247,30 +1320,35 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     }
   }
 
-  Future<bool> _confirmDelete() async {
-    final ok = await showDialog<bool>(
+  /// Asks for a reason, then deletes nothing itself: returns true when the owner confirms.
+  /// The deletion is written to the activity log with the reason, who did it, and when.
+  Future<bool> _confirmDelete(
+    CreditAccount account,
+    String kind,
+    String label,
+  ) async {
+    final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete this entry?'),
-        content: const Text(
-          'It will be removed from the statement and from the interest calculation.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: context.monova.expense,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
+      builder: (ctx) => _ReasonDialog(
+        title: 'Delete this $kind?',
+        message: 'It will be removed from the statement and from the interest calculation. The deletion stays in the activity log.',
+        confirmLabel: 'Delete',
+        danger: true,
       ),
     );
-    return ok == true;
+    if (reason == null) return false;
+    await LedgerActivityStore.add(
+      LedgerActivity(
+        at: DateTime.now(),
+        who: await LedgerActivityStore.whoNow(),
+        action: 'deleted',
+        kind: kind,
+        customer: account.name,
+        label: label,
+        reason: reason,
+      ),
+    );
+    return true;
   }
 
   /// Edit a bill's date, biller, description, amount and notes, or delete it.
@@ -1282,7 +1360,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
     if (r == null) return;
     if (r == _deleteSignal) {
-      if (!await _confirmDelete()) return;
+      if (!await _confirmDelete(account, 'bill', _billLabel(bill))) return;
       await _save(
         account.copyWith(
           bills: account.bills.where((b) => b.id != bill.id).toList(),
@@ -1291,6 +1369,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       return;
     }
     if (r is CreditBill) {
+      await LedgerActivityStore.add(
+        LedgerActivity(
+          at: DateTime.now(),
+          who: await LedgerActivityStore.whoNow(),
+          action: 'edited',
+          kind: 'bill',
+          customer: account.name,
+          label: _billLabel(r),
+          reason: r.edits.isEmpty ? '' : r.edits.last.reason,
+        ),
+      );
       await _save(
         account.copyWith(
           bills: [for (final b in account.bills) b.id == bill.id ? r : b],
@@ -1311,7 +1400,12 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
     if (r == null) return;
     if (r == _deleteSignal) {
-      if (!await _confirmDelete()) return;
+      if (!await _confirmDelete(
+        account,
+        'payment',
+        'Payment ${money(payment.cents / 100)}',
+      ))
+        return;
       await _save(
         account.copyWith(
           payments: account.payments.where((p) => p.id != payment.id).toList(),
@@ -1320,6 +1414,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       return;
     }
     if (r is CreditPayment) {
+      await LedgerActivityStore.add(
+        LedgerActivity(
+          at: DateTime.now(),
+          who: await LedgerActivityStore.whoNow(),
+          action: 'edited',
+          kind: 'payment',
+          customer: account.name,
+          label: 'Payment ${money(r.cents / 100)} on ${dayLabel(r.date)}',
+          reason: r.edits.isEmpty ? '' : r.edits.last.reason,
+        ),
+      );
       await _save(
         account.copyWith(
           payments: [
@@ -1379,6 +1484,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       note: 'Full settlement',
     );
     await _save(account.copyWith(payments: [...account.payments, payment]));
+    await LedgerActivityStore.add(
+      LedgerActivity(
+        at: DateTime.now(),
+        who: await LedgerActivityStore.whoNow(),
+        action: 'settled',
+        kind: 'payment',
+        customer: account.name,
+        label: 'Settled on ${dayLabel(settleOn)}: ${money(total / 100)}',
+        reason: '',
+      ),
+    );
   }
 
   Future<void> _viewBill(CreditAccount account, CreditBill bill) async {
@@ -1399,13 +1515,31 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     if (action == 'edit') {
       await _editBill(account, bill);
     } else if (action == 'delete') {
-      if (!await _confirmDelete()) return;
+      if (!await _confirmDelete(account, 'bill', _billLabel(bill))) return;
       await _save(
         account.copyWith(
           bills: account.bills.where((b) => b.id != bill.id).toList(),
         ),
       );
     }
+  }
+
+  /// Delete a payment after a reason is given. The deletion is kept in the activity log.
+  Future<void> _deletePayment(
+    CreditAccount account,
+    CreditPayment payment,
+  ) async {
+    if (!await _confirmDelete(
+      account,
+      'payment',
+      'Payment ${money(payment.cents / 100)}',
+    ))
+      return;
+    await _save(
+      account.copyWith(
+        payments: account.payments.where((p) => p.id != payment.id).toList(),
+      ),
+    );
   }
 
   static const _deleteSignal = 'delete-entry';
@@ -2225,4 +2359,82 @@ class _BillDetail extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// One line that describes a bill, for the activity log and delete prompts.
+String _billLabel(CreditBill b) =>
+    '${dayLabel(b.date)} · ${b.billerName.isEmpty ? b.description : b.billerName} · ${money(b.finalCents / 100)}';
+
+/// A dialog that asks for a reason of at least 8 letters. Returns the reason, or null when cancelled.
+class _ReasonDialog extends StatefulWidget {
+  const _ReasonDialog({
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    this.danger = false,
+  });
+
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final bool danger;
+
+  @override
+  State<_ReasonDialog> createState() => _ReasonDialogState();
+}
+
+class _ReasonDialogState extends State<_ReasonDialog> {
+  final _reason = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.message, style: TextStyle(color: c.muted, fontSize: 13)),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reason,
+            minLines: 2,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: 'Reason (required)',
+              errorText: _error,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: widget.danger
+              ? FilledButton.styleFrom(backgroundColor: c.expense)
+              : null,
+          onPressed: () {
+            final reason = _reason.text.trim();
+            if (reason.length < 8) {
+              setState(() => _error = 'Give a reason of at least 8 letters.');
+              return;
+            }
+            Navigator.pop(context, reason);
+          },
+          child: Text(widget.confirmLabel),
+        ),
+      ],
+    );
+  }
 }
