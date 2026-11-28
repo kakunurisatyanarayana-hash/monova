@@ -89,7 +89,13 @@ class CreditAccount {
     required this.bills,
     required this.payments,
     this.iOwe = false,
+    this.interestMethod = perBillInterest,
   });
+
+  /// How interest is worked out: each bill by its days open, or once on the whole bill.
+  static const perBillInterest = 'perBill';
+  static const wholeBillInterest = 'wholeBill';
+  final String interestMethod;
 
   final String id;
   final String name;
@@ -112,6 +118,7 @@ class CreditAccount {
     double? annualRatePercent,
     bool? compound,
     bool? iOwe,
+    String? interestMethod,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
   }) =>
@@ -122,6 +129,7 @@ class CreditAccount {
         annualRatePercent: annualRatePercent ?? this.annualRatePercent,
         compound: compound ?? this.compound,
         iOwe: iOwe ?? this.iOwe,
+        interestMethod: interestMethod ?? this.interestMethod,
         bills: bills ?? this.bills,
         payments: payments ?? this.payments,
       );
@@ -133,6 +141,7 @@ class CreditAccount {
         'annualRatePercent': annualRatePercent,
         'compound': compound,
         'iOwe': iOwe,
+        'interestMethod': interestMethod,
         'bills': bills.map((b) => b.toJson()).toList(),
         'payments': payments.map((p) => p.toJson()).toList(),
       };
@@ -144,6 +153,7 @@ class CreditAccount {
         annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
         compound: j['compound'] == true,
         iOwe: j['iOwe'] == true,
+        interestMethod: '${j['interestMethod'] ?? perBillInterest}',
         bills: [for (final b in (j['bills'] as List<dynamic>? ?? const [])) CreditBill.fromJson(Map<String, dynamic>.from(b as Map))],
         payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) CreditPayment.fromJson(Map<String, dynamic>.from(p as Map))],
       );
@@ -519,4 +529,67 @@ List<BillBreakdown> billBreakdowns(CreditAccount account, DateTime asOf, LedgerS
         closedOn: closedOn[b.id],
       ),
   ];
+}
+
+/// Whole-bill settlement. Each bill's interest is worked out once, on its full amount, for the days from the bill date
+/// to [asOf]. Payments clear each bill's interest first, then its amount, oldest bill first. Here [BillBreakdown.openCents]
+/// is what is still owed on the bill (amount plus interest left), and [BillBreakdown.interestCents] is the whole-bill interest.
+List<BillBreakdown> wholeBillBreakdowns(CreditAccount account, DateTime asOf) {
+  final end = dateOnly(asOf);
+  final rate = account.annualRatePercent / 100 / 365;
+  final bills = [...account.bills]..sort((a, b) => a.date.compareTo(b.date));
+  final payments = [...account.payments]..sort((a, b) => a.date.compareTo(b.date));
+  final amountLeft = <String, int>{for (final b in bills) b.id: b.finalCents};
+  final interestDue = <String, int>{};
+  final interestLeft = <String, int>{};
+  final daysOpen = <String, int>{};
+  final paidTotal = <String, int>{for (final b in bills) b.id: 0};
+  final closedOn = <String, DateTime>{};
+
+  for (final b in bills) {
+    final days = end.difference(dateOnly(b.date)).inDays;
+    final days0 = days < 0 ? 0 : days;
+    daysOpen[b.id] = days0;
+    interestDue[b.id] = (b.finalCents * rate * days0).round();
+    interestLeft[b.id] = interestDue[b.id]!;
+  }
+
+  for (final p in payments) {
+    if (dateOnly(p.date).isAfter(end)) continue;
+    var left = p.cents;
+    for (final b in bills) {
+      if (left <= 0) break;
+      if (dateOnly(b.date).isAfter(dateOnly(p.date))) continue;
+      final toInterest = left < interestLeft[b.id]! ? left : interestLeft[b.id]!;
+      interestLeft[b.id] = interestLeft[b.id]! - toInterest;
+      left -= toInterest;
+      final toAmount = left < amountLeft[b.id]! ? left : amountLeft[b.id]!;
+      amountLeft[b.id] = amountLeft[b.id]! - toAmount;
+      paidTotal[b.id] = paidTotal[b.id]! + toInterest + toAmount;
+      left -= toAmount;
+      if (amountLeft[b.id]! == 0 && interestLeft[b.id]! == 0 && !closedOn.containsKey(b.id)) {
+        closedOn[b.id] = dateOnly(p.date);
+      }
+    }
+  }
+
+  return [
+    for (final b in bills)
+      BillBreakdown(
+        bill: b,
+        daysOpen: daysOpen[b.id]!,
+        openCents: amountLeft[b.id]! + interestLeft[b.id]!,
+        paidCents: paidTotal[b.id]!,
+        interestCents: interestDue[b.id]!,
+        closedOn: closedOn[b.id],
+      ),
+  ];
+}
+
+/// Total still owed on an account today, under whichever interest method it uses.
+int accountTotalCents(CreditAccount account, DateTime asOf) {
+  if (account.interestMethod == CreditAccount.wholeBillInterest) {
+    return wholeBillBreakdowns(account, asOf).fold<int>(0, (sum, b) => sum + b.openCents);
+  }
+  return computeStatement(account, asOf).totalCents;
 }

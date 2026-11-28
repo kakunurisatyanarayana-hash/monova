@@ -17,9 +17,23 @@ import '../../shared/date_inputs.dart';
 
 String _id() => DateTime.now().microsecondsSinceEpoch.toString();
 
-String _dateText(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+String _dateText(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
-const _monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const _monthNames = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 String _monthLabel(String key) {
   final parts = key.split('-');
@@ -56,7 +70,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
   }
 
   Future<void> _newCustomer() async {
-    final account = await FormSheet.show<CreditAccount>(context, title: 'Add customer or supplier', child: const _AccountForm());
+    final account = await FormSheet.show<CreditAccount>(
+      context,
+      title: 'Add customer or supplier',
+      child: const _AccountForm(),
+    );
     if (account == null) return;
     final updated = [..._accounts, account];
     setState(() => _accounts = updated);
@@ -67,11 +85,18 @@ class _LedgerScreenState extends State<LedgerScreen> {
   Widget build(BuildContext context) {
     final c = context.monova;
     final today = dateOnly(DateTime.now());
-    final shown = _accounts.where((a) => a.name.toLowerCase().contains(_query.trim().toLowerCase())).toList();
-    final totalOutstanding = _accounts.fold<int>(0, (sum, a) => sum + computeStatement(a, today).totalCents);
+    final shown = _accounts
+        .where(
+          (a) => a.name.toLowerCase().contains(_query.trim().toLowerCase()),
+        )
+        .toList();
+    final totalOutstanding = _accounts.fold<int>(
+      0,
+      (sum, a) => sum + computeStatement(a, today).totalCents,
+    );
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Credit manager'),
+        title: const Text('Customers'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -94,20 +119,42 @@ class _LedgerScreenState extends State<LedgerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total on all accounts today', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontWeight: FontWeight.w600)),
+                      Text(
+                        'Total on all accounts today',
+                        style: TextStyle(
+                          color: c.onAccent.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      Text(money(totalOutstanding / 100), style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
+                      Text(
+                        money(totalOutstanding / 100),
+                        style: TextStyle(
+                          color: c.onAccent,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text('${_accounts.length} ${_accounts.length == 1 ? 'person' : 'people'}, including interest up to today',
-                          style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontSize: 12)),
+                      Text(
+                        '${_accounts.length} ${_accounts.length == 1 ? 'person' : 'people'}, including interest up to today',
+                        style: TextStyle(
+                          color: c.onAccent.withValues(alpha: 0.85),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 if (_accounts.length > 3)
-                  TextField(textInputAction: TextInputAction.next, 
+                  TextField(
+                    textInputAction: TextInputAction.next,
                     onChanged: (v) => setState(() => _query = v),
-                    decoration: const InputDecoration(hintText: 'Search people', prefixIcon: Icon(Icons.search_rounded)),
+                    decoration: const InputDecoration(
+                      hintText: 'Search people',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
                   ),
                 const SizedBox(height: 12),
                 if (_accounts.isEmpty)
@@ -137,7 +184,11 @@ class _LedgerScreenState extends State<LedgerScreen> {
 }
 
 class _CustomerTile extends StatelessWidget {
-  const _CustomerTile({required this.account, required this.today, required this.onTap});
+  const _CustomerTile({
+    required this.account,
+    required this.today,
+    required this.onTap,
+  });
 
   final CreditAccount account;
   final DateTime today;
@@ -147,6 +198,7 @@ class _CustomerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.monova;
     final s = computeStatement(account, today);
+    final total = accountTotalCents(account, today);
     return MonovaCard(
       onTap: onTap,
       padding: const EdgeInsets.all(14),
@@ -155,10 +207,19 @@ class _CustomerTile extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(gradient: c.aurora, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              gradient: c.aurora,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Center(
-              child: Text(account.name.isEmpty ? '?' : account.name[0].toUpperCase(),
-                  style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w800, fontSize: 18)),
+              child: Text(
+                account.name.isEmpty ? '?' : account.name[0].toUpperCase(),
+                style: TextStyle(
+                  color: c.onAccent,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -166,7 +227,13 @@ class _CustomerTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(account.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                Text(
+                  account.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${account.iOwe ? 'Supplier' : 'Customer'} · ${account.annualRatePercent}% a year simple · interest ${money(s.interestCents / 100)}',
@@ -178,8 +245,21 @@ class _CustomerTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(money(s.totalCents / 100), style: TextStyle(fontWeight: FontWeight.w800, color: s.totalCents > 0 ? c.expense : c.income)),
-              Text(s.totalCents > 0 ? (account.iOwe ? 'to pay' : 'to receive') : (s.totalCents < 0 ? (account.iOwe ? 'extra paid' : 'advance') : 'settled'), style: TextStyle(color: c.muted, fontSize: 11)),
+              Text(
+                money(total / 100),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: total > 0 ? c.expense : c.income,
+                ),
+              ),
+              Text(
+                total > 0
+                    ? (account.iOwe ? 'to pay' : 'to receive')
+                    : (total < 0
+                          ? (account.iOwe ? 'extra paid' : 'advance')
+                          : 'settled'),
+                style: TextStyle(color: c.muted, fontSize: 11),
+              ),
             ],
           ),
         ],
@@ -226,7 +306,10 @@ class _AccountFormState extends State<_AccountForm> {
       _phone.text = picked.first.phone;
     });
   }
-  late final _rate = TextEditingController(text: plainRate(widget.initial?.annualRatePercent ?? 24));
+
+  late final _rate = TextEditingController(
+    text: plainRate(widget.initial?.annualRatePercent ?? 24),
+  );
   RateUnit _unit = RateUnit.percentYear;
 
   /// The rate as a yearly percentage, whatever unit the person chose.
@@ -237,10 +320,12 @@ class _AccountFormState extends State<_AccountForm> {
 
   String _rateHelp() {
     final r = _annualRate;
-    if (r == null) return 'Charged every day on the amount owed, divided by 365.';
+    if (r == null)
+      return 'Charged every day on the amount owed, divided by 365.';
     return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
-  late bool _iOwe = widget.initial?.iOwe ?? false;
+
+  late String _method = widget.initial?.interestMethod ?? CreditAccount.perBillInterest;
   String? _error;
 
   @override
@@ -262,9 +347,26 @@ class _AccountFormState extends State<_AccountForm> {
       return;
     }
     final initial = widget.initial;
-    Navigator.of(context).pop(initial == null
-        ? CreditAccount(id: _id(), name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: false, iOwe: _iOwe, bills: const [], payments: const [])
-        : initial.copyWith(name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: false, iOwe: _iOwe));
+    Navigator.of(context).pop(
+      initial == null
+          ? CreditAccount(
+              id: _id(),
+              name: _name.text.trim(),
+              phone: _phone.text.trim(),
+              annualRatePercent: rate,
+              compound: false,
+              interestMethod: _method,
+              bills: const [],
+              payments: const [],
+            )
+          : initial.copyWith(
+              name: _name.text.trim(),
+              phone: _phone.text.trim(),
+              annualRatePercent: rate,
+              compound: false,
+              interestMethod: _method,
+            ),
+    );
   }
 
   @override
@@ -273,13 +375,28 @@ class _AccountFormState extends State<_AccountForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(onPressed: _pickContact, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick from contacts')),
+        OutlinedButton.icon(
+          onPressed: _pickContact,
+          icon: const Icon(Icons.contacts_rounded, size: 18),
+          label: const Text('Pick from contacts'),
+        ),
 
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name')),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _name,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Name'),
+        ),
         const SizedBox(height: 12),
 
-        TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Phone (optional)')),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          inputFormatters: phoneFormatters,
+          decoration: const InputDecoration(labelText: 'Phone (optional)'),
+        ),
         const SizedBox(height: 12),
         RateInput(
           controller: _rate,
@@ -291,18 +408,31 @@ class _AccountFormState extends State<_AccountForm> {
         Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
         const SizedBox(height: 4),
-        Text('Type', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
+        Text(
+          'How interest is worked out',
+          style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
           children: [
-            ChoiceChip(label: const Text('Customer'), selected: !_iOwe, onSelected: (_) => setState(() => _iOwe = false)),
-            ChoiceChip(label: const Text('Supplier / lender'), selected: _iOwe, onSelected: (_) => setState(() => _iOwe = true)),
+            ChoiceChip(
+              label: const Text('Each bill by days'),
+              selected: _method == CreditAccount.perBillInterest,
+              onSelected: (_) => setState(() => _method = CreditAccount.perBillInterest),
+            ),
+            ChoiceChip(
+              label: const Text('On the whole bill'),
+              selected: _method == CreditAccount.wholeBillInterest,
+              onSelected: (_) => setState(() => _method = CreditAccount.wholeBillInterest),
+            ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
-          'Interest is simple: each bill earns interest per day from its own date.',
+          _method == CreditAccount.wholeBillInterest
+              ? 'Interest is worked out once on the full bill, from the bill date to the settlement date. Payments reduce what is owed.'
+              : 'Each bill earns simple interest every day on what is still owed, from its own date. Give 0% for no interest.',
           style: TextStyle(color: c.muted, fontSize: 12),
         ),
         if (_error != null) ...[
@@ -310,7 +440,10 @@ class _AccountFormState extends State<_AccountForm> {
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save person' : 'Save changes')),
+        FilledButton(
+          onPressed: _save,
+          child: Text(widget.initial == null ? 'Save person' : 'Save changes'),
+        ),
       ],
     );
   }
@@ -350,13 +483,21 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _save(CreditAccount updated) async {
     setState(() => _account = updated);
     final all = await CreditLedgerStore.load();
-    await CreditLedgerStore.save([for (final a in all) a.id == updated.id ? updated : a]);
+    await CreditLedgerStore.save([
+      for (final a in all) a.id == updated.id ? updated : a,
+    ]);
   }
 
   Future<void> _addBill() async {
     final account = _account;
     if (account == null) return;
-    final bill = await FormSheet.show<CreditBill>(context, title: account.iOwe ? 'Bill received from supplier' : 'Bill given to customer', child: _BillForm(defaultBiller: account.name));
+    final bill = await FormSheet.show<CreditBill>(
+      context,
+      title: account.iOwe
+          ? 'Bill received from supplier'
+          : 'Bill given to customer',
+      child: _BillForm(defaultBiller: account.name),
+    );
     if (bill == null) return;
     await _save(account.copyWith(bills: [...account.bills, bill]));
   }
@@ -364,7 +505,13 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _addPayment() async {
     final account = _account;
     if (account == null) return;
-    final payment = await FormSheet.show<CreditPayment>(context, title: account.iOwe ? 'Money paid to supplier' : 'Money received from customer', child: const _PaymentForm());
+    final payment = await FormSheet.show<CreditPayment>(
+      context,
+      title: account.iOwe
+          ? 'Money paid to supplier'
+          : 'Money received from customer',
+      child: const _PaymentForm(),
+    );
     if (payment == null) return;
     await _save(account.copyWith(payments: [...account.payments, payment]));
   }
@@ -372,7 +519,11 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _editTerms() async {
     final account = _account;
     if (account == null) return;
-    final updated = await FormSheet.show<CreditAccount>(context, title: 'Edit person', child: _AccountForm(initial: account));
+    final updated = await FormSheet.show<CreditAccount>(
+      context,
+      title: 'Edit person',
+      child: _AccountForm(initial: account),
+    );
     if (updated != null) await _save(updated);
   }
 
@@ -383,11 +534,18 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete this customer?'),
-        content: Text('"${account.name}" with all bills and payments will be removed from this device.'),
+        content: Text(
+          '"${account.name}" with all bills and payments will be removed from this device.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.monova.expense,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -419,9 +577,21 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         title: Text(account?.name ?? 'Person'),
         actions: [
           if (account != null) ...[
-            IconButton(tooltip: 'Share statement', icon: const Icon(Icons.share_rounded), onPressed: () => _shareStatement(account)),
-            IconButton(tooltip: 'Edit interest and details', icon: const Icon(Icons.tune_rounded), onPressed: _editTerms),
-            IconButton(tooltip: 'Delete person', icon: Icon(Icons.delete_outline_rounded, color: c.expense), onPressed: _deleteCustomer),
+            IconButton(
+              tooltip: 'Share statement',
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () => _shareStatement(account),
+            ),
+            IconButton(
+              tooltip: 'Edit interest and details',
+              icon: const Icon(Icons.tune_rounded),
+              onPressed: _editTerms,
+            ),
+            IconButton(
+              tooltip: 'Delete person',
+              icon: Icon(Icons.delete_outline_rounded, color: c.expense),
+              onPressed: _deleteCustomer,
+            ),
           ],
         ],
       ),
@@ -431,23 +601,54 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                FloatingActionButton.extended(heroTag: 'payment', onPressed: _addPayment, icon: const Icon(Icons.payments_rounded), label: Text(account.iOwe ? 'Money paid' : 'Money received')),
+                FloatingActionButton.extended(
+                  heroTag: 'payment',
+                  onPressed: _addPayment,
+                  icon: const Icon(Icons.payments_rounded),
+                  label: Text(account.iOwe ? 'Money paid' : 'Money received'),
+                ),
                 const SizedBox(height: 10),
-                FloatingActionButton.extended(heroTag: 'bill', onPressed: _addBill, icon: const Icon(Icons.receipt_long_rounded), label: Text(account.iOwe ? 'Bill received' : 'Bill given')),
+                FloatingActionButton.extended(
+                  heroTag: 'bill',
+                  onPressed: _addBill,
+                  icon: const Icon(Icons.receipt_long_rounded),
+                  label: Text(account.iOwe ? 'Bill received' : 'Bill given'),
+                ),
               ],
             ),
       body: !_loaded
           ? const LoadingBox()
           : account == null
-              ? const EmptyState(icon: Icons.menu_book_rounded, title: 'Person not found', message: 'It may have been deleted.')
-              : _body(context, account),
+          ? const EmptyState(
+              icon: Icons.menu_book_rounded,
+              title: 'Person not found',
+              message: 'It may have been deleted.',
+            )
+          : _body(context, account),
     );
   }
 
   Widget _body(BuildContext context, CreditAccount account) {
     final c = context.monova;
     final s = computeStatement(account, _asOf);
-    final months = s.interestByMonth.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    final months = s.interestByMonth.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final whole = account.interestMethod == CreditAccount.wholeBillInterest;
+    final wb = whole
+        ? wholeBillBreakdowns(account, _asOf)
+        : const <BillBreakdown>[];
+    final totalNow = whole
+        ? wb.fold<int>(0, (x, b) => x + b.openCents)
+        : s.totalCents;
+    final billsNow = whole
+        ? wb.fold<int>(0, (x, b) => x + b.bill.finalCents)
+        : s.principalCents;
+    final interestNow = whole
+        ? wb.fold<int>(0, (x, b) => x + b.interestCents)
+        : s.interestCents;
+    final paidNow = whole
+        ? wb.fold<int>(0, (x, b) => x + b.paidCents)
+        : s.totalPaidCents;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
@@ -460,34 +661,68 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Final amount on ${_dateText(_asOf)}',
-                        style: TextStyle(color: c.onAccent.withValues(alpha: 0.9), fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Final amount on ${_dateText(_asOf)}',
+                      style: TextStyle(
+                        color: c.onAccent.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: _pickAsOf,
-                    icon: Icon(Icons.event_rounded, color: c.onAccent, size: 18),
-                    label: Text('Change date', style: TextStyle(color: c.onAccent)),
+                    icon: Icon(
+                      Icons.event_rounded,
+                      color: c.onAccent,
+                      size: 18,
+                    ),
+                    label: Text(
+                      'Change date',
+                      style: TextStyle(color: c.onAccent),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Expanded(child: Text(money(s.totalCents / 100), style: TextStyle(color: c.onAccent, fontSize: 34, fontWeight: FontWeight.w800))),
+                  Expanded(
+                    child: Text(
+                      money(totalNow / 100),
+                      style: TextStyle(
+                        color: c.onAccent,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Copy final amount',
                     icon: Icon(Icons.copy_rounded, color: c.onAccent),
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: ':  on '));
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Final amount copied')));
+                      Clipboard.setData(
+                        ClipboardData(
+                          text:
+                              '${account.name}: ${money(totalNow / 100)} on ${_dateText(_asOf)}',
+                        ),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Final amount copied')),
+                      );
                     },
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _sum('Bills', money(s.principalCents / 100), c),
-              _sum('Interest so far (${account.annualRatePercent}% a year)', money(s.interestCents / 100), c),
-              _sum('Paid so far', money(s.totalPaidCents / 100), c),
+              _sum('Bills', money(billsNow / 100), c),
+              _sum(
+                whole
+                    ? 'Interest on whole bills (${account.annualRatePercent}% a year)'
+                    : 'Interest so far (${account.annualRatePercent}% a year)',
+                money(interestNow / 100),
+                c,
+              ),
+              _sum('Paid so far', money(paidNow / 100), c),
             ],
           ),
         ),
@@ -505,7 +740,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         if (account.bills.isNotEmpty) ...[
           Text('Each bill', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          for (final b in billBreakdowns(account, _asOf, s)) ...[
+          for (final b in (whole ? wb : billBreakdowns(account, _asOf, s))) ...[
             MonovaCard(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -520,7 +755,9 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                         ),
                       ),
                       Text(
-                        b.closedOn == null ? 'Open' : 'Cleared ${dayLabel(b.closedOn!)}',
+                        b.closedOn == null
+                            ? 'Open'
+                            : 'Cleared ${dayLabel(b.closedOn!)}',
                         style: TextStyle(
                           color: b.closedOn == null ? c.warning : c.income,
                           fontSize: 12,
@@ -545,36 +782,53 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ],
           const SizedBox(height: 16),
         ],
-        Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)
-          Text('No bills or payments yet. Tap the button below to start.', style: TextStyle(color: c.muted))
-        else
-          for (final day in s.days.where((d) => !d.date.isAfter(_asOf))) ...[
-            _dayCard(account, day, c),
-            const SizedBox(height: 10),
-          ],
-        const SizedBox(height: 8),
-        Text('Tap a bill or payment to read or edit its notes.', style: TextStyle(color: c.muted, fontSize: 12)),
-        const SizedBox(height: 16),
-        Text('Interest by month', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        if (months.isEmpty)
-          Text('Interest starts the day after the first bill.', style: TextStyle(color: c.muted))
-        else
-          MonovaCard(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              children: [
-                for (final m in months)
-                  ListTile(
-                    dense: true,
-                    title: Text(_monthLabel(m.key)),
-                    trailing: Text(money(m.value / 100), style: const TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-              ],
-            ),
+        if (!whole) ...[
+          Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)
+            Text(
+              'No bills or payments yet. Tap the button below to start.',
+              style: TextStyle(color: c.muted),
+            )
+          else
+            for (final day in s.days.where((d) => !d.date.isAfter(_asOf))) ...[
+              _dayCard(account, day, c),
+              const SizedBox(height: 10),
+            ],
+          const SizedBox(height: 8),
+          Text(
+            'Tap a bill or payment to read or edit its notes.',
+            style: TextStyle(color: c.muted, fontSize: 12),
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Interest by month',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          if (months.isEmpty)
+            Text(
+              'Interest starts the day after the first bill.',
+              style: TextStyle(color: c.muted),
+            )
+          else
+            MonovaCard(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                children: [
+                  for (final m in months)
+                    ListTile(
+                      dense: true,
+                      title: Text(_monthLabel(m.key)),
+                      trailing: Text(
+                        money(m.value / 100),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -584,13 +838,16 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     final b = StringBuffer()
       ..writeln('Statement: ${account.name}')
       ..writeln('As of ${_dateText(s.asOf)}')
-      ..writeln('Final amount: ${money(s.totalCents / 100)} (bills ${money(s.principalCents / 100)} + interest ${money(s.interestCents / 100)})')
+      ..writeln(
+        'Final amount: ${money(accountTotalCents(account, _asOf) / 100)} (bills ${money(s.principalCents / 100)} + interest ${money(s.interestCents / 100)})',
+      )
       ..writeln();
     for (final d in s.days.where((d) => !d.date.isAfter(s.asOf))) {
       b.write('${_dateText(d.date)}: owed ${money(d.balanceCents / 100)}');
       if (d.billedCents > 0) b.write(', bills +${money(d.billedCents / 100)}');
       if (d.paidCents > 0) b.write(', paid -${money(d.paidCents / 100)}');
-      if (d.interestCents > 0) b.write(', interest +${money(d.interestCents / 100)}');
+      if (d.interestCents > 0)
+        b.write(', interest +${money(d.interestCents / 100)}');
       b.writeln();
     }
     await shareText(b.toString(), subject: 'Statement: ${account.name}');
@@ -604,13 +861,23 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Text(_dateText(day.date), style: const TextStyle(fontWeight: FontWeight.w800))),
-              Text('Balance ${money(day.balanceCents / 100)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              Expanded(
+                child: Text(
+                  _dateText(day.date),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                'Balance ${money(day.balanceCents / 100)}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ],
           ),
           for (final b in day.bills)
             _entryRow(
-              title: b.billerName.isEmpty ? (b.description.isEmpty ? 'Bill' : b.description) : '${b.billerName}${b.description.isEmpty ? '' : ' - ${b.description}'}',
+              title: b.billerName.isEmpty
+                  ? (b.description.isEmpty ? 'Bill' : b.description)
+                  : '${b.billerName}${b.description.isEmpty ? '' : ' - ${b.description}'}',
               notes: b.notes,
               amount: '+ ${money(b.finalCents / 100)}',
               color: c.expense,
@@ -640,7 +907,14 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     );
   }
 
-  Widget _entryRow({required String title, required String notes, required String amount, required Color color, required VoidCallback? onTap, required MonovaColors c}) {
+  Widget _entryRow({
+    required String title,
+    required String notes,
+    required String amount,
+    required Color color,
+    required VoidCallback? onTap,
+    required MonovaColors c,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
@@ -653,17 +927,32 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   if (notes.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(notes, style: TextStyle(color: c.muted, fontSize: 12, fontStyle: FontStyle.italic, height: 1.35)),
+                    Text(
+                      notes,
+                      style: TextStyle(
+                        color: c.muted,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        height: 1.35,
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
             const SizedBox(width: 10),
-            Text(amount, style: TextStyle(color: color, fontWeight: FontWeight.w700)),
-            if (onTap != null) Icon(Icons.chevron_right_rounded, color: c.muted, size: 18),
+            Text(
+              amount,
+              style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            ),
+            if (onTap != null)
+              Icon(Icons.chevron_right_rounded, color: c.muted, size: 18),
           ],
         ),
       ),
@@ -671,7 +960,11 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   }
 
   /// Opens a bill or payment so its notes can be read, changed, or the entry deleted.
-  Future<void> _editNotes(CreditAccount account, {CreditBill? bill, CreditPayment? payment}) async {
+  Future<void> _editNotes(
+    CreditAccount account, {
+    CreditBill? bill,
+    CreditPayment? payment,
+  }) async {
     final initial = bill?.notes ?? payment?.note ?? '';
     final result = await FormSheet.show<({String notes, bool delete})>(
       context,
@@ -684,11 +977,18 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Delete this entry?'),
-          content: const Text('It will be removed from the statement and from the interest calculation.'),
+          content: const Text(
+            'It will be removed from the statement and from the interest calculation.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: context.monova.expense),
+              style: FilledButton.styleFrom(
+                backgroundColor: context.monova.expense,
+              ),
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('Delete'),
             ),
@@ -697,27 +997,63 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       );
       if (ok != true) return;
       if (bill != null) {
-        await _save(account.copyWith(bills: account.bills.where((b) => b.id != bill.id).toList()));
+        await _save(
+          account.copyWith(
+            bills: account.bills.where((b) => b.id != bill.id).toList(),
+          ),
+        );
       } else if (payment != null) {
-        await _save(account.copyWith(payments: account.payments.where((p) => p.id != payment.id).toList()));
+        await _save(
+          account.copyWith(
+            payments: account.payments
+                .where((p) => p.id != payment.id)
+                .toList(),
+          ),
+        );
       }
       return;
     }
     if (bill != null) {
-      await _save(account.copyWith(bills: [for (final b in account.bills) b.id == bill.id ? b.copyWith(notes: result.notes) : b]));
-    } else if (payment != null) {
-      await _save(account.copyWith(payments: [for (final p in account.payments) p.id == payment.id ? p.copyWith(note: result.notes) : p]));
-    }
-  }
-  Widget _sum(String label, String value, MonovaColors c) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: TextStyle(color: c.onAccent.withValues(alpha: 0.9), fontSize: 13))),
-            Text(value, style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w700)),
+      await _save(
+        account.copyWith(
+          bills: [
+            for (final b in account.bills)
+              b.id == bill.id ? b.copyWith(notes: result.notes) : b,
           ],
         ),
       );
+    } else if (payment != null) {
+      await _save(
+        account.copyWith(
+          payments: [
+            for (final p in account.payments)
+              p.id == payment.id ? p.copyWith(note: result.notes) : p,
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _sum(String label, String value, MonovaColors c) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: c.onAccent.withValues(alpha: 0.9),
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w700),
+        ),
+      ],
+    ),
+  );
 }
 
 class _BillForm extends StatefulWidget {
@@ -756,8 +1092,10 @@ class _BillFormState extends State<_BillForm> {
       final parsed = await scanBillPhoto(camera: false);
       setState(() {
         if (parsed.date != null) _date = dateOnly(parsed.date!);
-        if (parsed.billerName != null && parsed.billerName!.isNotEmpty) _biller.text = parsed.billerName!;
-        if (parsed.itemsText.isNotEmpty && _description.text.trim().isEmpty) _description.text = parsed.itemsText;
+        if (parsed.billerName != null && parsed.billerName!.isNotEmpty)
+          _biller.text = parsed.billerName!;
+        if (parsed.itemsText.isNotEmpty && _description.text.trim().isEmpty)
+          _description.text = parsed.itemsText;
         if (parsed.amountRupees != null) {
           _final.text = parsed.amountRupees!.toStringAsFixed(2);
         }
@@ -782,27 +1120,37 @@ class _BillFormState extends State<_BillForm> {
     final finalAmount = double.tryParse(_final.text.replaceAll(',', '').trim());
     final gross = double.tryParse(_amount.text.replaceAll(',', '').trim());
     if (finalAmount == null || finalAmount <= 0) {
-      setState(() => _error = 'Enter the final price to be paid for this bill.');
+      setState(
+        () => _error = 'Enter the final price to be paid for this bill.',
+      );
       return;
     }
     if (gross != null && gross < finalAmount) {
-      setState(() => _error = 'The final price cannot be more than the amount before discount.');
+      setState(
+        () => _error =
+            'The final price cannot be more than the amount before discount.',
+      );
       return;
     }
     if (_description.text.trim().isEmpty) {
-      setState(() => _error = 'Say what was bought, for example "Urea 2 bags" or "Pesticide".');
+      setState(
+        () => _error =
+            'Say what was bought, for example "Urea 2 bags" or "Pesticide".',
+      );
       return;
     }
     final finalCents = (finalAmount * 100).round();
-    Navigator.of(context).pop(CreditBill(
-      id: _id(),
-      date: _date,
-      billerName: _biller.text.trim(),
-      description: _description.text.trim(),
-      amountCents: gross == null ? finalCents : (gross * 100).round(),
-      finalCents: finalCents,
-      notes: _notes.text.trim(),
-    ));
+    Navigator.of(context).pop(
+      CreditBill(
+        id: _id(),
+        date: _date,
+        billerName: _biller.text.trim(),
+        description: _description.text.trim(),
+        amountCents: gross == null ? finalCents : (gross * 100).round(),
+        finalCents: finalCents,
+        notes: _notes.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -818,27 +1166,70 @@ class _BillFormState extends State<_BillForm> {
         ),
         if (_scanNote != null) ...[
           const SizedBox(height: 6),
-          Text(_scanNote!, style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+          Text(
+            _scanNote!,
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+          ),
         ],
         const SizedBox(height: 12),
-        DateSelector(label: 'Date of purchase', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
-        const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer or supplier name')),
-        const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _description, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was bought', hintText: 'Urea 2 bags, pesticide')),
-        const SizedBox(height: 12),
-        TextField(controller: _notes, minLines: 2, maxLines: 4, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Notes (optional)', hintText: 'Paid half in cash, balance after harvest', alignLabelWithHint: true)),
-        const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, 
-          controller: _amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Amount (before discount, optional)', prefixText: '₹ '),
+        DateSelector(
+          label: 'Date of purchase',
+          value: _date,
+          firstYear: 2000,
+          onChanged: (d) => setState(() => _date = d),
         ),
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, 
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _biller,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Customer or supplier name',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _description,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'What was bought',
+            hintText: 'Urea 2 bags, pesticide',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _notes,
+          minLines: 2,
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: 'Notes (optional)',
+            hintText: 'Paid half in cash, balance after harvest',
+            alignLabelWithHint: true,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _amount,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Amount (before discount, optional)',
+            prefixText: '₹ ',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          textInputAction: TextInputAction.next,
           controller: _final,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Final price (to be paid)', prefixText: '₹ '),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Final price (to be paid)',
+            prefixText: '₹ ',
+          ),
         ),
         if (_error != null) ...[
           const SizedBox(height: 8),
@@ -847,7 +1238,11 @@ class _BillFormState extends State<_BillForm> {
         const SizedBox(height: 14),
         FilledButton(onPressed: _save, child: const Text('Save bill')),
         const SizedBox(height: 6),
-        Text('Interest is counted from the day of purchase.', textAlign: TextAlign.center, style: TextStyle(color: c.muted, fontSize: 12)),
+        Text(
+          'Interest is counted from the day of purchase.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: c.muted, fontSize: 12),
+        ),
       ],
     );
   }
@@ -879,7 +1274,14 @@ class _PaymentFormState extends State<_PaymentForm> {
       setState(() => _error = 'Enter the amount paid.');
       return;
     }
-    Navigator.of(context).pop(CreditPayment(id: _id(), date: _date, cents: (amount * 100).round(), note: _note.text.trim()));
+    Navigator.of(context).pop(
+      CreditPayment(
+        id: _id(),
+        date: _date,
+        cents: (amount * 100).round(),
+        note: _note.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -888,15 +1290,31 @@ class _PaymentFormState extends State<_PaymentForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DateSelector(label: 'Date paid', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
-        const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, 
-          controller: _amount,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true), inputFormatters: amountFormatters,
-          decoration: const InputDecoration(labelText: 'Amount paid', prefixText: '₹ '),
+        DateSelector(
+          label: 'Date paid',
+          value: _date,
+          firstYear: 2000,
+          onChanged: (d) => setState(() => _date = d),
         ),
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _note, decoration: const InputDecoration(labelText: 'How (cash, UPI, cheque)')),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _amount,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: amountFormatters,
+          decoration: const InputDecoration(
+            labelText: 'Amount paid',
+            prefixText: '₹ ',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          textInputAction: TextInputAction.next,
+          controller: _note,
+          decoration: const InputDecoration(
+            labelText: 'How (cash, UPI, cheque)',
+          ),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 8),
           Text(_error!, style: TextStyle(color: c.expense)),
@@ -941,14 +1359,18 @@ class _NotesFormState extends State<_NotesForm> {
           maxLines: 8,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
-            labelText: widget.isBill ? 'Notes for this bill' : 'Note for this payment',
+            labelText: widget.isBill
+                ? 'Notes for this bill'
+                : 'Note for this payment',
             alignLabelWithHint: true,
             hintText: 'Anything to remember about it',
           ),
         ),
         const SizedBox(height: 14),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop((notes: _controller.text.trim(), delete: false)),
+          onPressed: () =>
+              Navigator.of(context)
+                  .pop((notes: _controller.text.trim(), delete: false)),
           child: const Text('Save notes'),
         ),
         const SizedBox(height: 8),
