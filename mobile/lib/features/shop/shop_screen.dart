@@ -88,7 +88,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final entries = [for (final e in _all) if (e.day == _day) e]..sort((a, b) => a.kind.index.compareTo(b.kind.index));
     final t = shopTotalsFor(_all, _day);
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily expenses')),
+      appBar: AppBar(title: const Text('Daily shop bills')),
       floatingActionButton: _loaded
           ? FloatingActionButton.extended(
               onPressed: _add,
