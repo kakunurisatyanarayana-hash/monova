@@ -30,11 +30,11 @@ void main() {
     expect(s.principalCents, closeTo(100000 - (20000 - 986.3), 2));
   });
 
-  test('compound interest comes out higher than simple interest over the same year', () {
+  test('interest is simple only: a flag asking for compound interest is ignored', () {
     final simple = computeStatement(account(bills: [bill(DateTime(2026, 1, 1), 100000)]), DateTime(2027, 1, 1));
-    final compound = computeStatement(account(compound: true, bills: [bill(DateTime(2026, 1, 1), 100000)]), DateTime(2027, 1, 1));
-    expect(compound.totalCents, greaterThan(simple.totalCents));
-    expect(compound.totalCents, closeTo(112747, 40), reason: 'about 12.75% effective for a year, compounded daily');
+    final asked = computeStatement(account(compound: true, bills: [bill(DateTime(2026, 1, 1), 100000)]), DateTime(2027, 1, 1));
+    expect(asked.totalCents, simple.totalCents);
+    expect(simple.totalCents, closeTo(112000, 40), reason: '12% simple on Rs 1000 for a full year is Rs 120');
   });
 
   test('paying more than is owed leaves an advance (a negative amount owed)', () {
