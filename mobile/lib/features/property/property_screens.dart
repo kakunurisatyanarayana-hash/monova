@@ -7,6 +7,7 @@ import '../../core/complaint_store.dart';
 import '../../core/complaints.dart';
 import '../../core/format.dart';
 import '../../core/property_money.dart';
+import '../../core/hostel_publish.dart';
 import '../../core/property_store.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -91,15 +92,33 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
   }
 
   Future<void> _addProperty() async {
-    final result = await FormSheet.show<Property>(
+    final result = await FormSheet.show<Object>(
       context,
       title: 'Add a property',
       child: const _PropertyForm(),
     );
-    if (result == null) return;
-    final next = _book.copyWith(properties: [..._book.properties, result]);
+    if (result is! (Property, bool)) return;
+    final (property, direct) = result;
+    final next = _book.copyWith(properties: [..._book.properties, property]);
     setState(() => _book = next);
     await PropertyStore.save(next);
+    if (!direct || !mounted) return;
+    // Turn on direct complaints now. It needs the owner account, so say so if it can't be done yet.
+    try {
+      await HostelPublish.publish(propertyId: property.id, name: property.name);
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Direct complaints are on for this hostel.'),
+          ),
+        );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e Turn it on later from the hostel hub.')),
+        );
+      }
+    }
   }
 
   @override
@@ -2208,6 +2227,9 @@ class _PropertyForm extends StatefulWidget {
 }
 
 class _PropertyFormState extends State<_PropertyForm> {
+  /// Only used when adding a property: turn on direct complaints for the hostel straight away.
+  bool _directComplaints = false;
+
   late final _name = TextEditingController(text: widget.initial?.name ?? '');
   late final _address = TextEditingController(
     text: widget.initial?.address ?? '',
@@ -2373,31 +2395,32 @@ class _PropertyFormState extends State<_PropertyForm> {
       setState(() => _error = problem);
       return;
     }
-    Navigator.of(context).pop(
-      Property(
-        id: widget.initial?.id ?? _id(),
-        name: name,
-        category: _category,
-        address: _address.text.trim(),
-        state: _state.text.trim(),
-        district: _district.text.trim(),
-        cityVillage: _cityVillage.text.trim(),
-        mandal: _mandal.text.trim(),
-        pinCode: pin,
-        latitude: lat,
-        longitude: lng,
-        showExactLocation: _exact && lat != null && lng != null,
-        phone: _phone.text.trim(),
-        floors: floors!,
-        description: _description.text.trim(),
-        defaultRentCents: _cents(_rent.text),
-        notes: _notes.text.trim(),
-        ownerName: _ownerName.text.trim(),
-        ownerPhone: _ownerPhone.text.trim(),
-        ownerEmail: _ownerEmail.text.trim(),
-        ownerAddress: _ownerAddress.text.trim(),
-      ),
+    final saved = Property(
+      id: widget.initial?.id ?? _id(),
+      name: name,
+      category: _category,
+      address: _address.text.trim(),
+      state: _state.text.trim(),
+      district: _district.text.trim(),
+      cityVillage: _cityVillage.text.trim(),
+      mandal: _mandal.text.trim(),
+      pinCode: pin,
+      latitude: lat,
+      longitude: lng,
+      showExactLocation: _exact && lat != null && lng != null,
+      phone: _phone.text.trim(),
+      floors: floors!,
+      description: _description.text.trim(),
+      defaultRentCents: _cents(_rent.text),
+      notes: _notes.text.trim(),
+      ownerName: _ownerName.text.trim(),
+      ownerPhone: _ownerPhone.text.trim(),
+      ownerEmail: _ownerEmail.text.trim(),
+      ownerAddress: _ownerAddress.text.trim(),
     );
+    // Adding a property also returns the direct-complaints choice; editing returns just the property.
+    Navigator.of(context)
+        .pop(widget.initial == null ? (saved, _directComplaints) : saved);
   }
 
   @override
@@ -2659,6 +2682,20 @@ class _PropertyFormState extends State<_PropertyForm> {
         if (_error != null) ...[
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(color: c.expense)),
+        ],
+        if (widget.initial == null) ...[
+          const SizedBox(height: 8),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            value: _directComplaints,
+            onChanged: (v) => setState(() => _directComplaints = v ?? false),
+            title: const Text('Accept complaints directly from tenants'),
+            subtitle: Text(
+              'Tenants can send a complaint from the room QR code straight to this app. Needs the owner account signed in. You can change this later in the hostel hub.',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
+          ),
         ],
         const SizedBox(height: 14),
         FilledButton(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_lock.dart';
+import '../../core/cloud_sync.dart';
 import '../../core/build_info.dart';
 import '../../core/i18n.dart';
 import '../../core/profile_store.dart';
@@ -56,6 +57,26 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Every feature, grouped by what it is for.',
             onTap: () => context.push('/services'),
           ),
+          // Works in every build: lock the app with its PIN, and sign out of the owner account when signed in.
+          const SizedBox(height: 22),
+          const SectionTitle('App access'),
+          const SizedBox(height: 8),
+          if (ref.watch(appLockProvider).status == LockStatus.locked || ref.watch(appLockProvider).status == LockStatus.unlocked)
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              onPressed: () => ref.read(appLockProvider.notifier).lockIfSet(),
+              icon: const Icon(Icons.lock_outline_rounded),
+              label: const Text('Lock the app now'),
+            ),
+          if (OwnerAccount.user != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(foregroundColor: c.expense, side: BorderSide(color: c.expense), minimumSize: const Size.fromHeight(52)),
+              onPressed: () => OwnerAccount.signOut(),
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Sign out of owner account'),
+            ),
+          ],
           if (!ApiConfig.offline) ...[
             const SizedBox(height: 22),
             const SectionTitle('Account'),

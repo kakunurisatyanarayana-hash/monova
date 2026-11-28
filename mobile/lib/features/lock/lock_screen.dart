@@ -159,7 +159,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      for (var i = 0; i < (_pin.length < _minLength ? _minLength : _pin.length); i++)
+                      // Always show one dot per allowed digit (6), so a 6-digit PIN shows 6 places.
+                      for (var i = 0; i < _maxLength; i++)
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 6),
                           width: 14,
