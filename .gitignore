@@ -30,3 +30,6 @@
 # OS and editor files
 .DS_Store
 Thumbs.db
+
+# Firebase CLI cache
+.firebase/
