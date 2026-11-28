@@ -1,0 +1,61 @@
+# Builds the Flutter web app and deploys it to Firebase Hosting, plus the Firestore rules, on every push to property-module.
+name: Deploy to Firebase Hosting on merge
+
+on:
+  push:
+    branches:
+      - property-module
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.50.1'
+          cache: true
+
+      - name: Fetch packages
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build the web app for the live site
+        working-directory: mobile
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          FIREBASE_SENDER_ID: ${{ vars.FIREBASE_SENDER_ID }}
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_WEB_APP_ID: ${{ vars.FIREBASE_WEB_APP_ID }}
+        run: |
+          flutter build web --release \
+            --dart-define=MONOVA_OFFLINE=true \
+            --dart-define=PUBLIC_BASE_URL=https://monova-7516a.web.app \
+            --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID \
+            --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID \
+            --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY \
+            --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN \
+            --dart-define=FIREBASE_WEB_APP_ID=$FIREBASE_WEB_APP_ID
+
+      - name: Deploy hosting to the live channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONOVA_7516A }}
+          channelId: live
+          projectId: monova-7516a
+
+      - name: Deploy Firestore rules
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONOVA_7516A }}
+        run: |
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          npm install -g firebase-tools
+          firebase deploy --only firestore:rules --project monova-7516a --non-interactive
