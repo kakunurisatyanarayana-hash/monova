@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/api_client.dart';
 import '../../core/credit_ledger.dart';
 import '../../core/format.dart';
 import '../../core/personal_credit_store.dart';
+import '../../core/rate_presets.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../state/providers.dart';
 
 /// Credit manager: money I lent to people or businesses, and money I borrowed. Recorded by hand, on this phone.
 /// Separate from the customer book (Customers) and from bank, FD, SIP and savings balances.
@@ -161,9 +165,11 @@ class _PersonalCreditScreenState extends State<PersonalCreditScreen> {
                     _tile(a, today, c),
                     const SizedBox(height: 8),
                   ],
+                const SizedBox(height: 16),
+                const _ServerBalances(),
                 const SizedBox(height: 12),
                 Text(
-                  'Kept on this phone. Bank, FD, SIP and savings balances are shown separately, from the server.',
+                  'Kept on this phone. Bank, FD, SIP and savings balances come from the server and are never copied into the lent and borrowed totals.',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
               ],
@@ -372,6 +378,8 @@ class _PersonalFormState extends State<_PersonalForm> {
             label: Text('Date: ${dayLabel(_date)}'),
           ),
           const SizedBox(height: 12),
+          RatePresets(controller: _rate),
+          const SizedBox(height: 8),
           TextField(
             controller: _rate,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -623,6 +631,91 @@ class _RepaymentFormState extends State<_RepaymentForm> {
         const SizedBox(height: 14),
         FilledButton(onPressed: _save, child: const Text('Save')),
       ],
+    );
+  }
+}
+
+/// Bank, FD, SIP and savings balances from the server, read-only. They are not part of the lent and borrowed totals.
+/// Offline builds have no server, so they show a short explanation instead.
+class _ServerBalances extends ConsumerWidget {
+  const _ServerBalances();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.monova;
+    final header = Text(
+      'Banks, FD, SIP and savings (from the server)',
+      style: Theme.of(context).textTheme.titleMedium,
+    );
+    if (ApiConfig.offline) {
+      return MonovaCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            header,
+            const SizedBox(height: 6),
+            Text(
+              'These balances come from the server. This offline build has no server connection, so they cannot be shown here.',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+    final accounts = ref.watch(accountsProvider);
+    return MonovaCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header,
+          const SizedBox(height: 8),
+          accounts.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(8),
+              child: LinearProgressIndicator(),
+            ),
+            error: (e, _) => Text(
+              'Could not load balances from the server. $e',
+              style: TextStyle(color: c.expense, fontSize: 12),
+            ),
+            data: (list) => list.isEmpty
+                ? Text(
+                    'No bank or savings accounts on the server yet.',
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  )
+                : Column(
+                    children: [
+                      for (final a in list)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  a.bankName.isEmpty
+                                      ? a.name
+                                      : '${a.name} · ${a.bankName}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                money(a.currentBalance),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

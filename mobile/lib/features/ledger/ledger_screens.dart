@@ -11,6 +11,8 @@ import '../../core/format.dart';
 import '../../core/rate_input.dart';
 import '../../core/rate_units.dart';
 import '../../core/share_text.dart';
+import '../../core/rate_presets.dart';
+import 'ledger_extras.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../shared/date_inputs.dart';
@@ -50,6 +52,9 @@ class LedgerScreen extends StatefulWidget {
 
 class _LedgerScreenState extends State<LedgerScreen> {
   List<CreditAccount> _accounts = [];
+
+  /// null = all customers; otherwise only customers with this status.
+  AccountStatus? _filter;
   bool _loaded = false;
   String _query = '';
 
@@ -87,7 +92,9 @@ class _LedgerScreenState extends State<LedgerScreen> {
     final today = dateOnly(DateTime.now());
     final shown = _accounts
         .where(
-          (a) => a.name.toLowerCase().contains(_query.trim().toLowerCase()),
+          (a) =>
+              a.name.toLowerCase().contains(_query.trim().toLowerCase()) &&
+              (_filter == null || accountStatusOn(a, today) == _filter),
         )
         .toList();
     final totalOutstanding = _accounts.fold<int>(
@@ -147,6 +154,23 @@ class _LedgerScreenState extends State<LedgerScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('All'),
+                      selected: _filter == null,
+                      onSelected: (_) => setState(() => _filter = null),
+                    ),
+                    for (final s in AccountStatus.values)
+                      ChoiceChip(
+                        label: Text(accountStatusLabel(s)),
+                        selected: _filter == s,
+                        onSelected: (_) => setState(() => _filter = s),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 if (_accounts.length > 3)
                   TextField(
                     textInputAction: TextInputAction.next,
@@ -325,6 +349,9 @@ class _AccountFormState extends State<_AccountForm> {
     return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
 
+  late final _creditDays = TextEditingController(
+    text: '${widget.initial?.creditDays ?? 30}',
+  );
   late String _method =
       widget.initial?.interestMethod ?? CreditAccount.perBillInterest;
   String? _error;
@@ -357,6 +384,7 @@ class _AccountFormState extends State<_AccountForm> {
               annualRatePercent: rate,
               compound: false,
               interestMethod: _method,
+              creditDays: int.tryParse(_creditDays.text.trim()) ?? 30,
               bills: const [],
               payments: const [],
             )
@@ -366,6 +394,7 @@ class _AccountFormState extends State<_AccountForm> {
               annualRatePercent: rate,
               compound: false,
               interestMethod: _method,
+              creditDays: int.tryParse(_creditDays.text.trim()) ?? 30,
             ),
     );
   }
@@ -399,6 +428,10 @@ class _AccountFormState extends State<_AccountForm> {
           decoration: const InputDecoration(labelText: 'Phone (optional)'),
         ),
         const SizedBox(height: 12),
+        if (_unit == RateUnit.percentYear) ...[
+          RatePresets(controller: _rate, onPicked: () => setState(() {})),
+          const SizedBox(height: 10),
+        ],
         RateInput(
           controller: _rate,
           unit: _unit,
@@ -409,6 +442,16 @@ class _AccountFormState extends State<_AccountForm> {
         Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
         const SizedBox(height: 4),
+        TextField(
+          controller: _creditDays,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Days allowed before it is overdue',
+            helperText:
+                'A bill still unpaid after this many days shows as overdue.',
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           'How interest is worked out',
           style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
@@ -778,6 +821,21 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        PromissoryNoteCard(account: account, onChanged: _save),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () => FormSheet.show<void>(
+            context,
+            title: 'Estimate settlement',
+            child: SettlementEstimateSheet(
+              account: account,
+              initialDate: _asOf,
+            ),
+          ),
+          icon: const Icon(Icons.calculate_rounded),
+          label: const Text('Estimate settlement on a date'),
+        ),
+        const SizedBox(height: 16),
         if (atDates && steps.isNotEmpty) ...[
           Text(
             'Settlement steps',
@@ -835,11 +893,18 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                         ),
                       ),
                       Text(
-                        b.closedOn == null
-                            ? 'Open'
-                            : 'Cleared ${dayLabel(b.closedOn!)}',
+                        b.closedOn != null
+                            ? 'Settled ${dayLabel(b.closedOn!)}'
+                            : accountStatusLabel(
+                                billStatusOn(account, b, _asOf),
+                              ),
                         style: TextStyle(
-                          color: b.closedOn == null ? c.warning : c.income,
+                          color: b.closedOn != null
+                              ? c.income
+                              : (billStatusOn(account, b, _asOf) ==
+                                        AccountStatus.overdue
+                                    ? c.expense
+                                    : c.warning),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1785,29 +1850,69 @@ class _PaymentEditFormState extends State<_PaymentEditForm> {
     text: (widget.payment.cents / 100).toStringAsFixed(2),
   );
   late final _note = TextEditingController(text: widget.payment.note);
+  final _reason = TextEditingController();
   String? _error;
 
   @override
   void dispose() {
     _amount.dispose();
     _note.dispose();
+    _reason.dispose();
     super.dispose();
+  }
+
+  String _describe(DateTime d, int cents, String note, String billId) {
+    final bill = billId.isEmpty
+        ? 'oldest open bill'
+        : (widget.bills
+                  .where((b) => b.id == billId)
+                  .map(
+                    (b) => b.billerName.isEmpty ? b.description : b.billerName,
+                  )
+                  .firstOrNull ??
+              'a bill');
+    return '${dayLabel(d)} · ${money(cents / 100)} · ${note.isEmpty ? '-' : note} · against $bill';
   }
 
   void _save() {
     final amount = parseAmount(_amount.text);
+    final reason = _reason.text.trim();
+    String? problem;
     if (amount == null) {
-      setState(() => _error = 'Enter the amount paid.');
+      problem = 'Enter the amount paid.';
+    } else if (reason.length < 8) {
+      problem = 'Give a reason for the change (at least 8 letters), for example "Customer paid cash, wrong amount entered".';
+    }
+    if (problem != null) {
+      setState(() => _error = problem);
       return;
     }
+    final cents = (amount! * 100).round();
+    final note = _note.text.trim();
+    final before = _describe(
+      widget.payment.date,
+      widget.payment.cents,
+      widget.payment.note,
+      widget.payment.billId,
+    );
+    final after = _describe(_date, cents, note, _billId);
     Navigator.pop(
       context,
       CreditPayment(
         id: widget.payment.id,
         date: _date,
-        cents: (amount * 100).round(),
-        note: _note.text.trim(),
+        cents: cents,
+        note: note,
         billId: _billId,
+        edits: [
+          ...widget.payment.edits,
+          BillEdit(
+            at: DateTime.now(),
+            reason: reason,
+            before: before,
+            after: after,
+          ),
+        ],
       ),
     );
   }
@@ -1816,11 +1921,27 @@ class _PaymentEditFormState extends State<_PaymentEditForm> {
   Widget build(BuildContext context) {
     final c = context.monova;
     final billIds = {for (final b in widget.bills) b.id};
+    final history = widget.payment.edits;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (history.isNotEmpty) ...[
+            Text(
+              'Change history (${history.length})',
+              style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+            ),
+            for (final e in history)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                child: Text(
+                  '${dayLabel(e.at)} · Reason: ${e.reason}\nWas: ${e.before}\nNow: ${e.after}',
+                  style: TextStyle(color: c.muted, fontSize: 12),
+                ),
+              ),
+            const Divider(),
+          ],
           if (widget.bills.isNotEmpty) ...[
             DropdownButtonFormField<String>(
               initialValue: billIds.contains(_billId) ? _billId : '',
@@ -1861,12 +1982,22 @@ class _PaymentEditFormState extends State<_PaymentEditForm> {
             controller: _note,
             decoration: const InputDecoration(labelText: 'Note (optional)'),
           ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reason,
+            minLines: 2,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Reason for this change (required)',
+              hintText: 'For example: wrong amount entered, customer confirmed the correct amount',
+            ),
+          ),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(_error!, style: TextStyle(color: c.expense)),
           ],
           const SizedBox(height: 14),
-          FilledButton(onPressed: _save, child: const Text('Save changes')),
+          FilledButton(onPressed: _save, child: const Text('Save with reason')),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(foregroundColor: c.expense),

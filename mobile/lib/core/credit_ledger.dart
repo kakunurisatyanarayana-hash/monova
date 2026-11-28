@@ -106,6 +106,7 @@ class CreditPayment {
     required this.cents,
     required this.note,
     this.billId = '',
+    this.edits = const [],
   });
 
   final String id;
@@ -116,12 +117,16 @@ class CreditPayment {
   /// The bill this payment was made against. Empty means the oldest open bill.
   final String billId;
 
+  /// Every change made after the payment was first entered, oldest first.
+  final List<BillEdit> edits;
+
   CreditPayment copyWith({String? note}) => CreditPayment(
     id: id,
     date: date,
     cents: cents,
     note: note ?? this.note,
     billId: billId,
+    edits: edits,
   );
 
   Map<String, dynamic> toJson() => {
@@ -130,6 +135,7 @@ class CreditPayment {
     'cents': cents,
     'note': note,
     'billId': billId,
+    'edits': [for (final e in edits) e.toJson()],
   };
 
   factory CreditPayment.fromJson(Map<String, dynamic> j) => CreditPayment(
@@ -138,6 +144,10 @@ class CreditPayment {
     cents: (j['cents'] as num).toInt(),
     note: '${j['note'] ?? ''}',
     billId: '${j['billId'] ?? ''}',
+    edits: [
+      for (final e in (j['edits'] as List<dynamic>? ?? const []))
+        BillEdit.fromJson(Map<String, dynamic>.from(e as Map)),
+    ],
   );
 }
 
@@ -154,6 +164,9 @@ class CreditAccount {
     this.iOwe = false,
     this.interestMethod = perBillInterest,
     this.partyType = 'customer',
+    this.creditDays = 30,
+    this.noteBase64 = '',
+    this.noteCaption = '',
   });
 
   /// How interest is worked out: each bill by its days open, or once on the whole bill.
@@ -164,6 +177,13 @@ class CreditAccount {
 
   /// customer (customer book), person or thirdParty (personal Credit manager).
   final String partyType;
+
+  /// Days a bill may stay unpaid before the customer shows as overdue.
+  final int creditDays;
+
+  /// A photo of a promissory note, as base64 text, and its caption. Empty when there is none.
+  final String noteBase64;
+  final String noteCaption;
 
   final String id;
   final String name;
@@ -188,6 +208,9 @@ class CreditAccount {
     bool? iOwe,
     String? interestMethod,
     String? partyType,
+    int? creditDays,
+    String? noteBase64,
+    String? noteCaption,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
   }) => CreditAccount(
@@ -199,6 +222,9 @@ class CreditAccount {
     iOwe: iOwe ?? this.iOwe,
     interestMethod: interestMethod ?? this.interestMethod,
     partyType: partyType ?? this.partyType,
+    creditDays: creditDays ?? this.creditDays,
+    noteBase64: noteBase64 ?? this.noteBase64,
+    noteCaption: noteCaption ?? this.noteCaption,
     bills: bills ?? this.bills,
     payments: payments ?? this.payments,
   );
@@ -212,6 +238,9 @@ class CreditAccount {
     'iOwe': iOwe,
     'interestMethod': interestMethod,
     'partyType': partyType,
+    'creditDays': creditDays,
+    'noteBase64': noteBase64,
+    'noteCaption': noteCaption,
     'bills': bills.map((b) => b.toJson()).toList(),
     'payments': payments.map((p) => p.toJson()).toList(),
   };
@@ -225,6 +254,9 @@ class CreditAccount {
     iOwe: j['iOwe'] == true,
     interestMethod: '${j['interestMethod'] ?? perBillInterest}',
     partyType: '${j['partyType'] ?? 'customer'}',
+    creditDays: (j['creditDays'] as num?)?.toInt() ?? 30,
+    noteBase64: '${j['noteBase64'] ?? ''}',
+    noteCaption: '${j['noteCaption'] ?? ''}',
     bills: [
       for (final b in (j['bills'] as List<dynamic>? ?? const []))
         CreditBill.fromJson(Map<String, dynamic>.from(b as Map)),
@@ -840,4 +872,70 @@ List<CreditBill> _allocationOrder(List<CreditBill> bills, CreditPayment p) {
     for (final b in bills)
       if (b.id != p.billId) b,
   ];
+}
+
+/// Where a customer stands on [asOf]: settled (nothing owed), overdue (the oldest bill is older than the credit period
+/// and something is still owed), or pending (owed, but within the credit period).
+enum AccountStatus { settled, overdue, pending }
+
+String accountStatusLabel(AccountStatus s) => switch (s) {
+  AccountStatus.settled => 'Settled',
+  AccountStatus.overdue => 'Overdue',
+  AccountStatus.pending => 'Pending',
+};
+
+AccountStatus accountStatusOn(CreditAccount a, DateTime asOf) {
+  if (accountTotalCents(a, asOf) <= 0) return AccountStatus.settled;
+  final end = dateOnly(asOf);
+  final limit = end.subtract(Duration(days: a.creditDays));
+  final oldest = a.bills.isEmpty
+      ? null
+      : a.bills
+            .map((b) => dateOnly(b.date))
+            .reduce((x, y) => x.isBefore(y) ? x : y);
+  if (oldest != null && !oldest.isAfter(limit)) return AccountStatus.overdue;
+  return AccountStatus.pending;
+}
+
+/// Status of one bill on [asOf]: settled when cleared, overdue when older than the credit period, otherwise pending.
+AccountStatus billStatusOn(CreditAccount a, BillBreakdown b, DateTime asOf) {
+  if (b.closedOn != null || b.openCents <= 0) return AccountStatus.settled;
+  final limit = dateOnly(asOf).subtract(Duration(days: a.creditDays));
+  return dateOnly(b.bill.date).isAfter(limit)
+      ? AccountStatus.pending
+      : AccountStatus.overdue;
+}
+
+/// A rough sample settlement for [date]: bills, payments, interest and total, from the account's own rules.
+class SettlementEstimate {
+  const SettlementEstimate({
+    required this.billsCents,
+    required this.paidCents,
+    required this.interestCents,
+    required this.totalCents,
+  });
+
+  final int billsCents;
+  final int paidCents;
+  final int interestCents;
+  final int totalCents;
+}
+
+SettlementEstimate settlementEstimate(CreditAccount a, DateTime date) {
+  final d = dateOnly(date);
+  var bills = 0;
+  for (final b in a.bills) {
+    if (!dateOnly(b.date).isAfter(d)) bills += b.finalCents;
+  }
+  var paid = 0;
+  for (final p in a.payments) {
+    if (!dateOnly(p.date).isAfter(d)) paid += p.cents;
+  }
+  final total = accountTotalCents(a, d);
+  return SettlementEstimate(
+    billsCents: bills,
+    paidCents: paid,
+    interestCents: total - bills + paid,
+    totalCents: total,
+  );
 }
