@@ -604,6 +604,7 @@ class _QuickActions extends StatelessWidget {
       children: [
         _ActionCircle(icon: Icons.call_split_rounded, label: 'Split', onTap: () => context.push('/tools/split')),
         _ActionCircle(icon: Icons.menu_book_rounded, label: 'Customers', onTap: () => context.push('/ledger')),
+        _ActionCircle(icon: Icons.account_balance_wallet_rounded, label: 'Credit manager', onTap: () => context.push('/credit-manager')),
         _ActionCircle(icon: Icons.lock_rounded, label: 'Vault', onTap: () => context.push('/vault-hub')),
       ],
     );

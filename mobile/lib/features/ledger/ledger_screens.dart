@@ -755,6 +755,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                 c,
               ),
               _sum('Paid so far', money(paidNow / 100), c),
+              _sum('How interest is worked out', switch (account.interestMethod) { CreditAccount.wholeBillInterest => 'On the whole bill', CreditAccount.atBillDatesInterest => 'At each bill date', _ => 'Each bill by days' }, c),
             ],
           ),
         ),
@@ -952,7 +953,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               notes: b.notes,
               amount: '+ ${money(b.finalCents / 100)}',
               color: c.expense,
-              onTap: () => _editNotes(account, bill: b),
+              onTap: () => _editBill(account, b),
               c: c,
             ),
           for (final p in day.payments)
@@ -961,7 +962,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               notes: p.note.isEmpty ? '' : '',
               amount: '- ${money(p.cents / 100)}',
               color: c.income,
-              onTap: () => _editNotes(account, payment: p),
+              onTap: () => _editPayment(account, p),
               c: c,
             ),
           if (day.interestCents > 0)
@@ -1104,6 +1105,91 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       );
     }
   }
+
+  Future<bool> _confirmDelete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete this entry?'),
+        content: const Text(
+          'It will be removed from the statement and from the interest calculation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: context.monova.expense,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  /// Edit a bill's date, biller, description, amount and notes, or delete it.
+  Future<void> _editBill(CreditAccount account, CreditBill bill) async {
+    final r = await FormSheet.show<Object>(
+      context,
+      title: 'Edit bill',
+      child: _BillEditForm(bill: bill),
+    );
+    if (r == null) return;
+    if (r == _deleteSignal) {
+      if (!await _confirmDelete()) return;
+      await _save(
+        account.copyWith(
+          bills: account.bills.where((b) => b.id != bill.id).toList(),
+        ),
+      );
+      return;
+    }
+    if (r is CreditBill) {
+      await _save(
+        account.copyWith(
+          bills: [for (final b in account.bills) b.id == bill.id ? r : b],
+        ),
+      );
+    }
+  }
+
+  /// Edit a payment's date, amount, note and the bill it is against, or delete it.
+  Future<void> _editPayment(
+    CreditAccount account,
+    CreditPayment payment,
+  ) async {
+    final r = await FormSheet.show<Object>(
+      context,
+      title: 'Edit payment',
+      child: _PaymentEditForm(payment: payment, bills: account.bills),
+    );
+    if (r == null) return;
+    if (r == _deleteSignal) {
+      if (!await _confirmDelete()) return;
+      await _save(
+        account.copyWith(
+          payments: account.payments.where((p) => p.id != payment.id).toList(),
+        ),
+      );
+      return;
+    }
+    if (r is CreditPayment) {
+      await _save(
+        account.copyWith(
+          payments: [
+            for (final p in account.payments) p.id == payment.id ? r : p,
+          ],
+        ),
+      );
+    }
+  }
+
+  static const _deleteSignal = 'delete-entry';
 
   Widget _sum(String label, String value, MonovaColors c) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
@@ -1369,9 +1455,14 @@ class _PaymentFormState extends State<_PaymentForm> {
         if (widget.bills.isNotEmpty) ...[
           DropdownButtonFormField<String>(
             initialValue: _billId,
-            decoration: const InputDecoration(labelText: 'Pay against which bill?'),
+            decoration: const InputDecoration(
+              labelText: 'Pay against which bill?',
+            ),
             items: [
-              const DropdownMenuItem(value: '', child: Text('Oldest open bill (default)')),
+              const DropdownMenuItem(
+                value: '',
+                child: Text('Oldest open bill (default)'),
+              ),
               for (final b in widget.bills)
                 DropdownMenuItem(
                   value: b.id,
@@ -1477,4 +1568,231 @@ class _NotesFormState extends State<_NotesForm> {
       ],
     );
   }
+}
+
+class _BillEditForm extends StatefulWidget {
+  const _BillEditForm({required this.bill});
+
+  final CreditBill bill;
+
+  @override
+  State<_BillEditForm> createState() => _BillEditFormState();
+}
+
+class _BillEditFormState extends State<_BillEditForm> {
+  late DateTime _date = dateOnly(widget.bill.date);
+  late final _biller = TextEditingController(text: widget.bill.billerName);
+  late final _description = TextEditingController(
+    text: widget.bill.description,
+  );
+  late final _amount = TextEditingController(
+    text: (widget.bill.finalCents / 100).toStringAsFixed(2),
+  );
+  late final _notes = TextEditingController(text: widget.bill.notes);
+  String? _error;
+
+  @override
+  void dispose() {
+    _biller.dispose();
+    _description.dispose();
+    _amount.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final amount = parseAmount(_amount.text);
+    if (amount == null) {
+      setState(
+        () => _error = 'Enter the final amount, for example 1500 or 999.50.',
+      );
+      return;
+    }
+    final cents = (amount * 100).round();
+    Navigator.pop(
+      context,
+      CreditBill(
+        id: widget.bill.id,
+        date: _date,
+        billerName: _biller.text.trim(),
+        description: _description.text.trim(),
+        amountCents: cents,
+        finalCents: cents,
+        notes: _notes.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DateSelector(
+            label: 'Bill date',
+            value: _date,
+            onChanged: (d) => setState(() => _date = d),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _biller,
+            decoration: const InputDecoration(
+              labelText: 'Name of customer or supplier',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _description,
+            decoration: const InputDecoration(labelText: 'What was bought'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Final amount (₹)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notes,
+            decoration: const InputDecoration(labelText: 'Notes (optional)'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!, style: TextStyle(color: c.expense)),
+          ],
+          const SizedBox(height: 14),
+          FilledButton(onPressed: _save, child: const Text('Save changes')),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(foregroundColor: c.expense),
+            onPressed: () =>
+                Navigator.pop(context, _LedgerAccountScreenStateDelete.signal),
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Delete this bill'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentEditForm extends StatefulWidget {
+  const _PaymentEditForm({required this.payment, required this.bills});
+
+  final CreditPayment payment;
+  final List<CreditBill> bills;
+
+  @override
+  State<_PaymentEditForm> createState() => _PaymentEditFormState();
+}
+
+class _PaymentEditFormState extends State<_PaymentEditForm> {
+  late DateTime _date = dateOnly(widget.payment.date);
+  late String _billId = widget.payment.billId;
+  late final _amount = TextEditingController(
+    text: (widget.payment.cents / 100).toStringAsFixed(2),
+  );
+  late final _note = TextEditingController(text: widget.payment.note);
+  String? _error;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final amount = parseAmount(_amount.text);
+    if (amount == null) {
+      setState(() => _error = 'Enter the amount paid.');
+      return;
+    }
+    Navigator.pop(
+      context,
+      CreditPayment(
+        id: widget.payment.id,
+        date: _date,
+        cents: (amount * 100).round(),
+        note: _note.text.trim(),
+        billId: _billId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final billIds = {for (final b in widget.bills) b.id};
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.bills.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              initialValue: billIds.contains(_billId) ? _billId : '',
+              decoration: const InputDecoration(
+                labelText: 'Pay against which bill?',
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: '',
+                  child: Text('Oldest open bill (default)'),
+                ),
+                for (final b in widget.bills)
+                  DropdownMenuItem(
+                    value: b.id,
+                    child: Text(
+                      '${dayLabel(b.date)} · ${b.billerName.isEmpty ? b.description : b.billerName} · ${money(b.finalCents / 100)}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _billId = v ?? ''),
+            ),
+            const SizedBox(height: 12),
+          ],
+          DateSelector(
+            label: 'Date paid',
+            value: _date,
+            onChanged: (d) => setState(() => _date = d),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Amount paid (₹)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _note,
+            decoration: const InputDecoration(labelText: 'Note (optional)'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!, style: TextStyle(color: c.expense)),
+          ],
+          const SizedBox(height: 14),
+          FilledButton(onPressed: _save, child: const Text('Save changes')),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(foregroundColor: c.expense),
+            onPressed: () =>
+                Navigator.pop(context, _LedgerAccountScreenStateDelete.signal),
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Delete this payment'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The value a form returns to ask for deletion.
+class _LedgerAccountScreenStateDelete {
+  static const signal = 'delete-entry';
 }
