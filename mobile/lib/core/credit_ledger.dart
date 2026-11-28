@@ -7,6 +7,37 @@ DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// A bill given on credit: the date, the person it was given to (the biller), what it was for,
 /// the amount before any discount, the final price that is owed, and any notes kept with it.
+/// One change made to a bill, with the reason the owner gave. Kept so the bill's history can be shown.
+class BillEdit {
+  const BillEdit({
+    required this.at,
+    required this.reason,
+    required this.before,
+    required this.after,
+  });
+
+  final DateTime at;
+  final String reason;
+
+  /// What the bill said before the change, and what it says after.
+  final String before;
+  final String after;
+
+  Map<String, dynamic> toJson() => {
+    'at': at.toIso8601String(),
+    'reason': reason,
+    'before': before,
+    'after': after,
+  };
+
+  factory BillEdit.fromJson(Map<String, dynamic> j) => BillEdit(
+    at: DateTime.parse('${j['at']}'),
+    reason: '${j['reason'] ?? ''}',
+    before: '${j['before'] ?? ''}',
+    after: '${j['after'] ?? ''}',
+  );
+}
+
 class CreditBill {
   const CreditBill({
     required this.id,
@@ -16,6 +47,7 @@ class CreditBill {
     required this.amountCents,
     required this.finalCents,
     this.notes = '',
+    this.edits = const [],
   });
 
   final String id;
@@ -26,6 +58,9 @@ class CreditBill {
   final int finalCents;
   final String notes;
 
+  /// Every change made after the bill was first entered, oldest first.
+  final List<BillEdit> edits;
+
   CreditBill copyWith({String? notes}) => CreditBill(
     id: id,
     date: date,
@@ -34,6 +69,7 @@ class CreditBill {
     amountCents: amountCents,
     finalCents: finalCents,
     notes: notes ?? this.notes,
+    edits: edits,
   );
 
   Map<String, dynamic> toJson() => {
@@ -44,6 +80,7 @@ class CreditBill {
     'amountCents': amountCents,
     'finalCents': finalCents,
     'notes': notes,
+    'edits': [for (final e in edits) e.toJson()],
   };
 
   factory CreditBill.fromJson(Map<String, dynamic> j) => CreditBill(
@@ -54,6 +91,10 @@ class CreditBill {
     amountCents: (j['amountCents'] as num).toInt(),
     finalCents: (j['finalCents'] as num).toInt(),
     notes: '${j['notes'] ?? ''}',
+    edits: [
+      for (final e in (j['edits'] as List<dynamic>? ?? const []))
+        BillEdit.fromJson(Map<String, dynamic>.from(e as Map)),
+    ],
   );
 }
 

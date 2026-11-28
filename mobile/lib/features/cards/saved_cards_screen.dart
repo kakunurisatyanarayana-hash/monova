@@ -284,6 +284,24 @@ class _CardDetailState extends State<_CardDetail> {
     }
   }
 
+  /// The full number goes to the clipboard only after the owner agrees, and is cleared 30 seconds later.
+  Future<void> _confirmCopyNumber(String number) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Copy the full card number?'),
+        content: const Text('Other apps can read the clipboard. Monova clears it 30 seconds after you copy.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Copy')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    _copy('Card number', number);
+    Future<void>.delayed(const Duration(seconds: 30), () => Clipboard.setData(const ClipboardData(text: '')));
+  }
+
   void _copy(String label, String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -319,7 +337,7 @@ class _CardDetailState extends State<_CardDetail> {
           hasNumber: card.hasFullNumber,
           revealed: _revealed,
           onToggle: _toggleReveal,
-          onCopy: () => _copy('Card number', card.number),
+          onCopy: () => _confirmCopyNumber(card.number),
         ),
         _Line(label: 'Valid thru', value: card.expiryLabel),
         _Line(label: 'Cardholder', value: card.holder.isEmpty ? '-' : card.holder),

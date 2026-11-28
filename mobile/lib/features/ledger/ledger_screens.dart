@@ -755,7 +755,15 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                 c,
               ),
               _sum('Paid so far', money(paidNow / 100), c),
-              _sum('How interest is worked out', switch (account.interestMethod) { CreditAccount.wholeBillInterest => 'On the whole bill', CreditAccount.atBillDatesInterest => 'At each bill date', _ => 'Each bill by days' }, c),
+              _sum(
+                'How interest is worked out',
+                switch (account.interestMethod) {
+                  CreditAccount.wholeBillInterest => 'On the whole bill',
+                  CreditAccount.atBillDatesInterest => 'At each bill date',
+                  _ => 'Each bill by days',
+                },
+                c,
+              ),
             ],
           ),
         ),
@@ -953,7 +961,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               notes: b.notes,
               amount: '+ ${money(b.finalCents / 100)}',
               color: c.expense,
-              onTap: () => _editBill(account, b),
+              onTap: () => _viewBill(account, b),
               c: c,
             ),
           for (final p in day.payments)
@@ -1184,6 +1192,33 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           payments: [
             for (final p in account.payments) p.id == payment.id ? r : p,
           ],
+        ),
+      );
+    }
+  }
+
+  /// Bill details first: every field, the amount still owed and interest so far, and the full change history.
+  /// Edit and delete are offered from there.
+  Future<void> _viewBill(CreditAccount account, CreditBill bill) async {
+    final breakdowns = account.interestMethod == CreditAccount.wholeBillInterest
+        ? wholeBillBreakdowns(account, _asOf)
+        : billBreakdowns(account, _asOf, computeStatement(account, _asOf));
+    BillBreakdown? info;
+    for (final b in breakdowns) {
+      if (b.bill.id == bill.id) info = b;
+    }
+    final action = await FormSheet.show<String>(
+      context,
+      title: 'Bill details',
+      child: _BillDetail(bill: bill, info: info),
+    );
+    if (action == 'edit') {
+      await _editBill(account, bill);
+    } else if (action == 'delete') {
+      if (!await _confirmDelete()) return;
+      await _save(
+        account.copyWith(
+          bills: account.bills.where((b) => b.id != bill.id).toList(),
         ),
       );
     }
@@ -1589,6 +1624,7 @@ class _BillEditFormState extends State<_BillEditForm> {
     text: (widget.bill.finalCents / 100).toStringAsFixed(2),
   );
   late final _notes = TextEditingController(text: widget.bill.notes);
+  final _reason = TextEditingController();
   String? _error;
 
   @override
@@ -1597,40 +1633,83 @@ class _BillEditFormState extends State<_BillEditForm> {
     _description.dispose();
     _amount.dispose();
     _notes.dispose();
+    _reason.dispose();
     super.dispose();
   }
 
+  /// A one-line description of the bill's details, used to record what changed.
+  static String _describe(CreditBill b) =>
+      '${dayLabel(b.date)} · ${b.billerName.isEmpty ? '-' : b.billerName} · ${b.description.isEmpty ? '-' : b.description} · ${money(b.finalCents / 100)}';
+
   void _save() {
     final amount = parseAmount(_amount.text);
+    final reason = _reason.text.trim();
+    String? problem;
     if (amount == null) {
-      setState(
-        () => _error = 'Enter the final amount, for example 1500 or 999.50.',
-      );
+      problem = 'Enter the final amount, for example 1500 or 999.50.';
+    } else if (reason.length < 8) {
+      problem = 'Give a reason for the change (at least 8 letters), for example "Wrong amount written, bill was 1,200".';
+    }
+    if (problem != null) {
+      setState(() => _error = problem);
       return;
     }
-    final cents = (amount * 100).round();
-    Navigator.pop(
-      context,
-      CreditBill(
-        id: widget.bill.id,
-        date: _date,
-        billerName: _biller.text.trim(),
-        description: _description.text.trim(),
-        amountCents: cents,
-        finalCents: cents,
-        notes: _notes.text.trim(),
-      ),
+    final cents = (amount! * 100).round();
+    final updated = CreditBill(
+      id: widget.bill.id,
+      date: _date,
+      billerName: _biller.text.trim(),
+      description: _description.text.trim(),
+      amountCents: cents,
+      finalCents: cents,
+      notes: _notes.text.trim(),
+      edits: [
+        ...widget.bill.edits,
+        BillEdit(
+          at: DateTime.now(),
+          reason: reason,
+          before: _describe(widget.bill),
+          after: _describe(
+            CreditBill(
+              id: widget.bill.id,
+              date: _date,
+              billerName: _biller.text.trim(),
+              description: _description.text.trim(),
+              amountCents: cents,
+              finalCents: cents,
+            ),
+          ),
+        ),
+      ],
     );
+    Navigator.pop(context, updated);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.monova;
+    final history = widget.bill.edits;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (history.isNotEmpty) ...[
+            Text(
+              'Change history (${history.length})',
+              style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            for (final e in history)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '${dayLabel(e.at)}: ${e.reason}\nWas: ${e.before}\nNow: ${e.after}',
+                  style: TextStyle(color: c.muted, fontSize: 12),
+                ),
+              ),
+            const Divider(),
+          ],
           DateSelector(
             label: 'Bill date',
             value: _date,
@@ -1659,12 +1738,22 @@ class _BillEditFormState extends State<_BillEditForm> {
             controller: _notes,
             decoration: const InputDecoration(labelText: 'Notes (optional)'),
           ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _reason,
+            minLines: 2,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Reason for this change (required)',
+              hintText: 'For example: wrong amount written, customer confirmed the correct bill',
+            ),
+          ),
           if (_error != null) ...[
             const SizedBox(height: 8),
             Text(_error!, style: TextStyle(color: c.expense)),
           ],
           const SizedBox(height: 14),
-          FilledButton(onPressed: _save, child: const Text('Save changes')),
+          FilledButton(onPressed: _save, child: const Text('Save with reason')),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(foregroundColor: c.expense),
@@ -1795,4 +1884,95 @@ class _PaymentEditFormState extends State<_PaymentEditForm> {
 /// The value a form returns to ask for deletion.
 class _LedgerAccountScreenStateDelete {
   static const signal = 'delete-entry';
+}
+
+/// Read-only details of one bill, with its change history. Returns 'edit' or 'delete' when the owner picks an action.
+class _BillDetail extends StatelessWidget {
+  const _BillDetail({required this.bill, required this.info});
+
+  final CreditBill bill;
+  final BillBreakdown? info;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final name = bill.billerName.isEmpty ? '-' : bill.billerName;
+    final history = bill.edits;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _line('Date', dayLabel(bill.date), c),
+          _line('Customer or supplier', name, c),
+          _line(
+            'What was bought',
+            bill.description.isEmpty ? '-' : bill.description,
+            c,
+          ),
+          _line('Bill amount', money(bill.finalCents / 100), c),
+          if (info != null) ...[
+            _line('Paid so far', money(info!.paidCents / 100), c),
+            _line('Still owed', money(info!.openCents / 100), c),
+            _line('Interest on this bill', money(info!.interestCents / 100), c),
+            _line('Days open', '${info!.daysOpen}', c),
+            _line(
+              'Status',
+              info!.closedOn == null
+                  ? 'Open'
+                  : 'Cleared ${dayLabel(info!.closedOn!)}',
+              c,
+            ),
+          ],
+          if (bill.notes.isNotEmpty) _line('Notes', bill.notes, c),
+          const SizedBox(height: 12),
+          Text(
+            history.isEmpty
+                ? 'No changes since it was entered.'
+                : 'Change history (${history.length})',
+            style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+          ),
+          for (final e in history)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '${dayLabel(e.at)} · Reason: ${e.reason}\nWas: ${e.before}\nNow: ${e.after}',
+                style: TextStyle(color: c.muted, fontSize: 12),
+              ),
+            ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context, 'edit'),
+            icon: const Icon(Icons.edit_rounded),
+            label: const Text('Edit this bill (reason needed)'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(foregroundColor: c.expense),
+            onPressed: () => Navigator.pop(context, 'delete'),
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Delete this bill'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String label, String value, MonovaColors c) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(label, style: TextStyle(color: c.muted)),
+        ),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
 }
