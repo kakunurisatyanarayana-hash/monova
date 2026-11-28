@@ -14,6 +14,7 @@ import '../features/entries/purchases_screen.dart';
 import '../features/property/property_person.dart';
 import '../features/property/property_screens.dart';
 import '../features/ledger/ledger_screens.dart';
+import '../features/credit/personal_credit_screen.dart';
 import '../features/groups/group_screens.dart';
 import '../features/groups_local/local_groups_screen.dart';
 import '../features/home/home_screen.dart';
@@ -111,6 +112,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/planning', builder: (_, __) => const RequiresAccount(title: 'Budgets & savings', child: PlanningScreen())),
           GoRoute(path: '/recurring', builder: (_, __) => const RequiresAccount(title: 'Recurring', child: RecurringScreen())),
           GoRoute(path: '/ledger', builder: (_, __) => const LedgerScreen()),
+          GoRoute(path: '/credit-manager', builder: (_, __) => const PersonalCreditScreen()),
           GoRoute(path: '/ledger/:id', builder: (_, s) => LedgerAccountScreen(id: s.pathParameters['id']!)),
           GoRoute(path: '/entries', builder: (_, __) => const EntriesScreen()),
           GoRoute(path: '/purchases', builder: (_, __) => const PurchasesScreen()),

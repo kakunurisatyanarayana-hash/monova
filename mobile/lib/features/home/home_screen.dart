@@ -107,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
                 runSpacing: 8,
                 children: [
                   ActionChip(label: const Text('Accounts'), onPressed: () => context.push('/accounts')),
-                  ActionChip(label: const Text('Credit manager'), onPressed: () => context.push('/lending')),
+                  ActionChip(label: const Text('Credit manager'), onPressed: () => context.push('/credit-manager')),
                   ActionChip(label: const Text('Loans & EMI'), onPressed: () => context.push('/loans')),
                   ActionChip(label: const Text('Savings goals'), onPressed: () => context.push('/planning')),
                   ActionChip(label: const Text('Property and rooms'), onPressed: () => context.push('/property')),

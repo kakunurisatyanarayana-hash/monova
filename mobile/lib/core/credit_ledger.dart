@@ -101,6 +101,7 @@ class CreditAccount {
     required this.payments,
     this.iOwe = false,
     this.interestMethod = perBillInterest,
+    this.partyType = 'customer',
   });
 
   /// How interest is worked out: each bill by its days open, or once on the whole bill.
@@ -108,6 +109,8 @@ class CreditAccount {
   static const wholeBillInterest = 'wholeBill';
   static const atBillDatesInterest = 'atBillDates';
   final String interestMethod;
+  /// customer (customer book), person or thirdParty (personal Credit manager).
+  final String partyType;
 
   final String id;
   final String name;
@@ -131,6 +134,7 @@ class CreditAccount {
     bool? compound,
     bool? iOwe,
     String? interestMethod,
+    String? partyType,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
   }) => CreditAccount(
@@ -141,6 +145,7 @@ class CreditAccount {
     compound: compound ?? this.compound,
     iOwe: iOwe ?? this.iOwe,
     interestMethod: interestMethod ?? this.interestMethod,
+    partyType: partyType ?? this.partyType,
     bills: bills ?? this.bills,
     payments: payments ?? this.payments,
   );
@@ -153,6 +158,7 @@ class CreditAccount {
     'compound': compound,
     'iOwe': iOwe,
     'interestMethod': interestMethod,
+    'partyType': partyType,
     'bills': bills.map((b) => b.toJson()).toList(),
     'payments': payments.map((p) => p.toJson()).toList(),
   };
@@ -165,6 +171,7 @@ class CreditAccount {
     compound: j['compound'] == true,
     iOwe: j['iOwe'] == true,
     interestMethod: '${j['interestMethod'] ?? perBillInterest}',
+    partyType: '${j['partyType'] ?? 'customer'}',
     bills: [
       for (final b in (j['bills'] as List<dynamic>? ?? const []))
         CreditBill.fromJson(Map<String, dynamic>.from(b as Map)),
