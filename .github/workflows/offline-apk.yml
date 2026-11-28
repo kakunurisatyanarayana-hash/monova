@@ -76,10 +76,12 @@ jobs:
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_ANDROID_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID }}
           FIREBASE_WEB_APP_ID: ${{ vars.FIREBASE_WEB_APP_ID }}
+          TEST_BACKEND_URL: https://monova.onrender.com
+          TEST_BACKEND_TOKEN: ${{ secrets.TEST_BACKEND_TOKEN }}
         # Gradle downloads are sometimes rate-limited (HTTP 429) on the build machine; retry instead of failing at once.
         run: |
           for attempt in 1 2 3; do
-            flutter build apk --release --split-per-abi --dart-define=MONOVA_OFFLINE=true --dart-define=BUILD_REF=${{ github.ref_name }} --dart-define=BUILD_COMMIT=${{ github.sha }} --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN --dart-define=FIREBASE_ANDROID_APP_ID=$FIREBASE_ANDROID_APP_ID --dart-define=FIREBASE_WEB_APP_ID=$FIREBASE_WEB_APP_ID && exit 0
+            flutter build apk --release --split-per-abi --dart-define=MONOVA_OFFLINE=true --dart-define=BUILD_REF=${{ github.ref_name }} --dart-define=BUILD_COMMIT=${{ github.sha }} --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN --dart-define=FIREBASE_ANDROID_APP_ID=$FIREBASE_ANDROID_APP_ID --dart-define=FIREBASE_WEB_APP_ID=$FIREBASE_WEB_APP_ID --dart-define=TEST_BACKEND_URL=$TEST_BACKEND_URL --dart-define=TEST_BACKEND_TOKEN=$TEST_BACKEND_TOKEN && exit 0
             echo "Attempt $attempt failed. Waiting before trying again."
             sleep $((attempt * 60))
           done
@@ -92,7 +94,9 @@ jobs:
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           FIREBASE_WEB_APP_ID: ${{ vars.FIREBASE_WEB_APP_ID }}
-        run: flutter build web --release --dart-define=MONOVA_OFFLINE=true --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN --dart-define=FIREBASE_WEB_APP_ID=$FIREBASE_WEB_APP_ID
+          TEST_BACKEND_URL: https://monova.onrender.com
+          TEST_BACKEND_TOKEN: ${{ secrets.TEST_BACKEND_TOKEN }}
+        run: flutter build web --release --dart-define=MONOVA_OFFLINE=true --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID --dart-define=FIREBASE_SENDER_ID=$FIREBASE_SENDER_ID --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN --dart-define=FIREBASE_WEB_APP_ID=$FIREBASE_WEB_APP_ID --dart-define=TEST_BACKEND_URL=$TEST_BACKEND_URL --dart-define=TEST_BACKEND_TOKEN=$TEST_BACKEND_TOKEN
 
       - name: Upload web app
         uses: actions/upload-artifact@v4
