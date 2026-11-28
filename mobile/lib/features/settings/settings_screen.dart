@@ -8,6 +8,7 @@ import '../../core/cloud_sync.dart';
 import '../../core/build_info.dart';
 import '../../core/i18n.dart';
 import '../../core/profile_store.dart';
+import '../../core/test_backend.dart';
 import '../../core/theme_mode.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
@@ -39,7 +40,9 @@ class SettingsScreen extends ConsumerWidget {
           _SettingRow(
             icon: Icons.lock_outline_rounded,
             title: 'App PIN',
-            subtitle: pinOn ? 'On. Asked each time MONOVA opens.' : 'Off. Set a PIN to lock MONOVA.',
+            subtitle: pinOn
+                ? 'On. Asked each time MONOVA opens.'
+                : 'Off. Set a PIN to lock MONOVA.',
             onTap: () => togglePinFromSettings(context, ref),
           ),
           const SizedBox(height: 22),
@@ -57,13 +60,53 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Every feature, grouped by what it is for.',
             onTap: () => context.push('/services'),
           ),
+          if (testBackendEnabled) ...[
+            const SizedBox(height: 22),
+            const SectionTitle('Test server'),
+            const SizedBox(height: 8),
+            Text(
+              'Test builds only. Sends made-up test text, never customer or money records.',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              onPressed: () async {
+                final msg = await TestBackend.checkConnection();
+                if (context.mounted)
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(msg)));
+              },
+              icon: const Icon(Icons.cloud_done_outlined),
+              label: const Text('Check the test server'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              onPressed: () async {
+                final msg = await TestBackend.sendTestEvent();
+                if (context.mounted)
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(msg)));
+              },
+              icon: const Icon(Icons.send_outlined),
+              label: const Text('Send a test event'),
+            ),
+          ],
           // Works in every build: lock the app with its PIN, and sign out of the owner account when signed in.
           const SizedBox(height: 22),
           const SectionTitle('App access'),
           const SizedBox(height: 8),
-          if (ref.watch(appLockProvider).status == LockStatus.locked || ref.watch(appLockProvider).status == LockStatus.unlocked)
+          if (ref.watch(appLockProvider).status == LockStatus.locked ||
+              ref.watch(appLockProvider).status == LockStatus.unlocked)
             OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
               onPressed: () => ref.read(appLockProvider.notifier).lockIfSet(),
               icon: const Icon(Icons.lock_outline_rounded),
               label: const Text('Lock the app now'),
@@ -71,7 +114,11 @@ class SettingsScreen extends ConsumerWidget {
           if (OwnerAccount.user != null) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(foregroundColor: c.expense, side: BorderSide(color: c.expense), minimumSize: const Size.fromHeight(52)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: c.expense,
+                side: BorderSide(color: c.expense),
+                minimumSize: const Size.fromHeight(52),
+              ),
               onPressed: () => OwnerAccount.signOut(),
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Sign out of owner account'),
@@ -83,7 +130,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             if (signedIn)
               OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: c.expense, side: BorderSide(color: c.expense), minimumSize: const Size.fromHeight(52)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: c.expense,
+                  side: BorderSide(color: c.expense),
+                  minimumSize: const Size.fromHeight(52),
+                ),
                 onPressed: () async {
                   await ref.read(sessionProvider.notifier).logout();
                 },
@@ -92,14 +143,21 @@ class SettingsScreen extends ConsumerWidget {
               )
             else
               FilledButton.icon(
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                ),
                 onPressed: () => context.push('/auth'),
                 icon: const Icon(Icons.login_rounded),
                 label: const Text('Sign in or create account'),
               ),
           ],
           const SizedBox(height: 28),
-          Center(child: Text(buildLabel, style: TextStyle(color: c.muted, fontSize: 11))),
+          Center(
+            child: Text(
+              buildLabel,
+              style: TextStyle(color: c.muted, fontSize: 11),
+            ),
+          ),
         ],
       ),
     );
@@ -108,7 +166,12 @@ class SettingsScreen extends ConsumerWidget {
 
 /// One tappable row in Settings: icon, title, a short line of what it does, and a chevron.
 class _SettingRow extends StatelessWidget {
-  const _SettingRow({required this.icon, required this.title, required this.subtitle, required this.onTap});
+  const _SettingRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String title;
@@ -131,9 +194,15 @@ class _SettingRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: c.muted, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -144,6 +213,7 @@ class _SettingRow extends StatelessWidget {
     );
   }
 }
+
 /// Language and theme as chips: one tap each, no hidden menus.
 class _LanguageCard extends ConsumerWidget {
   const _LanguageCard();
@@ -158,7 +228,10 @@ class _LanguageCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('settings_language'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            tr('settings_language'),
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -183,17 +256,22 @@ class _LanguageCard extends ConsumerWidget {
                 ChoiceChip(
                   label: Text(themeLabel(m)),
                   selected: m == mode,
-                  onSelected: (_) => ref.read(themeModeProvider.notifier).set(m),
+                  onSelected: (_) =>
+                      ref.read(themeModeProvider.notifier).set(m),
                 ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(tr('settings_language_note'), style: TextStyle(color: c.muted, fontSize: 12, height: 1.4)),
+          Text(
+            tr('settings_language_note'),
+            style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
+          ),
         ],
       ),
     );
   }
 }
+
 /// The profile at the top of Settings. Tap to edit the name and contact details.
 class _ProfileCard extends ConsumerWidget {
   const _ProfileCard();
@@ -202,7 +280,10 @@ class _ProfileCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.monova;
     final p = ref.watch(profileProvider).profile;
-    final details = [if (p != null && p.phone.isNotEmpty) p.phone, if (p != null && p.email.isNotEmpty) p.email].join(' · ');
+    final details = [
+      if (p != null && p.phone.isNotEmpty) p.phone,
+      if (p != null && p.email.isNotEmpty) p.email,
+    ].join(' · ');
     return MonovaCard(
       padding: const EdgeInsets.all(14),
       onTap: () => context.push('/profile'),
@@ -213,7 +294,11 @@ class _ProfileCard extends ConsumerWidget {
             backgroundColor: c.accentStart,
             child: Text(
               p == null || p.name.isEmpty ? '?' : p.name[0].toUpperCase(),
-              style: TextStyle(color: c.onAccent, fontWeight: FontWeight.w800, fontSize: 18),
+              style: TextStyle(
+                color: c.onAccent,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -221,9 +306,18 @@ class _ProfileCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(p == null ? 'Add your name' : p.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                Text(
+                  p == null ? 'Add your name' : p.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(details.isEmpty ? 'Tap to edit your profile' : details, style: TextStyle(color: c.muted, fontSize: 12)),
+                Text(
+                  details.isEmpty ? 'Tap to edit your profile' : details,
+                  style: TextStyle(color: c.muted, fontSize: 12),
+                ),
               ],
             ),
           ),

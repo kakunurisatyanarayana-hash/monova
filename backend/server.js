@@ -14,6 +14,14 @@ const FILE = process.env.QUEUE_FILE || path.join(__dirname, 'queue.json');
 const MAX_EVENTS = 5000;
 const MAX_BODY = 64 * 1024;
 
+// The browser test build runs on another address, so allow it to call this server.
+// The token still has to match, so no one else can use the queue.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-test-token',
+};
+
 function loadQueue() {
   try {
     return JSON.parse(fs.readFileSync(FILE, 'utf8'));
@@ -33,7 +41,7 @@ function save() {
 }
 
 function send(res, status, body) {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+  res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS });
   res.end(JSON.stringify(body));
 }
 
@@ -61,6 +69,10 @@ function readBody(req) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, CORS);
+    return res.end();
+  }
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { ok: true, queued: queue.length, time: new Date().toISOString() });
   }

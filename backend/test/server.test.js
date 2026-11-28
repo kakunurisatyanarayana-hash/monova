@@ -33,6 +33,28 @@ test('health, auth, queueing', async () => {
     const list = await call(port, 'GET', '/events?limit=5', null, 'test-token');
     assert.equal(list.body.events[0].event.type, 'bill.added');
   } finally {
+    server.closeAllConnections();
+    server.close();
+  }
+});
+
+test('browser preflight is allowed', async () => {
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const port = server.address().port;
+  try {
+    const res = await new Promise((resolve, reject) => {
+      const req = http.request({ host: '127.0.0.1', port, method: 'OPTIONS', path: '/events' }, (r) => {
+        r.resume();
+        r.on('end', () => resolve(r));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.headers['access-control-allow-origin'], '*');
+    assert.match(res.headers['access-control-allow-headers'], /x-test-token/);
+  } finally {
+    server.closeAllConnections();
     server.close();
   }
 });
