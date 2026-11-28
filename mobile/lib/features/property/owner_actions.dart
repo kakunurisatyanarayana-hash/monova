@@ -132,18 +132,23 @@ class OwnerActions extends StatelessWidget {
             )
           else ...[
             Text(
-              '${monthLabel(today.year, today.month)} rent: ${money(status.amountCents / 100)}',
+              'Monthly rent: ${money(status.amountCents / 100)} · every ${status.tenancy.checkIn.day} of the month',
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
-              status.isPaid
-                  ? 'Paid in full'
-                  : '${money(status.owedCents / 100)} unpaid · due ${dayLabel(status.dueOn)}${overdue ? ' · overdue' : ''}',
+              'Paid up to ${dayLabel(status.paidThrough)}',
+              style: TextStyle(color: c.muted),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              status.isPaidUpOn(today)
+                  ? 'Next due ${dayLabel(status.dueOn)}'
+                  : '${money(status.owedCents / 100)} due ${dayLabel(status.dueOn)}${overdue ? ' · overdue' : ''}',
               style: TextStyle(
-                color: status.isPaid
+                color: status.isPaidUpOn(today)
                     ? c.income
-                    : (overdue ? c.expense : c.muted),
+                    : (overdue ? c.expense : c.warning),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -155,7 +160,7 @@ class OwnerActions extends StatelessWidget {
               style: TextStyle(color: c.muted, fontSize: 12),
             )
           else ...[
-            if (status != null && !status.isPaid)
+            if (status != null && !status.isPaidUpOn(today))
               FilledButton.icon(
                 onPressed: () => openWhatsAppDraft(
                   context,
