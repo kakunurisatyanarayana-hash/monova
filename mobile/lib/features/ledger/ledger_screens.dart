@@ -521,7 +521,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       title: account.iOwe
           ? 'Money paid to supplier'
           : 'Money received from customer',
-      child: const _PaymentForm(),
+      child: _PaymentForm(bills: account.bills),
     );
     if (payment == null) return;
     await _save(account.copyWith(payments: [...account.payments, payment]));
@@ -1320,7 +1320,10 @@ class _BillFormState extends State<_BillForm> {
 }
 
 class _PaymentForm extends StatefulWidget {
-  const _PaymentForm();
+  const _PaymentForm({this.bills = const []});
+
+  /// The bills this payment can be made against. Empty means no choice is offered.
+  final List<CreditBill> bills;
 
   @override
   State<_PaymentForm> createState() => _PaymentFormState();
@@ -1330,6 +1333,7 @@ class _PaymentFormState extends State<_PaymentForm> {
   DateTime _date = dateOnly(DateTime.now());
   final _amount = TextEditingController();
   final _note = TextEditingController();
+  String _billId = '';
   String? _error;
 
   @override
@@ -1351,6 +1355,7 @@ class _PaymentFormState extends State<_PaymentForm> {
         date: _date,
         cents: (amount * 100).round(),
         note: _note.text.trim(),
+        billId: _billId,
       ),
     );
   }
@@ -1361,6 +1366,25 @@ class _PaymentFormState extends State<_PaymentForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.bills.isNotEmpty) ...[
+          DropdownButtonFormField<String>(
+            initialValue: _billId,
+            decoration: const InputDecoration(labelText: 'Pay against which bill?'),
+            items: [
+              const DropdownMenuItem(value: '', child: Text('Oldest open bill (default)')),
+              for (final b in widget.bills)
+                DropdownMenuItem(
+                  value: b.id,
+                  child: Text(
+                    '${dayLabel(b.date)} · ${b.billerName.isEmpty ? b.description : b.billerName} · ${money(b.finalCents / 100)}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: (v) => setState(() => _billId = v ?? ''),
+          ),
+          const SizedBox(height: 12),
+        ],
         DateSelector(
           label: 'Date paid',
           value: _date,

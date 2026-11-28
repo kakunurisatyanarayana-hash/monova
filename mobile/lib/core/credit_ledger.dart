@@ -64,6 +64,7 @@ class CreditPayment {
     required this.date,
     required this.cents,
     required this.note,
+    this.billId = '',
   });
 
   final String id;
@@ -71,14 +72,23 @@ class CreditPayment {
   final int cents;
   final String note;
 
-  CreditPayment copyWith({String? note}) =>
-      CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
+  /// The bill this payment was made against. Empty means the oldest open bill.
+  final String billId;
+
+  CreditPayment copyWith({String? note}) => CreditPayment(
+    id: id,
+    date: date,
+    cents: cents,
+    note: note ?? this.note,
+    billId: billId,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'date': _isoDate(date),
     'cents': cents,
     'note': note,
+    'billId': billId,
   };
 
   factory CreditPayment.fromJson(Map<String, dynamic> j) => CreditPayment(
@@ -86,6 +96,7 @@ class CreditPayment {
     date: dateOnly(DateTime.parse('${j['date']}')),
     cents: (j['cents'] as num).toInt(),
     note: '${j['note'] ?? ''}',
+    billId: '${j['billId'] ?? ''}',
   );
 }
 
@@ -109,6 +120,7 @@ class CreditAccount {
   static const wholeBillInterest = 'wholeBill';
   static const atBillDatesInterest = 'atBillDates';
   final String interestMethod;
+
   /// customer (customer book), person or thirdParty (personal Credit manager).
   final String partyType;
 
@@ -560,7 +572,7 @@ List<BillBreakdown> billBreakdowns(
         final p = payments[pi++];
         var left =
             p.cents.toDouble() - (statement.interestPaidByPayment[p.id] ?? 0);
-        for (final b in bills) {
+        for (final b in _allocationOrder(bills, p)) {
           if (left <= 0) break;
           if (dateOnly(b.date).isAfter(day) || open[b.id]! <= 0) continue;
           final take = left < open[b.id]! ? left : open[b.id]!;
@@ -621,7 +633,7 @@ List<BillBreakdown> wholeBillBreakdowns(CreditAccount account, DateTime asOf) {
   for (final p in payments) {
     if (dateOnly(p.date).isAfter(end)) continue;
     var left = p.cents;
-    for (final b in bills) {
+    for (final b in _allocationOrder(bills, p)) {
       if (left <= 0) break;
       if (dateOnly(b.date).isAfter(dateOnly(p.date))) continue;
       final toInterest = left < interestLeft[b.id]!
@@ -777,3 +789,14 @@ List<SettlementStep> billDateSettlement(CreditAccount account, DateTime asOf) {
 
 String _shortDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+/// The order a payment pays bills in: the bill the customer chose first, then the oldest bills.
+List<CreditBill> _allocationOrder(List<CreditBill> bills, CreditPayment p) {
+  if (p.billId.isEmpty) return bills;
+  return [
+    for (final b in bills)
+      if (b.id == p.billId) b,
+    for (final b in bills)
+      if (b.id != p.billId) b,
+  ];
+}
