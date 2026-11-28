@@ -349,9 +349,8 @@ class _AccountFormState extends State<_AccountForm> {
     return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
 
-  late final _creditDays = TextEditingController(
-    text: '${widget.initial?.creditDays ?? 30}',
-  );
+  late int _creditDays = widget.initial?.creditDays ?? 0;
+  late int _creditMonths = widget.initial?.creditMonths ?? 1;
   late String _method =
       widget.initial?.interestMethod ?? CreditAccount.perBillInterest;
   String? _error;
@@ -384,7 +383,8 @@ class _AccountFormState extends State<_AccountForm> {
               annualRatePercent: rate,
               compound: false,
               interestMethod: _method,
-              creditDays: int.tryParse(_creditDays.text.trim()) ?? 30,
+              creditDays: _creditDays,
+              creditMonths: _creditMonths,
               bills: const [],
               payments: const [],
             )
@@ -394,7 +394,8 @@ class _AccountFormState extends State<_AccountForm> {
               annualRatePercent: rate,
               compound: false,
               interestMethod: _method,
-              creditDays: int.tryParse(_creditDays.text.trim()) ?? 30,
+              creditDays: _creditDays,
+              creditMonths: _creditMonths,
             ),
     );
   }
@@ -442,14 +443,48 @@ class _AccountFormState extends State<_AccountForm> {
         Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
         const SizedBox(height: 4),
-        TextField(
-          controller: _creditDays,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Days allowed before it is overdue',
-            helperText:
-                'A bill still unpaid after this many days shows as overdue.',
-          ),
+        Text(
+          'When does an unpaid bill become overdue?',
+          style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                initialValue: _creditMonths,
+                decoration: const InputDecoration(labelText: 'Months'),
+                items: [
+                  for (var m = 0; m <= 24; m++)
+                    DropdownMenuItem(
+                      value: m,
+                      child: Text('$m ${m == 1 ? 'month' : 'months'}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _creditMonths = v ?? 0),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                initialValue: _creditDays,
+                decoration: const InputDecoration(labelText: 'Days'),
+                items: [
+                  for (var d = 0; d <= 30; d++)
+                    DropdownMenuItem(
+                      value: d,
+                      child: Text('$d ${d == 1 ? 'day' : 'days'}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _creditDays = v ?? 0),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          creditPeriodLabel(_creditMonths, _creditDays),
+          style: TextStyle(color: c.muted, fontSize: 12),
         ),
         const SizedBox(height: 12),
         Text(
@@ -1299,10 +1334,20 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   /// Edit and delete are offered from there.
   /// Record one payment that clears everything owed on the chosen date, after a confirmation.
   Future<void> _settleAll(CreditAccount account) async {
-    final total = accountTotalCents(account, _asOf);
+    // Any date: past, today or future. The amount is worked out for the date chosen.
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: dateOnly(_asOf),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'Settlement date',
+    );
+    if (picked == null || !mounted) return;
+    final settleOn = dateOnly(picked);
+    final total = accountTotalCents(account, settleOn);
     if (total <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nothing is owed on this date.')),
+        SnackBar(content: Text('Nothing is owed on ${_dateText(settleOn)}.')),
       );
       return;
     }
@@ -1311,8 +1356,8 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Settle everything?'),
         content: Text(
-          'A payment of ${money(total / 100)} will be recorded on ${_dateText(_asOf)}, clearing interest and all bills. '
-          'It will appear in the payment history.',
+          'Settling on ${_dateText(settleOn)} clears interest and all bills. '
+          'The amount to collect is ${money(total / 100)}. It will appear in the payment history.',
         ),
         actions: [
           TextButton(
@@ -1329,7 +1374,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     if (ok != true) return;
     final payment = CreditPayment(
       id: _id(),
-      date: dateOnly(_asOf),
+      date: settleOn,
       cents: total,
       note: 'Full settlement',
     );
