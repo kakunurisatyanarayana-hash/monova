@@ -1,0 +1,14 @@
+# Render free web service for the Monova test backend.
+# Set TEST_TOKEN in the Render dashboard (Environment). Do not put the token in this file.
+services:
+  - type: web
+    name: monova-test-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: TEST_TOKEN
+        sync: false

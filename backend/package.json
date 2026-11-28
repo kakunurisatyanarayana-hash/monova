@@ -1,0 +1,12 @@
+{
+  "name": "monova-test-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Test backend for Monova. Receives events from the app, keeps them in a queue, and serves them back for testing. No personal data is required.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/server.test.js"
+  },
+  "engines": { "node": ">=20" }
+}
