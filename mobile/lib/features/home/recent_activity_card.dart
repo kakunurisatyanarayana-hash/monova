@@ -103,7 +103,7 @@ class _RecentActivityCardState extends State<RecentActivityCard> {
           Row(
             children: [
               Expanded(child: Text('Recent activity', style: Theme.of(context).textTheme.titleMedium)),
-              TextButton(onPressed: () => context.push('/ledger'), child: const Text('Credit book')),
+              TextButton(onPressed: () => context.push('/ledger'), child: const Text('Customer credit')),
             ],
           ),
           const SizedBox(height: 4),
