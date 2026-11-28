@@ -205,6 +205,10 @@ class _LedgerScreenState extends State<LedgerScreen> {
                         await context.push('/ledger/${a.id}');
                         await _reload();
                       },
+                      onDelete: () async {
+                        if (await confirmDeleteCustomer(context, a))
+                          await _reload();
+                      },
                     ),
                     const SizedBox(height: 10),
                   ],
@@ -219,11 +223,13 @@ class _CustomerTile extends StatelessWidget {
     required this.account,
     required this.today,
     required this.onTap,
+    required this.onDelete,
   });
 
   final CreditAccount account;
   final DateTime today;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +298,11 @@ class _CustomerTile extends StatelessWidget {
                 style: TextStyle(color: c.muted, fontSize: 11),
               ),
             ],
+          ),
+          IconButton(
+            tooltip: 'Delete customer',
+            icon: Icon(Icons.delete_outline_rounded, color: c.muted),
+            onPressed: () => onDelete(),
           ),
         ],
       ),
@@ -649,31 +660,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _deleteCustomer() async {
     final account = _account;
     if (account == null) return;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete this customer?'),
-        content: Text(
-          '"${account.name}" with all bills and payments will be removed from this device.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: context.monova.expense,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    final all = await CreditLedgerStore.load();
-    await CreditLedgerStore.save(all.where((a) => a.id != account.id).toList());
+    if (!await confirmDeleteCustomer(context, account)) return;
     if (mounted) context.pop();
   }
 
@@ -900,9 +887,15 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         ),
         const SizedBox(height: 8),
         FilledButton.icon(
+          onPressed: () => _settleAll(account, onDate: DateTime.now()),
+          icon: const Icon(Icons.bolt_rounded),
+          label: const Text('Settle now (today)'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
           onPressed: () => _settleAll(account),
-          icon: const Icon(Icons.done_all_rounded),
-          label: const Text('Settle everything on the date above'),
+          icon: const Icon(Icons.event_available_rounded),
+          label: const Text('Settle on another date (you choose)'),
         ),
         const SizedBox(height: 16),
         if (atDates && account.bills.isNotEmpty) ...[
@@ -1438,15 +1431,17 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   /// Bill details first: every field, the amount still owed and interest so far, and the full change history.
   /// Edit and delete are offered from there.
   /// Record one payment that clears everything owed on the chosen date, after a confirmation.
-  Future<void> _settleAll(CreditAccount account) async {
+  Future<void> _settleAll(CreditAccount account, {DateTime? onDate}) async {
     // Any date: past, today or future. The amount is worked out for the date chosen.
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: dateOnly(_asOf),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      helpText: 'Settlement date',
-    );
+    final picked =
+        onDate ??
+        await showDatePicker(
+          context: context,
+          initialDate: dateOnly(_asOf),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          helpText: 'Settlement date',
+        );
     if (picked == null || !mounted) return;
     final settleOn = dateOnly(picked);
     final total = accountTotalCents(account, settleOn);
@@ -2437,4 +2432,37 @@ class _ReasonDialogState extends State<_ReasonDialog> {
       ],
     );
   }
+}
+
+/// Deletes a customer with all bills and payments, after a reason is given. The deletion is written to the activity log.
+Future<bool> confirmDeleteCustomer(
+  BuildContext context,
+  CreditAccount account,
+) async {
+  final reason = await showDialog<String>(
+    context: context,
+    builder: (ctx) => _ReasonDialog(
+      title: 'Delete this customer?',
+      message:
+          '"${account.name}" with all ${account.bills.length} bills and ${account.payments.length} payments will be removed from this phone. The deletion stays in the activity log.',
+      confirmLabel: 'Delete',
+      danger: true,
+    ),
+  );
+  if (reason == null) return false;
+  await LedgerActivityStore.add(
+    LedgerActivity(
+      at: DateTime.now(),
+      who: await LedgerActivityStore.whoNow(),
+      action: 'deleted',
+      kind: 'customer',
+      customer: account.name,
+      label:
+          '${account.bills.length} bills and ${account.payments.length} payments',
+      reason: reason,
+    ),
+  );
+  final all = await CreditLedgerStore.load();
+  await CreditLedgerStore.save(all.where((a) => a.id != account.id).toList());
+  return true;
 }
