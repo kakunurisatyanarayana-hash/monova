@@ -27,55 +27,66 @@ class CreditBill {
   final String notes;
 
   CreditBill copyWith({String? notes}) => CreditBill(
-        id: id,
-        date: date,
-        billerName: billerName,
-        description: description,
-        amountCents: amountCents,
-        finalCents: finalCents,
-        notes: notes ?? this.notes,
-      );
+    id: id,
+    date: date,
+    billerName: billerName,
+    description: description,
+    amountCents: amountCents,
+    finalCents: finalCents,
+    notes: notes ?? this.notes,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': _isoDate(date),
-        'billerName': billerName,
-        'description': description,
-        'amountCents': amountCents,
-        'finalCents': finalCents,
-        'notes': notes,
-      };
+    'id': id,
+    'date': _isoDate(date),
+    'billerName': billerName,
+    'description': description,
+    'amountCents': amountCents,
+    'finalCents': finalCents,
+    'notes': notes,
+  };
 
   factory CreditBill.fromJson(Map<String, dynamic> j) => CreditBill(
-        id: '${j['id']}',
-        date: dateOnly(DateTime.parse('${j['date']}')),
-        billerName: '${j['billerName'] ?? ''}',
-        description: '${j['description'] ?? ''}',
-        amountCents: (j['amountCents'] as num).toInt(),
-        finalCents: (j['finalCents'] as num).toInt(),
-        notes: '${j['notes'] ?? ''}',
-      );
+    id: '${j['id']}',
+    date: dateOnly(DateTime.parse('${j['date']}')),
+    billerName: '${j['billerName'] ?? ''}',
+    description: '${j['description'] ?? ''}',
+    amountCents: (j['amountCents'] as num).toInt(),
+    finalCents: (j['finalCents'] as num).toInt(),
+    notes: '${j['notes'] ?? ''}',
+  );
 }
 
 /// Money the customer paid back. Payments reduce the accrued interest first, then the amount owed.
 class CreditPayment {
-  const CreditPayment({required this.id, required this.date, required this.cents, required this.note});
+  const CreditPayment({
+    required this.id,
+    required this.date,
+    required this.cents,
+    required this.note,
+  });
 
   final String id;
   final DateTime date;
   final int cents;
   final String note;
 
-  CreditPayment copyWith({String? note}) => CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
+  CreditPayment copyWith({String? note}) =>
+      CreditPayment(id: id, date: date, cents: cents, note: note ?? this.note);
 
-  Map<String, dynamic> toJson() => {'id': id, 'date': _isoDate(date), 'cents': cents, 'note': note};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'date': _isoDate(date),
+    'cents': cents,
+    'note': note,
+  };
 
   factory CreditPayment.fromJson(Map<String, dynamic> j) => CreditPayment(
-        id: '${j['id']}',
-        date: dateOnly(DateTime.parse('${j['date']}')),
-        cents: (j['cents'] as num).toInt(),
-        note: '${j['note'] ?? ''}',
-      );
+    id: '${j['id']}',
+    date: dateOnly(DateTime.parse('${j['date']}')),
+    cents: (j['cents'] as num).toInt(),
+    note: '${j['note'] ?? ''}',
+  );
 }
 
 /// One customer account with its interest terms.
@@ -95,6 +106,7 @@ class CreditAccount {
   /// How interest is worked out: each bill by its days open, or once on the whole bill.
   static const perBillInterest = 'perBill';
   static const wholeBillInterest = 'wholeBill';
+  static const atBillDatesInterest = 'atBillDates';
   final String interestMethod;
 
   final String id;
@@ -121,42 +133,47 @@ class CreditAccount {
     String? interestMethod,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
-  }) =>
-      CreditAccount(
-        id: id,
-        name: name ?? this.name,
-        phone: phone ?? this.phone,
-        annualRatePercent: annualRatePercent ?? this.annualRatePercent,
-        compound: compound ?? this.compound,
-        iOwe: iOwe ?? this.iOwe,
-        interestMethod: interestMethod ?? this.interestMethod,
-        bills: bills ?? this.bills,
-        payments: payments ?? this.payments,
-      );
+  }) => CreditAccount(
+    id: id,
+    name: name ?? this.name,
+    phone: phone ?? this.phone,
+    annualRatePercent: annualRatePercent ?? this.annualRatePercent,
+    compound: compound ?? this.compound,
+    iOwe: iOwe ?? this.iOwe,
+    interestMethod: interestMethod ?? this.interestMethod,
+    bills: bills ?? this.bills,
+    payments: payments ?? this.payments,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'phone': phone,
-        'annualRatePercent': annualRatePercent,
-        'compound': compound,
-        'iOwe': iOwe,
-        'interestMethod': interestMethod,
-        'bills': bills.map((b) => b.toJson()).toList(),
-        'payments': payments.map((p) => p.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'phone': phone,
+    'annualRatePercent': annualRatePercent,
+    'compound': compound,
+    'iOwe': iOwe,
+    'interestMethod': interestMethod,
+    'bills': bills.map((b) => b.toJson()).toList(),
+    'payments': payments.map((p) => p.toJson()).toList(),
+  };
 
   factory CreditAccount.fromJson(Map<String, dynamic> j) => CreditAccount(
-        id: '${j['id']}',
-        name: '${j['name'] ?? ''}',
-        phone: '${j['phone'] ?? ''}',
-        annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
-        compound: j['compound'] == true,
-        iOwe: j['iOwe'] == true,
-        interestMethod: '${j['interestMethod'] ?? perBillInterest}',
-        bills: [for (final b in (j['bills'] as List<dynamic>? ?? const [])) CreditBill.fromJson(Map<String, dynamic>.from(b as Map))],
-        payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) CreditPayment.fromJson(Map<String, dynamic>.from(p as Map))],
-      );
+    id: '${j['id']}',
+    name: '${j['name'] ?? ''}',
+    phone: '${j['phone'] ?? ''}',
+    annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
+    compound: j['compound'] == true,
+    iOwe: j['iOwe'] == true,
+    interestMethod: '${j['interestMethod'] ?? perBillInterest}',
+    bills: [
+      for (final b in (j['bills'] as List<dynamic>? ?? const []))
+        CreditBill.fromJson(Map<String, dynamic>.from(b as Map)),
+    ],
+    payments: [
+      for (final p in (j['payments'] as List<dynamic>? ?? const []))
+        CreditPayment.fromJson(Map<String, dynamic>.from(p as Map)),
+    ],
+  );
 }
 
 /// One line of the statement: a bill or a payment, with its id so it can be opened and edited.
@@ -270,8 +287,14 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   }
   if (events.isEmpty) {
     return LedgerStatement(
-      asOf: end, principalCents: 0, interestCents: 0, lines: const [], days: const [], interestByMonth: const {},
-      totalBilledCents: 0, totalPaidCents: 0,
+      asOf: end,
+      principalCents: 0,
+      interestCents: 0,
+      lines: const [],
+      days: const [],
+      interestByMonth: const {},
+      totalBilledCents: 0,
+      totalPaidCents: 0,
     );
   }
 
@@ -302,18 +325,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
       for (final e in todaysBills) {
         principal += e.finalCents;
         billed += e.finalCents;
-        lines.add(StatementLine(
-          date: day,
-          description: e.billerName.isEmpty
-              ? (e.description.isEmpty ? 'Bill' : e.description)
-              : '${e.billerName}${e.description.isEmpty ? '' : ' - ${e.description}'}',
-          debitCents: e.finalCents,
-          creditCents: 0,
-          balanceCents: 0,
-          refId: e.id,
-          isPayment: false,
-          notes: e.notes,
-        ));
+        lines.add(
+          StatementLine(
+            date: day,
+            description: e.billerName.isEmpty
+                ? (e.description.isEmpty ? 'Bill' : e.description)
+                : '${e.billerName}${e.description.isEmpty ? '' : ' - ${e.description}'}',
+            debitCents: e.finalCents,
+            creditCents: 0,
+            balanceCents: 0,
+            refId: e.id,
+            isPayment: false,
+            notes: e.notes,
+          ),
+        );
       }
       for (final e in todaysPayments) {
         var left = e.cents.toDouble();
@@ -323,24 +348,30 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
         left -= toInterest;
         principal -= left;
         paid += e.cents;
-        lines.add(StatementLine(
-          date: day,
-          description: e.note.isEmpty ? 'Payment received' : 'Payment: ${e.note}',
-          debitCents: 0,
-          creditCents: e.cents,
-          balanceCents: 0,
-          refId: e.id,
-          isPayment: true,
-          notes: e.note,
-        ));
+        lines.add(
+          StatementLine(
+            date: day,
+            description: e.note.isEmpty
+                ? 'Payment received'
+                : 'Payment: ${e.note}',
+            debitCents: 0,
+            creditCents: e.cents,
+            balanceCents: 0,
+            refId: e.id,
+            isPayment: true,
+            notes: e.note,
+          ),
+        );
       }
-      days.add(DayRow(
-        date: day,
-        bills: todaysBills,
-        payments: todaysPayments,
-        interestCents: interestSincePrevious.round(),
-        balanceCents: (principal + interest).round(),
-      ));
+      days.add(
+        DayRow(
+          date: day,
+          bills: todaysBills,
+          payments: todaysPayments,
+          interestCents: interestSincePrevious.round(),
+          balanceCents: (principal + interest).round(),
+        ),
+      );
       lastRowDay = day;
     }
 
@@ -360,16 +391,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
 
   // Interest has run since the last entry: show it on the as-of date.
   if (lastRowDay == null || lastRowDay.isBefore(end)) {
-    days.add(DayRow(
-      date: end,
-      bills: const [],
-      payments: const [],
-      interestCents: accruedSinceRow.round(),
-      balanceCents: (principal + interest).round(),
-    ));
+    days.add(
+      DayRow(
+        date: end,
+        bills: const [],
+        payments: const [],
+        interestCents: accruedSinceRow.round(),
+        balanceCents: (principal + interest).round(),
+      ),
+    );
   }
 
-  final monthTotals = <String, int>{for (final e in byMonth.entries) e.key: e.value.round()};
+  final monthTotals = <String, int>{
+    for (final e in byMonth.entries) e.key: e.value.round(),
+  };
 
   // Running balance, in date order.
   var running = 0;
@@ -377,16 +412,18 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   final withBalance = <StatementLine>[];
   for (final line in ordered) {
     running += line.debitCents - line.creditCents;
-    withBalance.add(StatementLine(
-      date: line.date,
-      description: line.description,
-      debitCents: line.debitCents,
-      creditCents: line.creditCents,
-      balanceCents: running,
-      refId: line.refId,
-      isPayment: line.isPayment,
-      notes: line.notes,
-    ));
+    withBalance.add(
+      StatementLine(
+        date: line.date,
+        description: line.description,
+        debitCents: line.debitCents,
+        creditCents: line.creditCents,
+        balanceCents: running,
+        refId: line.refId,
+        isPayment: line.isPayment,
+        notes: line.notes,
+      ),
+    );
   }
 
   return LedgerStatement(
@@ -402,15 +439,20 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
   );
 }
 
-String _isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String _isoDate(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 class CreditLedgerStore {
   CreditLedgerStore._();
 
   static Future<List<CreditAccount>> load() async {
     final store = await LocalStore.open();
-    final accounts = [for (final m in store.readList(ledgerKey)) CreditAccount.fromJson(m)];
-    accounts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final accounts = [
+      for (final m in store.readList(ledgerKey)) CreditAccount.fromJson(m),
+    ];
+    accounts.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
     return accounts;
   }
 
@@ -430,15 +472,17 @@ List<MoneyEntry> creditInterestEntries(List<CreditAccount> accounts) {
     for (final p in a.payments) {
       final cents = statement.interestPaidByPayment[p.id] ?? 0;
       if (cents <= 0) continue;
-      out.add(MoneyEntry(
-        id: 'cint-${a.id}-${p.id}',
-        income: true,
-        title: 'Interest from ${a.name}',
-        category: 'Interest received',
-        cents: cents,
-        date: p.date,
-        notes: 'Part of a payment that cleared interest',
-      ));
+      out.add(
+        MoneyEntry(
+          id: 'cint-${a.id}-${p.id}',
+          income: true,
+          title: 'Interest from ${a.name}',
+          category: 'Interest received',
+          cents: cents,
+          date: p.date,
+          notes: 'Part of a payment that cleared interest',
+        ),
+      );
     }
   }
   return out;
@@ -447,7 +491,10 @@ List<MoneyEntry> creditInterestEntries(List<CreditAccount> accounts) {
 /// Keeps the credit interest entries in Monova Finance in step with the accounts.
 Future<void> syncCreditInterest(List<CreditAccount> accounts) async {
   final entries = await EntryStore.loadEntries();
-  final kept = [for (final e in entries) if (!e.id.startsWith('cint-')) e];
+  final kept = [
+    for (final e in entries)
+      if (!e.id.startsWith('cint-')) e,
+  ];
   await EntryStore.saveEntries([...kept, ...creditInterestEntries(accounts)]);
 }
 
@@ -481,12 +528,19 @@ class BillBreakdown {
 
 /// Works out each bill's own interest. Payments clear the account's accrued interest first (as in [computeStatement]),
 /// and the rest pays off the oldest open bill first. Totals match the statement, because the same money is outstanding each day.
-List<BillBreakdown> billBreakdowns(CreditAccount account, DateTime asOf, LedgerStatement statement) {
+List<BillBreakdown> billBreakdowns(
+  CreditAccount account,
+  DateTime asOf,
+  LedgerStatement statement,
+) {
   final end = dateOnly(asOf);
   final dailyRate = account.annualRatePercent / 100 / 365;
   final bills = [...account.bills]..sort((a, b) => a.date.compareTo(b.date));
-  final payments = [...account.payments]..sort((a, b) => a.date.compareTo(b.date));
-  final open = <String, double>{for (final b in bills) b.id: b.finalCents.toDouble()};
+  final payments = [...account.payments]
+    ..sort((a, b) => a.date.compareTo(b.date));
+  final open = <String, double>{
+    for (final b in bills) b.id: b.finalCents.toDouble(),
+  };
   final interest = <String, double>{for (final b in bills) b.id: 0};
   final closedOn = <String, DateTime>{};
 
@@ -497,14 +551,16 @@ List<BillBreakdown> billBreakdowns(CreditAccount account, DateTime asOf, LedgerS
       // Payments on this day pay the oldest open bill that already exists today.
       while (pi < payments.length && dateOnly(payments[pi].date) == day) {
         final p = payments[pi++];
-        var left = p.cents.toDouble() - (statement.interestPaidByPayment[p.id] ?? 0);
+        var left =
+            p.cents.toDouble() - (statement.interestPaidByPayment[p.id] ?? 0);
         for (final b in bills) {
           if (left <= 0) break;
           if (dateOnly(b.date).isAfter(day) || open[b.id]! <= 0) continue;
           final take = left < open[b.id]! ? left : open[b.id]!;
           open[b.id] = open[b.id]! - take;
           left -= take;
-          if (open[b.id]! <= 0.0001 && !closedOn.containsKey(b.id)) closedOn[b.id] = day;
+          if (open[b.id]! <= 0.0001 && !closedOn.containsKey(b.id))
+            closedOn[b.id] = day;
         }
       }
       // One day of simple interest on what each open bill still owes.
@@ -538,7 +594,8 @@ List<BillBreakdown> wholeBillBreakdowns(CreditAccount account, DateTime asOf) {
   final end = dateOnly(asOf);
   final rate = account.annualRatePercent / 100 / 365;
   final bills = [...account.bills]..sort((a, b) => a.date.compareTo(b.date));
-  final payments = [...account.payments]..sort((a, b) => a.date.compareTo(b.date));
+  final payments = [...account.payments]
+    ..sort((a, b) => a.date.compareTo(b.date));
   final amountLeft = <String, int>{for (final b in bills) b.id: b.finalCents};
   final interestDue = <String, int>{};
   final interestLeft = <String, int>{};
@@ -560,14 +617,18 @@ List<BillBreakdown> wholeBillBreakdowns(CreditAccount account, DateTime asOf) {
     for (final b in bills) {
       if (left <= 0) break;
       if (dateOnly(b.date).isAfter(dateOnly(p.date))) continue;
-      final toInterest = left < interestLeft[b.id]! ? left : interestLeft[b.id]!;
+      final toInterest = left < interestLeft[b.id]!
+          ? left
+          : interestLeft[b.id]!;
       interestLeft[b.id] = interestLeft[b.id]! - toInterest;
       left -= toInterest;
       final toAmount = left < amountLeft[b.id]! ? left : amountLeft[b.id]!;
       amountLeft[b.id] = amountLeft[b.id]! - toAmount;
       paidTotal[b.id] = paidTotal[b.id]! + toInterest + toAmount;
       left -= toAmount;
-      if (amountLeft[b.id]! == 0 && interestLeft[b.id]! == 0 && !closedOn.containsKey(b.id)) {
+      if (amountLeft[b.id]! == 0 &&
+          interestLeft[b.id]! == 0 &&
+          !closedOn.containsKey(b.id)) {
         closedOn[b.id] = dateOnly(p.date);
       }
     }
@@ -589,7 +650,123 @@ List<BillBreakdown> wholeBillBreakdowns(CreditAccount account, DateTime asOf) {
 /// Total still owed on an account today, under whichever interest method it uses.
 int accountTotalCents(CreditAccount account, DateTime asOf) {
   if (account.interestMethod == CreditAccount.wholeBillInterest) {
-    return wholeBillBreakdowns(account, asOf).fold<int>(0, (sum, b) => sum + b.openCents);
+    return wholeBillBreakdowns(
+      account,
+      asOf,
+    ).fold<int>(0, (sum, b) => sum + b.openCents);
+  }
+  if (account.interestMethod == CreditAccount.atBillDatesInterest) {
+    final steps = billDateSettlement(account, asOf);
+    return steps.isEmpty ? 0 : steps.last.balanceCents;
   }
   return computeStatement(account, asOf).totalCents;
 }
+
+/// One step in a bill-date settlement: a bill, a payment, or interest added up to that date.
+class SettlementStep {
+  const SettlementStep({
+    required this.date,
+    required this.label,
+    required this.amountCents,
+    required this.interestCents,
+    required this.balanceCents,
+  });
+
+  final DateTime date;
+  final String label;
+
+  /// Bill amount (positive), or payment amount (negative). Zero for interest-only steps.
+  final int amountCents;
+
+  /// Interest added at this step (positive), or interest cleared by a payment (negative).
+  final int interestCents;
+
+  /// Total owed after this step (principal plus interest).
+  final int balanceCents;
+}
+
+/// Bill-date settlement. Interest runs from one bill date to the next. At each new bill, payment or settlement date,
+/// the interest for the period is added to the balance, so the next period earns interest on it too.
+/// A payment clears the interest added so far first, then the amount owed.
+List<SettlementStep> billDateSettlement(CreditAccount account, DateTime asOf) {
+  final end = dateOnly(asOf);
+  final rate = account.annualRatePercent / 100 / 365;
+  final events =
+      <({DateTime date, int order, Object item})>[
+        for (final b in account.bills)
+          if (!dateOnly(b.date).isAfter(end))
+            (date: dateOnly(b.date), order: 0, item: b),
+        for (final p in account.payments)
+          if (!dateOnly(p.date).isAfter(end))
+            (date: dateOnly(p.date), order: 1, item: p),
+      ]..sort((a, b) {
+        final d = a.date.compareTo(b.date);
+        return d != 0 ? d : a.order.compareTo(b.order);
+      });
+
+  var principal = 0.0;
+  var interest = 0.0;
+  DateTime? last;
+  final steps = <SettlementStep>[];
+
+  void accrueTo(DateTime d, String label) {
+    if (last == null) return;
+    final days = d.difference(last!).inDays;
+    final base = principal + interest;
+    if (days <= 0 || base <= 0) return;
+    final accrued = base * rate * days;
+    interest += accrued;
+    steps.add(
+      SettlementStep(
+        date: d,
+        label: label,
+        amountCents: 0,
+        interestCents: accrued.round(),
+        balanceCents: (principal + interest).round(),
+      ),
+    );
+  }
+
+  for (final e in events) {
+    accrueTo(
+      e.date,
+      'Interest from ${last == null ? '' : _shortDate(last!)} to ${_shortDate(e.date)}',
+    );
+    last = e.date;
+    final item = e.item;
+    if (item is CreditBill) {
+      principal += item.finalCents;
+      steps.add(
+        SettlementStep(
+          date: e.date,
+          label:
+              'Bill: ${item.billerName.isEmpty ? item.description : item.billerName}',
+          amountCents: item.finalCents,
+          interestCents: 0,
+          balanceCents: (principal + interest).round(),
+        ),
+      );
+    } else if (item is CreditPayment) {
+      final cents = item.cents.toDouble();
+      final toInterest = cents < interest ? cents : interest;
+      interest -= toInterest;
+      principal -= cents - toInterest;
+      steps.add(
+        SettlementStep(
+          date: e.date,
+          label: item.note.isEmpty
+              ? 'Payment received'
+              : 'Payment: ${item.note}',
+          amountCents: -item.cents,
+          interestCents: -toInterest.round(),
+          balanceCents: (principal + interest).round(),
+        ),
+      );
+    }
+  }
+  accrueTo(end, 'Interest to settlement date');
+  return steps;
+}
+
+String _shortDate(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';

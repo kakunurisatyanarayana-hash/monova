@@ -325,7 +325,8 @@ class _AccountFormState extends State<_AccountForm> {
     return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
 
-  late String _method = widget.initial?.interestMethod ?? CreditAccount.perBillInterest;
+  late String _method =
+      widget.initial?.interestMethod ?? CreditAccount.perBillInterest;
   String? _error;
 
   @override
@@ -419,12 +420,20 @@ class _AccountFormState extends State<_AccountForm> {
             ChoiceChip(
               label: const Text('Each bill by days'),
               selected: _method == CreditAccount.perBillInterest,
-              onSelected: (_) => setState(() => _method = CreditAccount.perBillInterest),
+              onSelected: (_) =>
+                  setState(() => _method = CreditAccount.perBillInterest),
             ),
             ChoiceChip(
               label: const Text('On the whole bill'),
               selected: _method == CreditAccount.wholeBillInterest,
-              onSelected: (_) => setState(() => _method = CreditAccount.wholeBillInterest),
+              onSelected: (_) =>
+                  setState(() => _method = CreditAccount.wholeBillInterest),
+            ),
+            ChoiceChip(
+              label: const Text('At each bill date'),
+              selected: _method == CreditAccount.atBillDatesInterest,
+              onSelected: (_) =>
+                  setState(() => _method = CreditAccount.atBillDatesInterest),
             ),
           ],
         ),
@@ -432,6 +441,8 @@ class _AccountFormState extends State<_AccountForm> {
         Text(
           _method == CreditAccount.wholeBillInterest
               ? 'Interest is worked out once on the full bill, from the bill date to the settlement date. Payments reduce what is owed.'
+              : _method == CreditAccount.atBillDatesInterest
+              ? 'Interest runs from one bill date to the next. At each new bill, it is added to the balance, so the next period earns interest on it too. The final settlement adds interest to the settlement date.'
               : 'Each bill earns simple interest every day on what is still owed, from its own date. Give 0% for no interest.',
           style: TextStyle(color: c.muted, fontSize: 12),
         ),
@@ -633,21 +644,42 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     final s = computeStatement(account, _asOf);
     final months = s.interestByMonth.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final whole = account.interestMethod == CreditAccount.wholeBillInterest;
+    final method = account.interestMethod;
+    final whole = method == CreditAccount.wholeBillInterest;
+    final atDates = method == CreditAccount.atBillDatesInterest;
     final wb = whole
         ? wholeBillBreakdowns(account, _asOf)
         : const <BillBreakdown>[];
+    final steps = atDates
+        ? billDateSettlement(account, _asOf)
+        : const <SettlementStep>[];
+    final billsUpTo = account.bills.where(
+      (b) => !dateOnly(b.date).isAfter(dateOnly(_asOf)),
+    );
+    final paymentsUpTo = account.payments.where(
+      (p) => !dateOnly(p.date).isAfter(dateOnly(_asOf)),
+    );
     final totalNow = whole
         ? wb.fold<int>(0, (x, b) => x + b.openCents)
+        : atDates
+        ? (steps.isEmpty ? 0 : steps.last.balanceCents)
         : s.totalCents;
     final billsNow = whole
         ? wb.fold<int>(0, (x, b) => x + b.bill.finalCents)
+        : atDates
+        ? billsUpTo.fold<int>(0, (x, b) => x + b.finalCents)
         : s.principalCents;
     final interestNow = whole
         ? wb.fold<int>(0, (x, b) => x + b.interestCents)
+        : atDates
+        ? steps
+              .where((st) => st.interestCents > 0)
+              .fold<int>(0, (x, st) => x + st.interestCents)
         : s.interestCents;
     final paidNow = whole
         ? wb.fold<int>(0, (x, b) => x + b.paidCents)
+        : atDates
+        ? paymentsUpTo.fold<int>(0, (x, p) => x + p.cents)
         : s.totalPaidCents;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
@@ -737,7 +769,46 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        if (account.bills.isNotEmpty) ...[
+        if (atDates && steps.isNotEmpty) ...[
+          Text(
+            'Settlement steps',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          for (final st in steps) ...[
+            MonovaCard(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${dayLabel(st.date)} · ${st.label}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          st.amountCents != 0
+                              ? 'Amount ${money(st.amountCents.abs() / 100)}'
+                              : 'Interest added ${money(st.interestCents / 100)}',
+                          style: TextStyle(color: c.muted, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'Balance ${money(st.balanceCents / 100)}',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+        ],
+        if (account.bills.isNotEmpty && !atDates) ...[
           Text('Each bill', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           for (final b in (whole ? wb : billBreakdowns(account, _asOf, s))) ...[
@@ -782,7 +853,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ],
           const SizedBox(height: 16),
         ],
-        if (!whole) ...[
+        if (!whole && !atDates) ...[
           Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)

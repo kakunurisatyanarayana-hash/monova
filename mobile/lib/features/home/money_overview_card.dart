@@ -104,7 +104,7 @@ class _MoneyOverviewCardState extends State<MoneyOverviewCard> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, mainAxisExtent: 104),
               children: [
                 _Tile(
-                  label: 'Credit manager due',
+                  label: 'Customers due',
                   value: money(t.creditDue / 100),
                   note: '${t.creditCustomers} ${t.creditCustomers == 1 ? 'customer' : 'customers'}',
                   color: t.creditDue > 0 ? c.expense : c.income,

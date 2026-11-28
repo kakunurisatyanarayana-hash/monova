@@ -107,7 +107,7 @@ class HomeScreen extends ConsumerWidget {
                 runSpacing: 8,
                 children: [
                   ActionChip(label: const Text('Accounts'), onPressed: () => context.push('/accounts')),
-                  ActionChip(label: const Text('Lending & borrowing'), onPressed: () => context.push('/lending')),
+                  ActionChip(label: const Text('Credit manager'), onPressed: () => context.push('/lending')),
                   ActionChip(label: const Text('Loans & EMI'), onPressed: () => context.push('/loans')),
                   ActionChip(label: const Text('Savings goals'), onPressed: () => context.push('/planning')),
                   ActionChip(label: const Text('Property and rooms'), onPressed: () => context.push('/property')),
@@ -603,7 +603,7 @@ class _QuickActions extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _ActionCircle(icon: Icons.call_split_rounded, label: 'Split', onTap: () => context.push('/tools/split')),
-        _ActionCircle(icon: Icons.menu_book_rounded, label: 'Credit manager', onTap: () => context.push('/ledger')),
+        _ActionCircle(icon: Icons.menu_book_rounded, label: 'Customers', onTap: () => context.push('/ledger')),
         _ActionCircle(icon: Icons.lock_rounded, label: 'Vault', onTap: () => context.push('/vault-hub')),
       ],
     );
