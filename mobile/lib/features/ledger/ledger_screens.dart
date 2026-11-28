@@ -56,7 +56,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
   }
 
   Future<void> _newCustomer() async {
-    final account = await FormSheet.show<CreditAccount>(context, title: 'New customer', child: const _AccountForm());
+    final account = await FormSheet.show<CreditAccount>(context, title: 'Add customer or supplier', child: const _AccountForm());
     if (account == null) return;
     final updated = [..._accounts, account];
     setState(() => _accounts = updated);
@@ -78,7 +78,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
             child: FilledButton.icon(
               onPressed: _loaded ? _newCustomer : null,
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-              label: const Text('New customer'),
+              label: const Text('Add person'),
             ),
           ),
         ],
@@ -94,7 +94,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total due today', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontWeight: FontWeight.w600)),
+                      Text('Total on all accounts today', style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Text(money(totalOutstanding / 100), style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
@@ -107,15 +107,15 @@ class _LedgerScreenState extends State<LedgerScreen> {
                 if (_accounts.length > 3)
                   TextField(textInputAction: TextInputAction.next, 
                     onChanged: (v) => setState(() => _query = v),
-                    decoration: const InputDecoration(hintText: 'Search customers', prefixIcon: Icon(Icons.search_rounded)),
+                    decoration: const InputDecoration(hintText: 'Search people', prefixIcon: Icon(Icons.search_rounded)),
                   ),
                 const SizedBox(height: 12),
                 if (_accounts.isEmpty)
                   EmptyState(
                     icon: Icons.menu_book_rounded,
-                    title: 'No customers yet',
-                    message: 'Add a customer, then record each bill given on credit and each payment. Interest is worked out for every day.',
-                    actionLabel: 'Add the first customer',
+                    title: 'No people yet',
+                    message: 'Add a customer you sell to on credit, or a supplier you buy from on credit. Then record each bill and each payment. Interest is worked out for every day.',
+                    actionLabel: 'Add the first person',
                     onAction: _newCustomer,
                   )
                 else
@@ -169,7 +169,7 @@ class _CustomerTile extends StatelessWidget {
                 Text(account.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.iOwe ? 'I owe' : 'Owes me'} · ${account.annualRatePercent}% a year simple · interest ${money(s.interestCents / 100)}',
+                  '${account.iOwe ? 'Supplier' : 'Customer'} · ${account.annualRatePercent}% a year simple · interest ${money(s.interestCents / 100)}',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
               ],
@@ -179,7 +179,7 @@ class _CustomerTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(money(s.totalCents / 100), style: TextStyle(fontWeight: FontWeight.w800, color: s.totalCents > 0 ? c.expense : c.income)),
-              Text(s.totalCents > 0 ? 'due' : (s.totalCents < 0 ? 'advance' : 'clear'), style: TextStyle(color: c.muted, fontSize: 11)),
+              Text(s.totalCents > 0 ? (account.iOwe ? 'to pay' : 'to receive') : (s.totalCents < 0 ? (account.iOwe ? 'extra paid' : 'advance') : 'settled'), style: TextStyle(color: c.muted, fontSize: 11)),
             ],
           ),
         ],
@@ -217,7 +217,7 @@ class _AccountFormState extends State<_AccountForm> {
     if (!mounted) return;
     final picked = await FormSheet.show<List<PickedContact>>(
       context,
-      title: 'Pick a customer',
+      title: 'Pick a person',
       child: ContactPickerSheet(contacts: contacts, singleSelect: true),
     );
     if (picked == null || picked.isEmpty || !mounted) return;
@@ -254,7 +254,7 @@ class _AccountFormState extends State<_AccountForm> {
   void _save() {
     final rate = _annualRate;
     if (_name.text.trim().isEmpty) {
-      setState(() => _error = 'Enter the customer name.');
+      setState(() => _error = 'Enter the name.');
       return;
     }
     if (rate == null || rate < 0 || rate > 120) {
@@ -291,13 +291,13 @@ class _AccountFormState extends State<_AccountForm> {
         Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
         const SizedBox(height: 4),
-        Text('Who owes whom', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
+        Text('Type', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
           children: [
-            ChoiceChip(label: const Text('They owe me'), selected: !_iOwe, onSelected: (_) => setState(() => _iOwe = false)),
-            ChoiceChip(label: const Text('I owe them'), selected: _iOwe, onSelected: (_) => setState(() => _iOwe = true)),
+            ChoiceChip(label: const Text('Customer'), selected: !_iOwe, onSelected: (_) => setState(() => _iOwe = false)),
+            ChoiceChip(label: const Text('Supplier / lender'), selected: _iOwe, onSelected: (_) => setState(() => _iOwe = true)),
           ],
         ),
         const SizedBox(height: 4),
@@ -310,7 +310,7 @@ class _AccountFormState extends State<_AccountForm> {
           Text(_error!, style: TextStyle(color: c.expense)),
         ],
         const SizedBox(height: 14),
-        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save customer' : 'Save changes')),
+        FilledButton(onPressed: _save, child: Text(widget.initial == null ? 'Save person' : 'Save changes')),
       ],
     );
   }
@@ -356,7 +356,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _addBill() async {
     final account = _account;
     if (account == null) return;
-    final bill = await FormSheet.show<CreditBill>(context, title: 'Add a bill', child: _BillForm(defaultBiller: account.name));
+    final bill = await FormSheet.show<CreditBill>(context, title: account.iOwe ? 'Bill received from supplier' : 'Bill given to customer', child: _BillForm(defaultBiller: account.name));
     if (bill == null) return;
     await _save(account.copyWith(bills: [...account.bills, bill]));
   }
@@ -364,7 +364,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _addPayment() async {
     final account = _account;
     if (account == null) return;
-    final payment = await FormSheet.show<CreditPayment>(context, title: 'Record a payment', child: const _PaymentForm());
+    final payment = await FormSheet.show<CreditPayment>(context, title: account.iOwe ? 'Money paid to supplier' : 'Money received from customer', child: const _PaymentForm());
     if (payment == null) return;
     await _save(account.copyWith(payments: [...account.payments, payment]));
   }
@@ -372,7 +372,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
   Future<void> _editTerms() async {
     final account = _account;
     if (account == null) return;
-    final updated = await FormSheet.show<CreditAccount>(context, title: 'Edit customer', child: _AccountForm(initial: account));
+    final updated = await FormSheet.show<CreditAccount>(context, title: 'Edit person', child: _AccountForm(initial: account));
     if (updated != null) await _save(updated);
   }
 
@@ -416,12 +416,12 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
     final account = _account;
     return Scaffold(
       appBar: AppBar(
-        title: Text(account?.name ?? 'Customer'),
+        title: Text(account?.name ?? 'Person'),
         actions: [
           if (account != null) ...[
             IconButton(tooltip: 'Share statement', icon: const Icon(Icons.share_rounded), onPressed: () => _shareStatement(account)),
             IconButton(tooltip: 'Edit interest and details', icon: const Icon(Icons.tune_rounded), onPressed: _editTerms),
-            IconButton(tooltip: 'Delete customer', icon: Icon(Icons.delete_outline_rounded, color: c.expense), onPressed: _deleteCustomer),
+            IconButton(tooltip: 'Delete person', icon: Icon(Icons.delete_outline_rounded, color: c.expense), onPressed: _deleteCustomer),
           ],
         ],
       ),
@@ -431,15 +431,15 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                FloatingActionButton.extended(heroTag: 'payment', onPressed: _addPayment, icon: const Icon(Icons.payments_rounded), label: const Text('Payment')),
+                FloatingActionButton.extended(heroTag: 'payment', onPressed: _addPayment, icon: const Icon(Icons.payments_rounded), label: Text(account.iOwe ? 'Money paid' : 'Money received')),
                 const SizedBox(height: 10),
-                FloatingActionButton.extended(heroTag: 'bill', onPressed: _addBill, icon: const Icon(Icons.receipt_long_rounded), label: const Text('Add bill')),
+                FloatingActionButton.extended(heroTag: 'bill', onPressed: _addBill, icon: const Icon(Icons.receipt_long_rounded), label: Text(account.iOwe ? 'Bill received' : 'Bill given')),
               ],
             ),
       body: !_loaded
           ? const LoadingBox()
           : account == null
-              ? const EmptyState(icon: Icons.menu_book_rounded, title: 'Customer not found', message: 'It may have been deleted.')
+              ? const EmptyState(icon: Icons.menu_book_rounded, title: 'Person not found', message: 'It may have been deleted.')
               : _body(context, account),
     );
   }
@@ -485,7 +485,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              _sum('Bills and unpaid amount', money(s.principalCents / 100), c),
+              _sum('Bills', money(s.principalCents / 100), c),
               _sum('Interest so far (${account.annualRatePercent}% a year)', money(s.interestCents / 100), c),
               _sum('Paid so far', money(s.totalPaidCents / 100), c),
             ],
@@ -496,8 +496,8 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           padding: const EdgeInsets.all(14),
           child: Text(
             account.compound
-                ? 'Interest is worked out every day and added to the balance, so it also earns interest.'
-                : 'Interest is worked out every day on the amount owed (simple interest). Payments clear the interest first.',
+                ? 'Interest is simple: worked out every day on what is still open, from the date of each bill.'
+                : 'Payments clear the interest first, then the oldest open bill.',
             style: TextStyle(color: c.muted, fontSize: 12, height: 1.4),
           ),
         ),
@@ -531,7 +531,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Bill ${money(b.bill.finalCents / 100)} · paid ${money(b.paidCents / 100)} · still owed ${money(b.openCents / 100)}',
+                    'Bill ${money(b.bill.finalCents / 100)} · paid ${money(b.paidCents / 100)} · still open ${money(b.openCents / 100)}',
                     style: TextStyle(color: c.muted, fontSize: 12),
                   ),
                   Text(
@@ -548,7 +548,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
         Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)
-          Text('No bills or payments yet. Tap "Add bill" to start.', style: TextStyle(color: c.muted))
+          Text('No bills or payments yet. Tap the button below to start.', style: TextStyle(color: c.muted))
         else
           for (final day in s.days.where((d) => !d.date.isAfter(_asOf))) ...[
             _dayCard(account, day, c),
@@ -605,7 +605,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           Row(
             children: [
               Expanded(child: Text(_dateText(day.date), style: const TextStyle(fontWeight: FontWeight.w800))),
-              Text('Owed ${money(day.balanceCents / 100)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text('Balance ${money(day.balanceCents / 100)}', style: const TextStyle(fontWeight: FontWeight.w700)),
             ],
           ),
           for (final b in day.bills)
@@ -619,7 +619,7 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
             ),
           for (final p in day.payments)
             _entryRow(
-              title: p.note.isEmpty ? 'Payment received' : 'Payment: ${p.note}',
+              title: p.note.isEmpty ? 'Payment' : 'Payment: ${p.note}',
               notes: p.note.isEmpty ? '' : '',
               amount: '- ${money(p.cents / 100)}',
               color: c.income,
@@ -823,7 +823,7 @@ class _BillFormState extends State<_BillForm> {
         const SizedBox(height: 12),
         DateSelector(label: 'Date of purchase', value: _date, firstYear: 2000, onChanged: (d) => setState(() => _date = d)),
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name of biller')),
+        TextField(textInputAction: TextInputAction.next, controller: _biller, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer or supplier name')),
         const SizedBox(height: 12),
         TextField(textInputAction: TextInputAction.next, controller: _description, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'What was bought', hintText: 'Urea 2 bags, pesticide')),
         const SizedBox(height: 12),
