@@ -603,6 +603,7 @@ class _QuickActions extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _ActionCircle(icon: Icons.call_split_rounded, label: 'Split', onTap: () => context.push('/tools/split')),
+        _ActionCircle(icon: Icons.storefront_rounded, label: 'Shop bills', onTap: () => context.push('/shop')),
         _ActionCircle(icon: Icons.menu_book_rounded, label: 'Customer credit', onTap: () => context.push('/ledger')),
         _ActionCircle(icon: Icons.lock_rounded, label: 'Vault', onTap: () => context.push('/vault-hub')),
       ],
