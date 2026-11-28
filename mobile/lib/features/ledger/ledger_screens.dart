@@ -821,8 +821,6 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        PromissoryNoteCard(account: account, onChanged: _save),
-        const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () => FormSheet.show<void>(
             context,
@@ -835,7 +833,42 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           icon: const Icon(Icons.calculate_rounded),
           label: const Text('Estimate settlement on a date'),
         ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: () => _settleAll(account),
+          icon: const Icon(Icons.done_all_rounded),
+          label: const Text('Settle everything on the date above'),
+        ),
         const SizedBox(height: 16),
+        if (atDates && account.bills.isNotEmpty) ...[
+          Text('Bills', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final b in ([
+            ...account.bills,
+          ]..sort((x, y) => x.date.compareTo(y.date)))) ...[
+            MonovaCard(
+              padding: const EdgeInsets.all(12),
+              onTap: () => _viewBill(account, b),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${dayLabel(b.date)} · ${b.billerName.isEmpty ? b.description : b.billerName}',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Text(
+                    money(b.finalCents / 100),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: c.muted),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+        ],
         if (atDates && steps.isNotEmpty) ...[
           Text(
             'Settlement steps',
@@ -1264,9 +1297,50 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
 
   /// Bill details first: every field, the amount still owed and interest so far, and the full change history.
   /// Edit and delete are offered from there.
+  /// Record one payment that clears everything owed on the chosen date, after a confirmation.
+  Future<void> _settleAll(CreditAccount account) async {
+    final total = accountTotalCents(account, _asOf);
+    if (total <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing is owed on this date.')),
+      );
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Settle everything?'),
+        content: Text(
+          'A payment of ${money(total / 100)} will be recorded on ${_dateText(_asOf)}, clearing interest and all bills. '
+          'It will appear in the payment history.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Settle'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final payment = CreditPayment(
+      id: _id(),
+      date: dateOnly(_asOf),
+      cents: total,
+      note: 'Full settlement',
+    );
+    await _save(account.copyWith(payments: [...account.payments, payment]));
+  }
+
   Future<void> _viewBill(CreditAccount account, CreditBill bill) async {
     final breakdowns = account.interestMethod == CreditAccount.wholeBillInterest
         ? wholeBillBreakdowns(account, _asOf)
+        : account.interestMethod == CreditAccount.atBillDatesInterest
+        ? const <BillBreakdown>[]
         : billBreakdowns(account, _asOf, computeStatement(account, _asOf));
     BillBreakdown? info;
     for (final b in breakdowns) {

@@ -12,18 +12,33 @@ import '../../shared/date_inputs.dart';
 /// The promissory note for a customer: a photo, with a caption. It can be added, replaced, its caption edited, or removed.
 /// [onChanged] saves the new account.
 class PromissoryNoteCard extends StatelessWidget {
-  const PromissoryNoteCard({super.key, required this.account, required this.onChanged});
+  const PromissoryNoteCard({
+    super.key,
+    required this.account,
+    required this.onChanged,
+  });
 
   final CreditAccount account;
   final Future<void> Function(CreditAccount) onChanged;
 
   Future<void> _pick(BuildContext context) async {
-    final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, maxHeight: 1200, imageQuality: 60);
+    final file = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 60,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
     if (bytes.length > 1500000) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That photo is too large. Choose a smaller photo of the note.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'That photo is too large. Choose a smaller photo of the note.',
+            ),
+          ),
+        );
       }
       return;
     }
@@ -44,10 +59,18 @@ class PromissoryNoteCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove the promissory note?'),
-        content: const Text('The photo and its caption will be removed from this customer.'),
+        content: const Text(
+          'The photo and its caption will be removed from this customer.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -64,18 +87,30 @@ class PromissoryNoteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Promissory note', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Promissory note',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           if (!has)
-            Text('No note attached. Add a photo of the signed promissory note or agreement.', style: TextStyle(color: c.muted, fontSize: 12))
+            Text(
+              'No note attached. Add a photo of the signed promissory note or agreement.',
+              style: TextStyle(color: c.muted, fontSize: 12),
+            )
           else ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.memory(base64Decode(account.noteBase64), fit: BoxFit.contain),
+              child: Image.memory(
+                base64Decode(account.noteBase64),
+                fit: BoxFit.contain,
+              ),
             ),
             if (account.noteCaption.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text(account.noteCaption, style: TextStyle(color: c.muted, fontSize: 12)),
+              Text(
+                account.noteCaption,
+                style: TextStyle(color: c.muted, fontSize: 12),
+              ),
             ],
           ],
           const SizedBox(height: 10),
@@ -133,11 +168,19 @@ class _CaptionDialogState extends State<_CaptionDialog> {
       title: const Text('Caption for the note'),
       content: TextField(
         controller: _controller,
-        decoration: const InputDecoration(hintText: 'For example: Signed on 5 Nov, interest 18% a year'),
+        decoration: const InputDecoration(
+          hintText: 'For example: Signed on 5 Nov, interest 18% a year',
+        ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: () => Navigator.pop(context, _controller.text.trim()), child: const Text('Save')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Save'),
+        ),
       ],
     );
   }
@@ -146,27 +189,40 @@ class _CaptionDialogState extends State<_CaptionDialog> {
 /// Rough estimate: pick a sample settlement date and see the bills, payments, interest and total on that date.
 /// The numbers come from the same rules the statement uses, so they match the final settlement on that date.
 class SettlementEstimateSheet extends StatefulWidget {
-  const SettlementEstimateSheet({super.key, required this.account, required this.initialDate});
+  const SettlementEstimateSheet({
+    super.key,
+    required this.account,
+    required this.initialDate,
+  });
 
   final CreditAccount account;
   final DateTime initialDate;
 
   @override
-  State<SettlementEstimateSheet> createState() => _SettlementEstimateSheetState();
+  State<SettlementEstimateSheet> createState() =>
+      _SettlementEstimateSheetState();
 }
 
 class _SettlementEstimateSheetState extends State<SettlementEstimateSheet> {
   late DateTime _date = dateOnly(widget.initialDate);
 
-  Widget _row(String label, int cents, MonovaColors c, {bool strong = false}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      children: [
-        Expanded(child: Text(label, style: TextStyle(color: c.muted))),
-        Text(money(cents / 100), style: TextStyle(fontWeight: strong ? FontWeight.w800 : FontWeight.w600)),
-      ],
-    ),
-  );
+  Widget _row(String label, int cents, MonovaColors c, {bool strong = false}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(label, style: TextStyle(color: c.muted)),
+            ),
+            Text(
+              money(cents / 100),
+              style: TextStyle(
+                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +238,11 @@ class _SettlementEstimateSheetState extends State<SettlementEstimateSheet> {
             style: TextStyle(color: c.muted, fontSize: 12),
           ),
           const SizedBox(height: 10),
-          DateSelector(label: 'Sample settlement date', value: _date, onChanged: (d) => setState(() => _date = d)),
+          DateSelector(
+            label: 'Sample settlement date',
+            value: _date,
+            onChanged: (d) => setState(() => _date = d),
+          ),
           const SizedBox(height: 10),
           _row('Bills given up to this date', e.billsCents, c),
           _row('Payments received up to this date', e.paidCents, c),

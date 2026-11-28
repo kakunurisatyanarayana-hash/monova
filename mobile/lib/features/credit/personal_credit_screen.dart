@@ -8,6 +8,7 @@ import '../../core/personal_credit_store.dart';
 import '../../core/rate_presets.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../ledger/ledger_extras.dart';
 import '../../state/providers.dart';
 
 /// Credit manager: money I lent to people or businesses, and money I borrowed. Recorded by hand, on this phone.
@@ -490,6 +491,14 @@ class _PersonalDetailState extends State<_PersonalDetail> {
             money(outstanding / 100),
             c,
             strong: true,
+          ),
+          const SizedBox(height: 12),
+          PromissoryNoteCard(
+            account: _account,
+            onChanged: (updated) async {
+              setState(() => _account = updated);
+              await widget.onChanged(updated);
+            },
           ),
           const SizedBox(height: 12),
           Text(
