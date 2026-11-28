@@ -505,9 +505,10 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
           MonovaCard(
             gradient: c.hero,
             padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
+            child: EqualTileGrid(
+              minTileWidth: 118,
+              tileHeight: 92,
+              gap: 10,
               children: [
                 _Stat(
                   label: 'Total rooms',
@@ -620,24 +621,26 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
             ),
           ],
           const SizedBox(height: 18),
+          const SectionTitle('Vacancy'),
+          const SizedBox(height: 8),
+          if (summary.rooms.isEmpty)
+            EmptyState(
+              icon: Icons.meeting_room_outlined,
+              title: 'No rooms yet',
+              message: 'Add the rooms in this property. Choose how many people share each room, up to any number.',
+              actionLabel: 'Add a room',
+              onAction: () => _addRoom(property),
+            )
+          else
+            // Sharing and vacancy filters at the top, then one tile per room. Tap a tile to open the room.
+            _VacancyBoard(
+              rooms: summary.rooms,
+              openByRoom: openByRoom,
+              onOpen: (room) => _openRoom(room),
+            ),
+          const SizedBox(height: 18),
           if (property.hasLocation) ...[
-            PropertyMapPreview(
-              latitude: property.latitude!,
-              longitude: property.longitude!,
-              exact: property.showExactLocation,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              [
-                property.address,
-                property.cityVillage,
-                property.mandal,
-                property.district,
-                property.state,
-                property.pinCode,
-              ].where((s) => s.isNotEmpty).join(', '),
-              style: TextStyle(color: c.muted, fontSize: 12),
-            ),
+            PropertyLocationRow(property: property),
             const SizedBox(height: 14),
           ],
           if (!property.hasLocation && property.address.isNotEmpty) ...[
@@ -656,24 +659,6 @@ class _PropertyDashboardScreenState extends State<PropertyDashboardScreen> {
             propertyId: property.id,
             title: 'Transactions and expenses',
           ),
-          const SizedBox(height: 18),
-          const SectionTitle('Vacancy'),
-          const SizedBox(height: 8),
-          if (summary.rooms.isEmpty)
-            EmptyState(
-              icon: Icons.meeting_room_outlined,
-              title: 'No rooms yet',
-              message: 'Add the rooms in this property. Choose how many people share each room, up to any number.',
-              actionLabel: 'Add a room',
-              onAction: () => _addRoom(property),
-            )
-          else
-            // Sharing and vacancy filters at the top, then one tile per room. Tap a tile to open the room.
-            _VacancyBoard(
-              rooms: summary.rooms,
-              openByRoom: openByRoom,
-              onOpen: (room) => _openRoom(room),
-            ),
           const SizedBox(height: 18),
           SectionTitle(
             'People',
@@ -811,8 +796,7 @@ class _Stat extends StatelessWidget {
     final c = context.monova;
     final fg = alert ? Colors.white : (onHero ? c.onAccent : c.ink);
     final tile = Container(
-      width: 150,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: alert
             ? c.expense

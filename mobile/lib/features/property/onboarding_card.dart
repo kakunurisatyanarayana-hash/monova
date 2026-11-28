@@ -44,26 +44,35 @@ class _OnboardingCardState extends State<OnboardingCard> {
     final book = widget.book;
     final firstId = book.properties.isEmpty ? null : book.properties.first.id;
     final steps = <_Step>[
-      _Step('Add a property', firstId != null, widget.onAddProperty),
+      _Step(
+        'Add a property',
+        firstId != null,
+        widget.onAddProperty,
+        'The hotel, hostel, PG or flat you manage.',
+      ),
       _Step(
         'Add floors and rooms',
         book.rooms.isNotEmpty,
         firstId == null ? null : () => context.push('/property/$firstId'),
+        'Rooms and how many people share each one.',
       ),
       _Step(
-        'Add tenants from contacts or type them',
+        'Add tenants',
         book.persons.any((p) => !p.isOwner),
         firstId == null ? null : () => context.push('/property/$firstId'),
+        'People who stay, so rent and messages can be sent.',
       ),
       _Step(
-        'Turn on direct complaints for the hostel',
+        'Publish the complaint form',
         _hostelOn,
         firstId == null ? null : () => context.push('/property/$firstId/hub'),
+        'Lets tenants send complaints from the room QR code straight to this app, as well as through WhatsApp. Optional.',
       ),
       _Step(
-        'Sign in the owner account to share complaints',
+        'Sign in the owner account',
         OwnerAccount.user?.emailVerified ?? false,
         () => context.push('/owner-account'),
+        'Needed only to receive those direct complaints on this phone. Verify your email once.',
       ),
     ];
     final done = steps.where((s) => s.done).length;
@@ -93,14 +102,24 @@ class _OnboardingCardState extends State<OnboardingCard> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        s.label,
-                        style: TextStyle(
-                          color: s.done ? c.muted : c.ink,
-                          decoration: s.done
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.label,
+                            style: TextStyle(
+                              color: s.done ? c.muted : c.ink,
+                              decoration: s.done
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          if (!s.done)
+                            Text(
+                              s.detail,
+                              style: TextStyle(color: c.muted, fontSize: 12),
+                            ),
+                        ],
                       ),
                     ),
                     if (!s.done && s.onTap != null)
@@ -116,9 +135,10 @@ class _OnboardingCardState extends State<OnboardingCard> {
 }
 
 class _Step {
-  const _Step(this.label, this.done, this.onTap);
+  const _Step(this.label, this.done, this.onTap, this.detail);
 
   final String label;
   final bool done;
   final VoidCallback? onTap;
+  final String detail;
 }

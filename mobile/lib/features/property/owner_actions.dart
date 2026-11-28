@@ -43,6 +43,49 @@ Future<void> openWhatsAppDraft(
   );
 }
 
+/// The property's address on one line, with a Map button that opens the location in the phone's map app.
+class PropertyLocationRow extends StatelessWidget {
+  const PropertyLocationRow({super.key, required this.property});
+
+  final Property property;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.monova;
+    final address = [
+      property.address,
+      property.cityVillage,
+      property.mandal,
+      property.district,
+      property.state,
+      property.pinCode,
+    ].where((s) => s.isNotEmpty).join(', ');
+    final query = '${property.latitude},${property.longitude}';
+    return Row(
+      children: [
+        Icon(Icons.place_outlined, size: 18, color: c.muted),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            address,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: c.muted, fontSize: 12),
+          ),
+        ),
+        TextButton.icon(
+          onPressed: () => launchUrl(
+            Uri.parse('https://www.google.com/maps/search/?api=1&query=$query'),
+            mode: LaunchMode.externalApplication,
+          ),
+          icon: const Icon(Icons.map_outlined, size: 18),
+          label: const Text('Map'),
+        ),
+      ],
+    );
+  }
+}
+
 /// Rent status and WhatsApp messages for one person, shown on the person's page.
 class OwnerActions extends StatelessWidget {
   const OwnerActions({super.key, required this.person, required this.book});
@@ -170,7 +213,11 @@ class OwnerActions extends StatelessWidget {
   }
 
   /// Shows the complaint link as a QR code, so it can be scanned in person without sending anything.
-  Future<void> _showQr(BuildContext context, Property? property, Room room) async {
+  Future<void> _showQr(
+    BuildContext context,
+    Property? property,
+    Room room,
+  ) async {
     final link = await _complaintLink(property, room);
     if (!context.mounted) return;
     await FormSheet.show<void>(
@@ -246,6 +293,25 @@ class _BillSplitFormState extends State<_BillSplitForm> {
   late final List<Tenancy> _active;
   final Set<String> _chosen = {};
 
+  /// Null means the whole property; otherwise only the tenants of that room are listed.
+  String? _roomId;
+
+  List<Tenancy> get _scope => _roomId == null
+      ? _active
+      : [
+          for (final t in _active)
+            if (t.roomId == _roomId) t,
+        ];
+
+  void _pickRoom(String? roomId) {
+    setState(() {
+      _roomId = roomId;
+      _chosen
+        ..clear()
+        ..addAll(_scope.map((t) => t.id));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -290,14 +356,39 @@ class _BillSplitFormState extends State<_BillSplitForm> {
           TextField(
             controller: _label,
             decoration: const InputDecoration(
-              labelText: 'What is it for? (for example Electricity, Dec)',
+              labelText:
+                  'What is it for? (for example Maintenance, Electricity)',
             ),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 12),
-          if (_active.isEmpty)
+          Text(
+            'Split for',
+            style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Whole property'),
+                selected: _roomId == null,
+                onSelected: (_) => _pickRoom(null),
+              ),
+              for (final r in widget.book.rooms)
+                if (r.propertyId == widget.property.id && !r.archived)
+                  ChoiceChip(
+                    label: Text('Room ${r.number}'),
+                    selected: _roomId == r.id,
+                    onSelected: (_) => _pickRoom(r.id),
+                  ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_scope.isEmpty)
             Text(
-              'No active tenants in this property yet.',
+              'No active tenants here yet.',
               style: TextStyle(color: c.muted),
             )
           else ...[
@@ -305,7 +396,7 @@ class _BillSplitFormState extends State<_BillSplitForm> {
               'Share with',
               style: TextStyle(color: c.muted, fontWeight: FontWeight.w700),
             ),
-            for (final t in _active)
+            for (final t in _scope)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: _chosen.contains(t.id),
@@ -339,7 +430,8 @@ class _BillSplitFormState extends State<_BillSplitForm> {
                         billShareMessage(
                           hostel: widget.property.name,
                           resident: chosen[i].name,
-                          label: _label.text,
+                          label:
+                              '${monthLabel(DateTime.now().year, DateTime.now().month)} ${_label.text}',
                           share: money(shares[i] / 100),
                         ),
                       ),
