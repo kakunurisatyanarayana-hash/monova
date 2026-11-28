@@ -494,6 +494,49 @@ class _LedgerAccountScreenState extends State<LedgerAccountScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        if (account.bills.isNotEmpty) ...[
+          Text('Each bill', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final b in billBreakdowns(account, _asOf, s)) ...[
+            MonovaCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${dayLabel(b.bill.date)} · ${b.bill.billerName.isEmpty ? b.bill.description : b.bill.billerName}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text(
+                        b.closedOn == null ? 'Open' : 'Cleared ${dayLabel(b.closedOn!)}',
+                        style: TextStyle(
+                          color: b.closedOn == null ? c.warning : c.income,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bill ${money(b.bill.finalCents / 100)} · paid ${money(b.paidCents / 100)} · still owed ${money(b.openCents / 100)}',
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  ),
+                  Text(
+                    '${b.daysOpen} days · interest so far ${money(b.interestCents / 100)} at ${account.annualRatePercent}% a year',
+                    style: TextStyle(color: c.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+        ],
         Text('Day by day', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         if (s.days.where((d) => !d.date.isAfter(_asOf)).isEmpty)
