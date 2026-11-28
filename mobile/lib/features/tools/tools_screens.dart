@@ -86,7 +86,7 @@ class ToolsScreen extends ConsumerWidget {
           ),
           _ToolTile(
             icon: Icons.menu_book_rounded,
-            title: 'Customer credit',
+            title: 'Credit manager',
             subtitle: 'Bills given on credit, payments, and interest worked out for each day. Final amount on any date.',
             onTap: () => context.push('/ledger'),
           ),

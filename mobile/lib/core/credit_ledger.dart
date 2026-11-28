@@ -88,11 +88,15 @@ class CreditAccount {
     required this.compound,
     required this.bills,
     required this.payments,
+    this.iOwe = false,
   });
 
   final String id;
   final String name;
   final String phone;
+
+  /// False: this person owes me (a customer, or money I lent). True: I owe them (a vendor, or money I borrowed).
+  final bool iOwe;
 
   /// Yearly interest in percent. It is applied per day, on the outstanding amount (divided by 365).
   final double annualRatePercent;
@@ -107,6 +111,7 @@ class CreditAccount {
     String? phone,
     double? annualRatePercent,
     bool? compound,
+    bool? iOwe,
     List<CreditBill>? bills,
     List<CreditPayment>? payments,
   }) =>
@@ -116,6 +121,7 @@ class CreditAccount {
         phone: phone ?? this.phone,
         annualRatePercent: annualRatePercent ?? this.annualRatePercent,
         compound: compound ?? this.compound,
+        iOwe: iOwe ?? this.iOwe,
         bills: bills ?? this.bills,
         payments: payments ?? this.payments,
       );
@@ -126,6 +132,7 @@ class CreditAccount {
         'phone': phone,
         'annualRatePercent': annualRatePercent,
         'compound': compound,
+        'iOwe': iOwe,
         'bills': bills.map((b) => b.toJson()).toList(),
         'payments': payments.map((p) => p.toJson()).toList(),
       };
@@ -136,6 +143,7 @@ class CreditAccount {
         phone: '${j['phone'] ?? ''}',
         annualRatePercent: (j['annualRatePercent'] as num?)?.toDouble() ?? 0,
         compound: j['compound'] == true,
+        iOwe: j['iOwe'] == true,
         bills: [for (final b in (j['bills'] as List<dynamic>? ?? const [])) CreditBill.fromJson(Map<String, dynamic>.from(b as Map))],
         payments: [for (final p in (j['payments'] as List<dynamic>? ?? const [])) CreditPayment.fromJson(Map<String, dynamic>.from(p as Map))],
       );
@@ -328,7 +336,8 @@ LedgerStatement computeStatement(CreditAccount account, DateTime asOf) {
 
     // Interest for this day, on what is owed at the end of the day before the next events.
     if (day.isBefore(end)) {
-      final base = account.compound ? principal + interest : principal;
+      // Simple interest only: interest is worked out on the amount owed, never on earlier interest.
+      final base = principal;
       final accrual = base > 0 ? base * dailyRate : 0.0;
       interest += accrual;
       accruedSinceRow += accrual;

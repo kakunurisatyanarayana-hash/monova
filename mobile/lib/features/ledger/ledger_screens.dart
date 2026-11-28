@@ -71,7 +71,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
     final totalOutstanding = _accounts.fold<int>(0, (sum, a) => sum + computeStatement(a, today).totalCents);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Credit book'),
+        title: const Text('Credit manager'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -98,7 +98,7 @@ class _LedgerScreenState extends State<LedgerScreen> {
                       const SizedBox(height: 6),
                       Text(money(totalOutstanding / 100), style: TextStyle(color: c.onAccent, fontSize: 30, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
-                      Text('${_accounts.length} ${_accounts.length == 1 ? 'customer' : 'customers'}, including interest up to today',
+                      Text('${_accounts.length} ${_accounts.length == 1 ? 'person' : 'people'}, including interest up to today',
                           style: TextStyle(color: c.onAccent.withValues(alpha: 0.85), fontSize: 12)),
                     ],
                   ),
@@ -169,7 +169,7 @@ class _CustomerTile extends StatelessWidget {
                 Text(account.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(
-                  '${account.annualRatePercent}% a year · ${account.compound ? 'compound' : 'simple'} · interest ${money(s.interestCents / 100)}',
+                  '${account.iOwe ? 'I owe' : 'Owes me'} · ${account.annualRatePercent}% a year simple · interest ${money(s.interestCents / 100)}',
                   style: TextStyle(color: c.muted, fontSize: 12),
                 ),
               ],
@@ -240,7 +240,7 @@ class _AccountFormState extends State<_AccountForm> {
     if (r == null) return 'Charged every day on the amount owed, divided by 365.';
     return 'Per day: ${(r / 365).toStringAsFixed(4)}% of the amount owed.';
   }
-  late bool _compound = widget.initial?.compound ?? false;
+  late bool _iOwe = widget.initial?.iOwe ?? false;
   String? _error;
 
   @override
@@ -263,8 +263,8 @@ class _AccountFormState extends State<_AccountForm> {
     }
     final initial = widget.initial;
     Navigator.of(context).pop(initial == null
-        ? CreditAccount(id: _id(), name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: _compound, bills: const [], payments: const [])
-        : initial.copyWith(name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: _compound));
+        ? CreditAccount(id: _id(), name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: false, iOwe: _iOwe, bills: const [], payments: const [])
+        : initial.copyWith(name: _name.text.trim(), phone: _phone.text.trim(), annualRatePercent: rate, compound: false, iOwe: _iOwe));
   }
 
   @override
@@ -276,7 +276,7 @@ class _AccountFormState extends State<_AccountForm> {
         OutlinedButton.icon(onPressed: _pickContact, icon: const Icon(Icons.contacts_rounded, size: 18), label: const Text('Pick from contacts')),
 
         const SizedBox(height: 12),
-        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Customer name')),
+        TextField(textInputAction: TextInputAction.next, controller: _name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Name')),
         const SizedBox(height: 12),
 
         TextField(textInputAction: TextInputAction.next, controller: _phone, keyboardType: TextInputType.phone, inputFormatters: phoneFormatters, decoration: const InputDecoration(labelText: 'Phone (optional)')),
@@ -290,12 +290,20 @@ class _AccountFormState extends State<_AccountForm> {
         const SizedBox(height: 6),
         Text(_rateHelp(), style: TextStyle(color: c.muted, fontSize: 12)),
         const SizedBox(height: 8),
-        SwitchListTile(
-          value: _compound,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Add interest to the balance'),
-          subtitle: Text('Off: simple interest on the bills. On: interest also earns interest each day.', style: TextStyle(color: c.muted, fontSize: 12)),
-          onChanged: (v) => setState(() => _compound = v),
+        const SizedBox(height: 4),
+        Text('Who owes whom', style: TextStyle(color: c.muted, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          children: [
+            ChoiceChip(label: const Text('They owe me'), selected: !_iOwe, onSelected: (_) => setState(() => _iOwe = false)),
+            ChoiceChip(label: const Text('I owe them'), selected: _iOwe, onSelected: (_) => setState(() => _iOwe = true)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Interest is simple: each bill earns interest per day from its own date.',
+          style: TextStyle(color: c.muted, fontSize: 12),
         ),
         if (_error != null) ...[
           const SizedBox(height: 8),
