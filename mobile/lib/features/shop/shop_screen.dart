@@ -119,7 +119,20 @@ class _ShopScreenState extends State<ShopScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _Figure(label: 'Expenses on this day', value: money(t.cashOut / 100), color: c.expense),
+                      Row(
+                        children: [
+                          Expanded(child: _Figure(label: 'Cash in', value: money(t.cashIn / 100), color: c.income)),
+                          Expanded(child: _Figure(label: 'Cash out', value: money(t.cashOut / 100), color: c.expense)),
+                          Expanded(child: _Figure(label: 'Day total', value: money(t.net / 100), color: t.net >= 0 ? c.income : c.expense)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(child: _Figure(label: 'On credit', value: money(t.onCredit / 100), color: c.warning)),
+                          Expanded(child: _Figure(label: 'Still to pay', value: money(t.toPay / 100), color: c.warning)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -130,7 +143,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   const EmptyState(
                     icon: Icons.storefront_rounded,
                     title: 'No entries on this day',
-                    message: 'Add an expense you paid, such as tea, fuel or electricity. Tap an entry to correct it.',
+                    message: 'Add a sale, an expense or a supplier bill. Tap an entry to correct it.',
                   )
                 else
                   for (final e in entries) ...[
@@ -209,7 +222,7 @@ class _ShopEntryForm extends StatefulWidget {
 }
 
 class _ShopEntryFormState extends State<_ShopEntryForm> {
-  late ShopKind _kind = widget.initial?.kind ?? ShopKind.expense;
+  late ShopKind _kind = widget.initial?.kind ?? ShopKind.sale;
   late bool _paid = widget.initial?.paid ?? true;
   late final _party = TextEditingController(text: widget.initial?.party ?? '');
   late final _description = TextEditingController(text: widget.initial?.description ?? '');
@@ -268,7 +281,7 @@ class _ShopEntryFormState extends State<_ShopEntryForm> {
           Wrap(
             spacing: 8,
             children: [
-              for (final k in const [ShopKind.expense])
+              for (final k in ShopKind.values)
                 ChoiceChip(
                   label: Text(shopKindLabel(k)),
                   selected: _kind == k,
